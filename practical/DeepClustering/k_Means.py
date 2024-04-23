@@ -20,11 +20,10 @@ class KMeans:
         else:
             raise ValueError("Inputs must have the same dimension!\n")
 
-    def __init__(self, X, n_clusters, max_epoch, distance=euclidian):
+    def __init__(self, X, n_clusters, distance=euclidian):
         self.X = np.asarray(X)
         self.n_data: int = np.shape(self.X)[0]
         self.n_clusters: int = n_clusters
-        self.max_epoch: int = max_epoch
         self.distance: callable = distance
 
         ## Available after fitting the data
@@ -84,11 +83,11 @@ class KMeans:
         if dim == 3:
             pass
 
-    def fit(self, visuals=False):
+    def fit(self, max_epoch: int, visuals=False):
         ## Initialize centroids randomly
         self.pick_random_centroids()
 
-        for epoch in range(1, self.max_epoch):
+        for epoch in range(1, max_epoch):
             ## For each data point
             for x in self.X:
                 ## Assign each point to the nearest centroid
@@ -107,17 +106,17 @@ class KMeans:
 
 
 class KMeansSGD(KMeans):
-    def __init__(self, X: iter, n_clusters: int, max_iter: int):
-        super(KMeansSGD, self).__init__(X, n_clusters, max_iter)
+    def __init__(self, X: iter, n_clusters: int):
+        super(KMeansSGD, self).__init__(X, n_clusters)
 
-    def fit(self, visuals=False):
+    def fit(self, max_epoch: int, visuals=False):
         pass
 
 
 class KMeansMiniBatch(KMeans):
-    def __init__(self, X: iter, n_clusters: int, max_iter: int, batch_size):
-        super(KMeansMiniBatch, self).__init__(X, n_clusters, max_iter)
+    def __init__(self, X: iter, n_clusters: int, batch_size: int):
+        super(KMeansMiniBatch, self).__init__(X, n_clusters)
         self.batch_size: int = batch_size
 
-    def fit(self, visuals=False):
+    def fit(self, max_epoch: int, visuals=False):
         pass

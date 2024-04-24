@@ -37,6 +37,7 @@ class KMeans:
         """
         return [self.X[i] for i in np.random.choice(range(self.n_data), size=self.n_clusters, replace=False)]
 
+    ## TODO:
     def get_closest_centroid(self, x: np.array) -> np.ndarray:
         """
         Calculates distances in a sorted list and returns the closest centroid.
@@ -45,7 +46,7 @@ class KMeans:
         """
         dist = sorted([(centroid, self.distance(x, centroid))
                        for centroid in self.centroids], key=lambda tpl: tpl[1])
-        centroid, d = dist[0]
+        centroid = dist[0][0]
 
         return centroid
 

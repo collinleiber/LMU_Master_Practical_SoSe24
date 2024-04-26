@@ -1,5 +1,5 @@
 import unittest
-from LMU_Master_Practical_SoSe24.practical.DeepClustering.KMeans import KMeansSGD
+from LMU_Master_Practical_SoSe24.practical.DeepClustering.kmeans import KMeansSGD
 
 
 class TestKMeansSGD(unittest.TestCase):

@@ -48,7 +48,7 @@ class KMeans:
                        for centroid in self.centroids], key=lambda tpl: tpl[1])
         centroid = dist[0][0]
 
-        return centroidw
+        return centroid
 
     def get_clusters(self) -> list:
         """

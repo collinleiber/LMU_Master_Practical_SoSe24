@@ -1,5 +1,5 @@
 import unittest
-from LMU_Master_Practical_SoSe24.practical.DeepClustering.k_Means import KMeansMiniBatch
+from LMU_Master_Practical_SoSe24.practical.DeepClustering.KMeans import KMeansMiniBatch
 
 
 class TestKMeansMiniBatch(unittest.TestCase):

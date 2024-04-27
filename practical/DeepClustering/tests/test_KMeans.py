@@ -18,34 +18,24 @@ class TestKMeans(unittest.TestCase):
 
         ## Kmean object with a random dataset
         self.X = np.random.rand(self.N, self.d)
-        self.kmean = kmeans.KMeans(data=self.X, n_clusters=self.K)
-
+        self.kmean = kmeans.KMeans(n_clusters=self.K)
 
     def tearDown(self):
         pass
-
-    def test_euclidian(self):
-
-        dist = self.kmean.euclidian(self.x, self.y)
-
-        self.assertEquals(dist, np.linalg.norm((self.x - self.y)))
-        self.assertGreaterEqual(dist, 0)
 
     def test_pick_random_centroids(self):
         for centroid in self.kmean.pick_random_centroids():
             self.assertIn(centroid, self.X)
 
-    def test_get_clusters(self):
-        clusters = self.kmean.get_clusters()
-        self.assertEquals(len(clusters), self.K)
-        self.assertIsNotNone(clusters)
+    def test_distances_to_centroids(self):
+        pass
 
-    def test_get_centroids(self):
-        centroids = self.kmean.get_centroids()
-        self.assertEquals(len(centroids), self.K)
+    def test_calculate_new_centroids(self):
+        pass
 
     def test_fit(self):
         pass
 
+
 if __name__ == '__main__':
-    TestKMeans.run()
+    unittest.main()

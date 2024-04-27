@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from sklearn.datasets import make_blobs
-
+from scipy.spatial import distance
 
 
 class KMeans:
@@ -11,133 +11,81 @@ class KMeans:
     Standard k-Means Algorithm
     """
 
-    @staticmethod
-    def euclidian(x, y) -> float:
-        """
-        Calculates the Euclidian-distance of the two data points.
-        """
-        x = np.asarray(x)
-        y = np.asarray(y)
-        if len(x) == len(y):
-            return np.linalg.norm((x - y))
-        else:
-            raise ValueError("Inputs must have the same dimension!\n")
-
-    def __init__(self, data: iter, n_clusters, distance=euclidian):
-        ## Initialize data
-        self.X = np.asarray(data)
-        self.n_data = np.shape(self.X)[0]
+    def __init__(self, n_clusters, distance=distance.euclidean):
         self.n_clusters: int = n_clusters
         self.distance: callable = distance
+        self.centroids: [np.array] = []
+        self.labels = None
 
-        ## Available after fitting the data
-        self.labels: {tuple: np.ndarray} = {}
-        self.clusters: list = []
-        self.centroids: list = []
-
-    def pick_random_centroids(self) -> list:
+    def pick_random_centroids(self, X) -> [np.ndarray]:
         """
         Returns n_clusters sized list of random data points from the dataset X.
         """
-        return [self.X[i] for i in np.random.choice(range(self.n_data), size=self.n_clusters, replace=False)]
+        n_data = np.shape(X)[0]
+        return [X[i] for i in np.random.choice(range(n_data), size=self.n_clusters, replace=False)]
 
-    ## TODO:
-    def get_closest_centroid(self, x: np.array) -> np.ndarray:
+    def distances_to_centroids(self, x: np.array) -> [float]:
         """
-        Calculates distances in a sorted list and returns the closest centroid.
-        :param x: data point to be evaluated
-        :return: the closest centroid to the point x
+        Calculates distances of the point x to the cluster centroids and returns them in a list (unsorted).
         """
-        distances = [(centroid, self.distance(x, centroid)) for centroid in self.centroids]
-        distances: sorted = distances.sort(key=lambda tpl: tpl[1])
-        closest_centroid = distances[0]
+        return [self.distance(x, centroid) for centroid in self.centroids]
 
-        return closest_centroid
-
-
-    def get_clusters(self) -> list:
-        """
-        Calculates the new clusters based on the current labels.
-        :return: list of clusters, which are the list of data points of the cluster
-        """
-        clusters = []
-        for centroid in self.centroids:
-            cluster = []
-            for x in self.labels.keys():
-                if self.labels[x] == centroid:
-                    point = np.asarray(x)
-                    cluster.append(point)
-            clusters.append(cluster)
-
-        return clusters
-
-    def get_centroids(self) -> list:
+    def calculate_new_centroids(self, X) -> [np.ndarray]:
         """
         Finds mean values of the clusters
         """
-        return [np.mean(cluster, axis=0) for cluster in self.clusters]
+        return [np.mean(X[np.argwhere(self.labels == label)], axis=0)[0] for label in range(self.n_clusters)]
 
-    def visualize(self, epoch=0):
-        dim = self.X.shape[1] ## Dimension of each data point
-        c_map = {centroid : i for i, centroid in enumerate(self.centroids)}
-        colors = np.array([c_map[self.labels[x]] for x in self.X])
+    def visualize(self, X, epoch=0):
+        plt.scatter(X[:, 0], X[:, 1], c=self.labels)
+        plt.title(f"Epoch: {epoch}")
+        plt.show()
 
-        ## 2D-Plots
-        if dim == 2:
-            plt.scatter(x=self.X[:, 0], y=self.X[:, 1], c=colors)
-            plt.title(f"Clusters of epoch: {epoch}")
-            plt.show()
+    def fit(self, X: iter, max_epoch: int, show=False):
+        ## Setup
+        X = np.asarray(X)
+        n, d = np.shape(X)
 
-        ## 3D-Plots
-        if dim == 3:
-            pass
-
-    def fit(self, max_epoch: int, visuals=False):
         ## Initialize centroids randomly
-        self.centroids = self.pick_random_centroids()
+        self.centroids = self.pick_random_centroids(X)
 
-        for epoch in range(1, max_epoch):
-            ## For each data point
-            for x in self.X:
-                ## Assign each point to the nearest centroid
-                nearest_centroid = self.get_closest_centroid(x)
-                self.labels[tuple(x)] = nearest_centroid
+        ## Initialize array of labels
+        self.labels = np.empty(n)
 
-            ## Update clusters & centroids
-            self.clusters = self.get_clusters()
-            self.centroids = self.get_centroids()
+        for epoch in range(1, max_epoch + 1):
+            print(epoch)
+            ## Assign each point to the nearest centroid
+            for i, x in enumerate(X):
+                distances = self.distances_to_centroids(x)
+                self.labels[i] = np.argmin(distances)
 
-            ## Visualize clusters
-            if visuals:
-                self.visualize()
+            if show:
+                self.visualize(X, epoch)
 
-        return self.labels, self.centroids
+            ## Update centroids
+            new_centroids = self.calculate_new_centroids(X)
+            if np.array_equal(new_centroids, self.centroids):
+                # Converges if labels don't change
+                break
+            else:
+                self.centroids = new_centroids
+
+        print("Done!")
+        return self.labels
 
 
 class KMeansSGD(KMeans):
-    def __init__(self, data: iter, n_clusters: int):
-        super(KMeansSGD, self).__init__(data, n_clusters)
-
-    def fit(self, max_epoch: int, visuals=False):
-        pass
+    pass
 
 
 class KMeansMiniBatch(KMeans):
-    def __init__(self, data: iter, n_clusters: int, batch_size: int):
-        super(KMeansMiniBatch, self).__init__(data, n_clusters)
-        self.batch_size: int = batch_size
-
-    def fit(self, max_epoch: int, visuals=False):
-
-        pass
+    pass
 
 
 if __name__ == "__main__":
-    X, y_true = make_blobs(n_samples=500, centers=5, cluster_std=0.60, random_state=0)
-    # plt.scatter(X[:, 0], X[:, 1])
-    # plt.show()
+    X, y_true = make_blobs(n_samples=500, centers=4, cluster_std=0.60, random_state=0)
+    plt.scatter(X[:, 0], X[:, 1])
+    plt.show()
 
-    kmeans = KMeans(X, n_clusters=5)
-    print(kmeans.__dict__)
-
-    kmeans.fit(max_epoch=5, visuals=True)
+    kmeans = KMeans(10)
+    kmeans.fit(X, max_epoch=30, show=True)

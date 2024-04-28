@@ -1,9 +1,18 @@
+from typing import Iterator
+
 import numpy as np
+
+import torch
+import torch.nn as nn
+import torch.utils.data.dataloader
+import torch.optim
+
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from sklearn.datasets import make_blobs
 from scipy.spatial import distance
+from torch.nn import Parameter
 
 
 class KMeans:
@@ -11,8 +20,8 @@ class KMeans:
     Standard k-Means Algorithm
     """
 
-    def __init__(self, n_clusters, distance=distance.euclidean):
-        self.n_clusters: int = n_clusters
+    def __init__(self, n_cluster, distance=distance.euclidean):
+        self.n_cluster: int = n_cluster
         self.distance: callable = distance
         self.centroids: [np.array] = []
         self.labels = None
@@ -22,7 +31,7 @@ class KMeans:
         Returns n_clusters sized list of random data points from the dataset X.
         """
         n_data = np.shape(X)[0]
-        return [X[i] for i in np.random.choice(range(n_data), size=self.n_clusters, replace=False)]
+        return [X[i] for i in np.random.choice(range(n_data), size=self.n_cluster, replace=False)]
 
     def distances_to_centroids(self, x: np.array) -> [float]:
         """
@@ -34,7 +43,7 @@ class KMeans:
         """
         Finds mean values of the clusters
         """
-        return [np.mean(X[np.argwhere(self.labels == label)], axis=0)[0] for label in range(self.n_clusters)]
+        return [np.mean(X[np.argwhere(self.labels == label)], axis=0)[0] for label in range(self.n_cluster)]
 
     def visualize(self, X, epoch=0):
         plt.scatter(X[:, 0], X[:, 1], c=self.labels)
@@ -71,21 +80,30 @@ class KMeans:
                 self.centroids = new_centroids
 
         print("Done!")
-        return self.labels
+        return self.labels, self.centroids
 
 
-class KMeansSGD(KMeans):
-    pass
+
+class MiniBatchKmeans(nn.Module):
+    def __init__(self, n_cluster):
+        super(MiniBatchKmeans, self).__init__()
+        self.kmean = KMeans(n_cluster)
+
+    def forward(self, X):
+        labels, centroids = self.kmean.fit(X, 1)
+        return centroids
 
 
-class KMeansMiniBatch(KMeans):
-    pass
+def fit(X, n_cluster, max_epoch, batch_size):
 
+    model = MiniBatchKmeans(n_cluster)
+    train_data = torch.utils.data.DataLoader(dataset=X, batch_size=batch_size, shuffle=True)
+    params = nn.Parameter(torch.tensor(model.kmean.centroids))
+    optimizer = torch.optim.Adam(params)
+    criterion = nn.MSELoss
 
-if __name__ == "__main__":
-    X, y_true = make_blobs(n_samples=500, centers=4, cluster_std=0.60, random_state=0)
-    plt.scatter(X[:, 0], X[:, 1])
-    plt.show()
+    for epoch in range(max_epoch):
+        for i, mb in enumerate(train_data):
+            optimizer.zero_grad()
 
-    kmeans = KMeans(10)
-    kmeans.fit(X, max_epoch=30, show=True)
+            pass

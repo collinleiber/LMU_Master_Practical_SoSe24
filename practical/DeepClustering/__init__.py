@@ -1,5 +1,3 @@
-import numpy as np
-import matplotlib.pyplot as plt
+from .deep_clustering_dummy import hello_world
 
-pass
-
+__all__ = ["hello_world"]

@@ -4,8 +4,6 @@ import math
 import time
 import matplotlib.pyplot as plt
 
-def hello_world(string: str) -> str:
-    return "Hello " + string
 
 def kMeans (data,k):
 
@@ -66,14 +64,18 @@ def kMeans (data,k):
 
 
         if clusters == old_clusters:
-            colors = itertools.cycle(["r", "b", "g"])
-            for i in range(k):
-                plt.scatter([tupel[0] for tupel in clusters[i]],[tupel[1] for tupel in clusters[i]],color=next(colors))
-            plt.show()
-            break
+            #generate_plot(clusters,k)
+            return clusters
+        
 
+
+def generate_plot (clusters,k):
+    colors = itertools.cycle(["r", "b", "g"])
+    for i in range(k):
+        plt.scatter([tupel[0] for tupel in clusters[i]],[tupel[1] for tupel in clusters[i]],color=next(colors))
+    plt.show() 
+    
 kMeans([(2,3),(4,8),(8,7),(10,3),(5,7),(1,3),(3,11),(9,2),(8,4),(5,1)],2)      
-
 
 
 

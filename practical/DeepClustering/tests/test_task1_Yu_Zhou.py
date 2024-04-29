@@ -1,5 +1,5 @@
 import torch
-from practical.DeepClustering.task1 import MiniBatchKMeans
+from practical.DeepClustering.task1_Yu_Zhou import MiniBatchKMeans
 
 def test_mini_batch_k_means():
 

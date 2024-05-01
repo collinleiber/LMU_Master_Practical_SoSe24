@@ -1,0 +1,3 @@
+class AlphaMiner:
+    pass
+

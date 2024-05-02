@@ -16,7 +16,7 @@ class AlphaMiner:
         self.parallel_pairs = self._get_parallel_pairs(self.following_pairs)
         self.sequential_pairs = self._get_sequential_pairs(self.following_pairs, self.parallel_pairs)
         self.not_following_pairs = self._get_not_following_pairs(self.following_pairs)
-        self.before_pairs = self._get_before_pairs(self.not_following_pairs)
+        self.before_pairs = self._get_before_pairs(self.not_following_pairs, self.sequential_pairs, self.parallel_pairs)
 
     def _import_event_log(self, file_path) -> tuple[pd.DataFrame, dict]:
         if not os.path.exists(file_path):
@@ -55,8 +55,8 @@ class AlphaMiner:
     def _get_following_pairs(self, traces):
         pairs = []
         for trace in traces:
-            for i in range(0, len(trace)):
-                if i < len(traces) - 2:
+            for i in range(0, len(trace)-1):
+                if (i+1) <= len(traces):
                     pairs.append((trace[i], trace[i + 1]))
         unique_pairs = np.asarray(list(set(pairs)))
         return unique_pairs
@@ -87,12 +87,14 @@ class AlphaMiner:
                                           and not np.any(np.all(reversed_pairs == pair, axis=1))])
         return not_following_pairs
 
-    def _get_before_pairs(self, not_following_pairs):
+    def _get_before_pairs(self, not_following_pairs, sequential_pairs, parallel_pairs):
         all_pairs = []
         for a1 in self.activities.keys():
             for a2 in self.activities.keys():
                 all_pairs.append((a1, a2))
         all_pairs = np.asarray(list(set(all_pairs)))
-        not_following_pairs = np.asarray([pair for pair in all_pairs
-                                          if not np.any(np.all(not_following_pairs == pair, axis=1))])
-        return not_following_pairs
+        before_pairs = np.asarray([pair for pair in all_pairs
+                                   if not np.any(np.all(not_following_pairs == pair, axis=1))
+                                   and not np.any(np.all(sequential_pairs == pair, axis=1))
+                                   and not np.any(np.all(parallel_pairs == pair, axis=1))])
+        return before_pairs

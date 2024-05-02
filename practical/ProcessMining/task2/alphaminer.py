@@ -16,6 +16,7 @@ class AlphaMiner:
         self.parallel_pairs = self._get_parallel_pairs(self.following_pairs)
         self.sequential_pairs = self._get_sequential_pairs(self.following_pairs, self.parallel_pairs)
         self.not_following_pairs = self._get_not_following_pairs(self.following_pairs)
+        self.before_pairs = self._get_before_pairs(self.not_following_pairs)
 
     def _import_event_log(self, file_path) -> tuple[pd.DataFrame, dict]:
         if not os.path.exists(file_path):
@@ -42,6 +43,9 @@ class AlphaMiner:
         unique_activities = list(event_log['activity'].unique())
         activities = {i: unique_activities[i] for i in range(0, len(unique_activities))}
         return activities
+
+    def _extract_traces(self, event_log):
+        return np.asarray(event_log.groupby('case_id')['activity_id'].apply(np.asarray).values)
 
     def _get_start_end_activities(self, traces):
         t_in = np.asarray(list(set([trace[0] for trace in traces])))
@@ -77,9 +81,18 @@ class AlphaMiner:
             for a2 in self.activities.keys():
                 all_pairs.append((a1, a2))
         all_pairs = np.asarray(list(set(all_pairs)))
+        reversed_pairs = np.asarray([pair[::-1] for pair in following_pairs])
         not_following_pairs = np.asarray([pair for pair in all_pairs
-                                          if not np.any(np.all(following_pairs == pair, axis=1))])
+                                          if not np.any(np.all(following_pairs == pair, axis=1))
+                                          and not np.any(np.all(reversed_pairs == pair, axis=1))])
         return not_following_pairs
 
-    def _extract_traces(self, event_log):
-        return np.asarray(event_log.groupby('case_id')['activity_id'].apply(np.asarray).values)
+    def _get_before_pairs(self, not_following_pairs):
+        all_pairs = []
+        for a1 in self.activities.keys():
+            for a2 in self.activities.keys():
+                all_pairs.append((a1, a2))
+        all_pairs = np.asarray(list(set(all_pairs)))
+        not_following_pairs = np.asarray([pair for pair in all_pairs
+                                          if not np.any(np.all(not_following_pairs == pair, axis=1))])
+        return not_following_pairs

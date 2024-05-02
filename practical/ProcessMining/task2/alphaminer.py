@@ -37,7 +37,7 @@ class AlphaMiner:
 
         return matrix
 
-    def _import_event_log(self, file_path) -> tuple[pd.DataFrame, dict]:
+    def _import_event_log(self, file_path):
         if not os.path.exists(file_path):
             raise Exception("File does not exist")
 
@@ -51,6 +51,7 @@ class AlphaMiner:
         else:
             raise Exception("File extension must be .csv or xes")
 
+        event_log = event_log.sort_values(['case:concept:name', 'time:timestamp'])
         event_log = (event_log[["case:concept:name", "concept:name"]]
                      .rename(columns={"case:concept:name": "case_id", "concept:name": "activity"}))
         activities = self._create_alphabet(event_log)

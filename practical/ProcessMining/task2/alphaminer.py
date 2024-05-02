@@ -7,7 +7,7 @@ import os
 class AlphaMiner:
 
     def __init__(self, file_path):
-        self.event_log, self.activities = self._import_event_log(file_path)
+        self.event_log, self.activities, self.all_pairs = self._import_event_log(file_path)
         self.traces = self._extract_traces(self.event_log)
 
         self.t_in, self.t_out = self._get_start_end_activities(self.traces)
@@ -17,6 +17,25 @@ class AlphaMiner:
         self.sequential_pairs = self._get_sequential_pairs(self.following_pairs, self.parallel_pairs)
         self.not_following_pairs = self._get_not_following_pairs(self.following_pairs)
         self.before_pairs = self._get_before_pairs(self.not_following_pairs, self.sequential_pairs, self.parallel_pairs)
+
+    def footprint_matrix(self):
+        matrix = pd.DataFrame(index=sorted(self.activities.values()), columns=sorted(self.activities.values()))
+
+        for pair in self.all_pairs:
+            a1, a2 = pair
+            a1_value, a2_value = self.activities[a1], self.activities[a2]
+            if any(np.array_equal(pair, p) for p in self.parallel_pairs):
+                matrix.at[a1_value, a2_value] = '||'
+            elif any(np.array_equal(pair, p) for p in self.sequential_pairs):
+                matrix.at[a1_value, a2_value] = '→'
+            elif any(np.array_equal(pair, p) for p in self.not_following_pairs):
+                matrix.at[a1_value, a2_value] = '#'
+            elif any(np.array_equal(pair, p) for p in self.before_pairs):
+                matrix.at[a1_value, a2_value] = '←'
+            else:
+                matrix.at[a1_value, a2_value] = ''
+
+        return matrix
 
     def _import_event_log(self, file_path) -> tuple[pd.DataFrame, dict]:
         if not os.path.exists(file_path):
@@ -35,9 +54,10 @@ class AlphaMiner:
         event_log = (event_log[["case:concept:name", "concept:name"]]
                      .rename(columns={"case:concept:name": "case_id", "concept:name": "activity"}))
         activities = self._create_alphabet(event_log)
+        all_pairs = [(a1, a2) for a1 in activities.keys() for a2 in activities.keys()]
         event_log['activity_id'] = event_log.apply(lambda row: dict(zip(activities.values(),
                                                                         activities.keys())).get(row['activity']), 1)
-        return event_log, activities
+        return event_log, activities, all_pairs
 
     def _create_alphabet(self, event_log):
         unique_activities = list(event_log['activity'].unique())
@@ -76,24 +96,14 @@ class AlphaMiner:
         return sequential_pairs
 
     def _get_not_following_pairs(self, following_pairs):
-        all_pairs = []
-        for a1 in self.activities.keys():
-            for a2 in self.activities.keys():
-                all_pairs.append((a1, a2))
-        all_pairs = np.asarray(list(set(all_pairs)))
         reversed_pairs = np.asarray([pair[::-1] for pair in following_pairs])
-        not_following_pairs = np.asarray([pair for pair in all_pairs
+        not_following_pairs = np.asarray([pair for pair in self.all_pairs
                                           if not np.any(np.all(following_pairs == pair, axis=1))
                                           and not np.any(np.all(reversed_pairs == pair, axis=1))])
         return not_following_pairs
 
     def _get_before_pairs(self, not_following_pairs, sequential_pairs, parallel_pairs):
-        all_pairs = []
-        for a1 in self.activities.keys():
-            for a2 in self.activities.keys():
-                all_pairs.append((a1, a2))
-        all_pairs = np.asarray(list(set(all_pairs)))
-        before_pairs = np.asarray([pair for pair in all_pairs
+        before_pairs = np.asarray([pair for pair in self.all_pairs
                                    if not np.any(np.all(not_following_pairs == pair, axis=1))
                                    and not np.any(np.all(sequential_pairs == pair, axis=1))
                                    and not np.any(np.all(parallel_pairs == pair, axis=1))])

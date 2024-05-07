@@ -244,11 +244,10 @@ class AlphaMiner:
         xor_split, xor_join, result = [], [], []
         for activity in self.activities:
             xor_split.extend(self._right_side_maximization(activity))
-            # TODO check if left side maximization is necessary
-            # xor_join.extend(self._left_side_maximization(activity))
+            xor_join.extend(self._left_side_maximization(activity))
 
         result.extend(xor_split), result.extend(xor_join)
-        # result.extend(self._prune_redundant_sequential_pairs(xor_split, xor_join)) TODO
+        result.extend(self._prune_redundant_sequential_pairs(xor_split, xor_join))
 
         return np.asarray(list(set(result)), dtype=object)
 
@@ -268,7 +267,7 @@ class AlphaMiner:
         if candidates := sorted([pair[1] for pair in self.sequential_pairs if pair[0] == activity]):
             # When not null, create tuples of each pair that is in not_following_pairs and the given activity
             return [(activity, powered_pair) for powered_pair in list(combinations(candidates, 2))
-                    if not np.any(np.all(self.not_following_pairs == powered_pair))]
+                    if np.any([np.array_equal(powered_pair, pair) for pair in self.not_following_pairs])]
         return []
 
     def _left_side_maximization(self, activity: int):
@@ -287,7 +286,7 @@ class AlphaMiner:
         if candidates := sorted([pair[0] for pair in self.sequential_pairs if pair[1] == activity]):
             # When not null, create tuples of each pair that is in not_following_pairs and the given activity
             return [(powered_pair, activity) for powered_pair in list(combinations(candidates, 2))
-                    if not np.any(np.all(self.not_following_pairs == powered_pair))]
+                    if np.any([np.array_equal(powered_pair, pair) for pair in self.not_following_pairs])]
         return []
 
     def _prune_redundant_sequential_pairs(self, split_result: List[Tuple], join_result: List[Tuple]) -> np.ndarray:

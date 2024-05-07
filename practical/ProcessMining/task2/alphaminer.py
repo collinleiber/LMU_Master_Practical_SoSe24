@@ -41,6 +41,8 @@ class AlphaMiner:
         self.not_following_pairs = self._get_not_following_pairs(self.following_pairs)
         self.before_pairs = self._get_before_pairs(self.not_following_pairs, self.sequential_pairs, self.parallel_pairs)
 
+        self.maximal_pairs = self._get_maximized_pairs()
+
     def footprint_matrix(self) -> pd.DataFrame:
         """
         Generates the footprint matrix for the process.

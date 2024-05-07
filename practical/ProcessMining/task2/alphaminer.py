@@ -244,11 +244,11 @@ class AlphaMiner:
         xor_split, xor_join, result = [], [], []
         for activity in self.activities:
             xor_split.extend(self._right_side_maximization(activity))
-            xor_join.extend(self._left_side_maximization(activity))
+            # TODO check if left side maximization is necessary
+            # xor_join.extend(self._left_side_maximization(activity))
 
-        # Add remaining entries to result
         result.extend(xor_split), result.extend(xor_join)
-        result.extend(self._prune_redundant_sequential_pairs(xor_split, xor_join))
+        # result.extend(self._prune_redundant_sequential_pairs(xor_split, xor_join)) TODO
 
         return np.asarray(list(set(result)), dtype=object)
 

@@ -322,6 +322,15 @@ class AlphaMiner:
 
         return minimal_pairs
 
+    def get_maximal_pairs(self):
+        """
+        Returns the maximized pair set as result of the alpha miner algorithm.
+
+        Returns:
+            np.ndarray: The maximized pair set.
+        """
+        return self._activity_encoder(self.maximal_pairs, getter=True)
+
     def print_pairs(self, encoded: bool = True):
         """
         Debugging method.
@@ -358,7 +367,7 @@ class AlphaMiner:
         elif pair_type == "max":
             self._activity_encoder(self.maximal_pairs, "Maximal pairs", encoded=encoded)
 
-    def _activity_encoder(self, pairs: np.ndarray, description: str, encoded: bool):
+    def _activity_encoder(self, pairs: np.ndarray, description: str="", encoded: bool=True, getter: bool = False):
         """
         Helper method to print pairs with activity IDs or names.
 
@@ -388,6 +397,9 @@ class AlphaMiner:
                     second = alphabet.get(second)
                 output.append((first, second))
 
-        print(description + ":")
-        print(sorted(output)) if int_only else print(output)
-        print()
+        if not getter:
+            print(description + ":")
+            print(sorted(output)) if int_only else print(output)
+            print()
+        else:
+            return output

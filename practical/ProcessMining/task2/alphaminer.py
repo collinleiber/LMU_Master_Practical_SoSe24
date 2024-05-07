@@ -390,6 +390,7 @@ class AlphaMiner:
                     int_only = False
                 else:
                     first = alphabet.get(first)
+                # TODO when no left side maximation, flatten tuple, first item a, rest b
                 if isinstance(second, tuple):
                     second = (alphabet.get(second[0]), alphabet.get(second[1]))
                     int_only = False

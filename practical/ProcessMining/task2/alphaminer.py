@@ -109,7 +109,7 @@ class AlphaMiner:
         Returns:
             Dict[int, str]: The mapping of activity IDs to activity names.
         """
-        unique_activities = list(event_log['activity'].unique())
+        unique_activities = sorted(list(event_log['activity'].unique()))
         activities = {i: unique_activities[i] for i in range(0, len(unique_activities))}
         return activities
 

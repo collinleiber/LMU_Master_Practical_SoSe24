@@ -228,3 +228,17 @@ class AlphaMiner:
                                    and not np.any(np.all(sequential_pairs == pair, axis=1))
                                    and not np.any(np.all(parallel_pairs == pair, axis=1))])
         return before_pairs
+
+    def print_pairs(self):
+        """
+        Debugging method.
+        Prints all pair types of current alpha miner instance.
+        """
+        print("Activity dictionary: \n" + str(self.activities))
+
+        print("Following pairs >: \n" + str(self.following_pairs))
+        print("Parallel pairs ||: \n" + str(self.parallel_pairs))
+        print("Sequential pairs ->: \n" + str(self.sequential_pairs))
+        print("Not following pairs #: \n" + str(self.not_following_pairs))
+
+        print("Maximal pairs: \n" + str(self.maximal_pairs))

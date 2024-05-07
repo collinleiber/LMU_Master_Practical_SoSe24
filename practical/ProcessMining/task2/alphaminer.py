@@ -1,3 +1,4 @@
+from itertools import combinations
 from typing import Dict, List, Tuple, Union
 import pandas as pd
 import numpy as np
@@ -228,6 +229,64 @@ class AlphaMiner:
                                    and not np.any(np.all(sequential_pairs == pair, axis=1))
                                    and not np.any(np.all(parallel_pairs == pair, axis=1))])
         return before_pairs
+
+    def _get_maximized_pairs(self):
+        """
+        Iterates over all activities to find maximal pairs and prunes redundant pairs.
+        xor_split and xor_join are used to store results of the right and left side maximization per activity.
+        Result is union of maximal pairs and the difference of sequential pairs without
+        sequential pairs used for maximal pairs.
+
+        Returns:
+            np.ndarray: The maximized pair set as result of the alpha miner algorithm.
+        """
+        xor_split, xor_join, result = [], [], []
+        for activity in self.activities:
+            xor_split.extend(self._right_side_maximization(activity))
+            xor_join.extend(self._left_side_maximization(activity))
+
+        # Add remaining entries to result
+        result.extend(xor_split), result.extend(xor_join)
+
+        return np.asarray(list(set(result)), dtype=object)
+
+    def _right_side_maximization(self, activity: int):
+        """
+        Maximizes the pairs for the given activity on the right side.
+        For all sequential pairs where the given activity is the first item, all second items are candidates.
+        From the power set of these candidates (without reversed items duplicates),
+        all pairs that are in not_following_pairs get merged with the activity and added to right side maximized pairs.
+
+        Parameters:
+            activity (int): The activity to maximize the pairs for, where it appears as first item.
+
+        Returns:
+            np.ndarray: The right side maximized pair set.
+        """
+        if candidates := sorted([pair[1] for pair in self.sequential_pairs if pair[0] == activity]):
+            # When not null, create tuples of each pair that is in not_following_pairs and the given activity
+            return [(activity, powered_pair) for powered_pair in list(combinations(candidates, 2))
+                    if not np.any(np.all(self.not_following_pairs == powered_pair))]
+        return []
+
+    def _left_side_maximization(self, activity: int):
+        """
+        Maximizes the pairs for the given activity on the left side.
+        For all sequential pairs where the given activity is the second item, all first items are candidates.
+        From the power set of these candidates (without reversed items duplicates),
+        all pairs that are in not_following_pairs get merged with the activity and added to left side maximized pairs.
+
+        Parameters:
+            activity (int): The activity to maximize the pairs for, where it appears as second item.
+
+        Returns:
+            np.ndarray: The left side maximized pair set.
+        """
+        if candidates := sorted([pair[0] for pair in self.sequential_pairs if pair[1] == activity]):
+            # When not null, create tuples of each pair that is in not_following_pairs and the given activity
+            return [(powered_pair, activity) for powered_pair in list(combinations(candidates, 2))
+                    if not np.any(np.all(self.not_following_pairs == powered_pair))]
+        return []
 
 
     def print_pairs(self, encoded: bool = True):

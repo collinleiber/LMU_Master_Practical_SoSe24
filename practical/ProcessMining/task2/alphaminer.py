@@ -385,15 +385,15 @@ class AlphaMiner:
                 second = pair[1]
 
                 if isinstance(first, tuple):
-                    first = (alphabet.get(first[0]), alphabet.get(first[1]))
+                    first = {alphabet.get(first[0]), alphabet.get(first[1])}
                     int_only = False
                 else:
-                    first = alphabet.get(first)
+                    first = {alphabet.get(first)}
                 if isinstance(second, tuple):
-                    second = (alphabet.get(second[0]), alphabet.get(second[1]))
+                    second = {alphabet.get(second[0]), alphabet.get(second[1])}
                     int_only = False
                 else:
-                    second = alphabet.get(second)
+                    second = {alphabet.get(second)}
                 output.append((first, second))
 
         if not getter:

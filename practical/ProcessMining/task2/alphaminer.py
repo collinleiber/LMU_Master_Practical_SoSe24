@@ -233,7 +233,7 @@ class AlphaMiner:
 
     def _get_maximized_pairs(self):
         """
-        Iterates over all activities to find maximal pairs and prunes redundant pairs.
+        Iterates over all activities to find maximal pairs and prunes redundant pairs. (Alpha-Algorithm Step 5 & 6)
         xor_split and xor_join are used to store results of the right and left side maximization per activity.
         Result is union of maximal pairs and the difference of sequential pairs without
         sequential pairs used for maximal pairs.
@@ -253,7 +253,7 @@ class AlphaMiner:
 
     def _right_side_maximization(self, activity: int):
         """
-        Maximizes the pairs for the given activity on the right side.
+        Maximizes the pairs for the given activity on the right side. (Alpha-Algorithm Step 5)
         For all sequential pairs where the given activity is the first item, all second items are candidates.
         From the power set of these candidates (without reversed items duplicates),
         all pairs that are in not_following_pairs get merged with the activity and added to right side maximized pairs.
@@ -272,7 +272,7 @@ class AlphaMiner:
 
     def _left_side_maximization(self, activity: int):
         """
-        Maximizes the pairs for the given activity on the left side.
+        Maximizes the pairs for the given activity on the left side. (Alpha-Algorithm Step 5)
         For all sequential pairs where the given activity is the second item, all first items are candidates.
         From the power set of these candidates (without reversed items duplicates),
         all pairs that are in not_following_pairs get merged with the activity and added to left side maximized pairs.
@@ -291,7 +291,7 @@ class AlphaMiner:
 
     def _prune_redundant_sequential_pairs(self, split_result: List[Tuple], join_result: List[Tuple]) -> np.ndarray:
         """
-        Prunes redundant pairs from the sequential pairs.
+        Prunes redundant pairs from the sequential pairs. (Alpha-Algorithm Step 6)
         When a maximal pair (y, z) appears in split_result or join_results as first or second item,
         all sequential pairs (x, y) and (x, z) or (y, x) and (z, x) get removed.
         Returns all remaining pairs from sequential_pairs, which were accordingly not used to find maximal pairs.
@@ -366,7 +366,7 @@ class AlphaMiner:
         elif pair_type == "max":
             self._activity_encoder(self.maximal_pairs, "Maximal pairs", encoded=encoded)
 
-    def _activity_encoder(self, pairs: np.ndarray, description: str="", encoded: bool=True, getter: bool = False):
+    def _activity_encoder(self, pairs: np.ndarray, description: str = "", encoded: bool = True, getter: bool = False):
         """
         Helper method to print pairs with activity IDs or names.
 

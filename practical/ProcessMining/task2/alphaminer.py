@@ -1,5 +1,5 @@
 from itertools import combinations
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Set
 import pandas as pd
 import numpy as np
 import pm4py
@@ -231,7 +231,7 @@ class AlphaMiner:
                                    and not np.any(np.all(parallel_pairs == pair, axis=1))])
         return before_pairs
 
-    def _get_maximized_pairs(self):
+    def _get_maximized_pairs(self) -> np.ndarray:
         """
         Iterates over all activities to find maximal pairs and prunes redundant pairs. (Alpha-Algorithm Step 5 & 6)
         xor_split and xor_join are used to store results of the right and left side maximization per activity.
@@ -239,7 +239,7 @@ class AlphaMiner:
         sequential pairs used for maximal pairs.
 
         Returns:
-            np.ndarray: The maximized pair set as result of the alpha miner algorithm.
+            np.ndarray: The maximized pair set as result of the alpha miner algorithm step 6.
         """
         xor_split, xor_join, result = [], [], []
         for activity in self.activities:
@@ -251,7 +251,7 @@ class AlphaMiner:
 
         return np.asarray(list(set(result)), dtype=object)
 
-    def _right_side_maximization(self, activity: int):
+    def _right_side_maximization(self, activity: int) -> List:
         """
         Maximizes the pairs for the given activity on the right side. (Alpha-Algorithm Step 5)
         For all sequential pairs where the given activity is the first item, all second items are candidates.
@@ -270,7 +270,7 @@ class AlphaMiner:
                     if np.any([np.array_equal(powered_pair, pair) for pair in self.not_following_pairs])]
         return []
 
-    def _left_side_maximization(self, activity: int):
+    def _left_side_maximization(self, activity: int) -> List:
         """
         Maximizes the pairs for the given activity on the left side. (Alpha-Algorithm Step 5)
         For all sequential pairs where the given activity is the second item, all first items are candidates.
@@ -321,7 +321,7 @@ class AlphaMiner:
 
         return minimal_pairs
 
-    def get_maximal_pairs(self):
+    def get_maximal_pairs(self) -> List[Tuple[Set[str], Set[str]]]:
         """
         Returns the maximized pair set as result of the alpha miner algorithm.
 
@@ -330,7 +330,7 @@ class AlphaMiner:
         """
         return self._activity_encoder(self.maximal_pairs, getter=True)
 
-    def print_pairs(self, encoded: bool = True):
+    def print_pairs(self, encoded: bool = True) -> None:
         """
         Debugging method.
         Prints all pair types of current alpha miner instance.
@@ -345,7 +345,7 @@ class AlphaMiner:
         self._activity_encoder(self.before_pairs, "Before pairs", encoded=encoded)
         self._activity_encoder(self.maximal_pairs, "Maximal pairs", encoded=encoded)
 
-    def print_single_pair_type(self, pair_type: str = ">", encoded: bool = True):
+    def print_single_pair_type(self, pair_type: str = ">", encoded: bool = True) -> None:
         """
         Debugging method.
 
@@ -366,7 +366,8 @@ class AlphaMiner:
         elif pair_type == "max":
             self._activity_encoder(self.maximal_pairs, "Maximal pairs", encoded=encoded)
 
-    def _activity_encoder(self, pairs: np.ndarray, description: str = "", encoded: bool = True, getter: bool = False):
+    def _activity_encoder(self, pairs: np.ndarray, description: str = "",
+                          encoded: bool = True, getter: bool = False) -> None or List[Tuple[Set, Set]]:
         """
         Helper method to print pairs with activity IDs or names.
 

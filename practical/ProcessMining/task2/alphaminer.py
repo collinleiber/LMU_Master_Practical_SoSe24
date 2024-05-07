@@ -229,16 +229,73 @@ class AlphaMiner:
                                    and not np.any(np.all(parallel_pairs == pair, axis=1))])
         return before_pairs
 
-    def print_pairs(self):
+
+    def print_pairs(self, encoded: bool = True):
         """
         Debugging method.
         Prints all pair types of current alpha miner instance.
+
+        Parameters:
+            encoded (bool): Whether to print the pairs with activity IDs or names.
         """
-        print("Activity dictionary: \n" + str(self.activities))
+        self._activity_encoder(self.following_pairs, "Following pairs", encoded=encoded)
+        self._activity_encoder(self.parallel_pairs, "Parallel pairs", encoded=encoded)
+        self._activity_encoder(self.sequential_pairs, "Sequential pairs", encoded=encoded)
+        self._activity_encoder(self.not_following_pairs, "Not following pairs", encoded=encoded)
+        self._activity_encoder(self.before_pairs, "Before pairs", encoded=encoded)
+        self._activity_encoder(self.maximal_pairs, "Maximal pairs", encoded=encoded)
 
-        print("Following pairs >: \n" + str(self.following_pairs))
-        print("Parallel pairs ||: \n" + str(self.parallel_pairs))
-        print("Sequential pairs ->: \n" + str(self.sequential_pairs))
-        print("Not following pairs #: \n" + str(self.not_following_pairs))
+    def print_single_pair_type(self, pair_type: str = ">", encoded: bool = True):
+        """
+        Debugging method.
 
-        print("Maximal pairs: \n" + str(self.maximal_pairs))
+        Parameters:
+            pair_type (str): The pair type to print. Options are: ">", "||", "->", "#", "<-", "max".
+            encoded (bool): Whether to print the pairs with activity IDs or names.
+        """
+        if pair_type == ">":
+            self._activity_encoder(self.following_pairs, "Following pairs", encoded=encoded)
+        elif pair_type == "||":
+            self._activity_encoder(self.parallel_pairs, "Parallel pairs", encoded=encoded)
+        elif pair_type == "->":
+            self._activity_encoder(self.sequential_pairs, "Sequential pairs", encoded=encoded)
+        elif pair_type == "#":
+            self._activity_encoder(self.not_following_pairs, "Not following pairs", encoded=encoded)
+        elif pair_type == "<-":
+            self._activity_encoder(self.before_pairs, "Before pairs", encoded=encoded)
+        elif pair_type == "max":
+            self._activity_encoder(self.maximal_pairs, "Maximal pairs", encoded=encoded)
+
+    def _activity_encoder(self, pairs: np.ndarray, description: str, encoded: bool):
+        """
+        Helper method to print pairs with activity IDs or names.
+
+        Parameters:
+            pairs (np.ndarray): The pairs to print.
+            description (str): The description, naming the pair type.
+            encoded (bool): Whether to print the pairs with activity IDs or names.
+        """
+        output = []
+        alphabet = self.activities
+        int_only = True
+
+        if encoded:
+            for pair in pairs:
+                first = pair[0]
+                second = pair[1]
+
+                if isinstance(first, tuple):
+                    first = (alphabet.get(first[0]), alphabet.get(first[1]))
+                    int_only = False
+                else:
+                    first = alphabet.get(first)
+                if isinstance(second, tuple):
+                    second = (alphabet.get(second[0]), alphabet.get(second[1]))
+                    int_only = False
+                else:
+                    second = alphabet.get(second)
+                output.append((first, second))
+
+        print(description + ":")
+        print(sorted(output)) if int_only else print(output)
+        print()

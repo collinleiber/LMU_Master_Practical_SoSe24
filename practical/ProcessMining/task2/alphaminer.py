@@ -22,6 +22,7 @@ class AlphaMiner:
         sequential_pairs (np.ndarray): The pairs of activities that are sequential.
         not_following_pairs (np.ndarray): The pairs of activities that do not follow each other.
         before_pairs (np.ndarray): The pairs of activities where the first activity occurs before the second.
+        maximal_pairs (np.ndarray): The maximized pair set as result of the alpha miner algorithm.
     """
 
     def __init__(self, file_path: str):
@@ -247,6 +248,7 @@ class AlphaMiner:
 
         # Add remaining entries to result
         result.extend(xor_split), result.extend(xor_join)
+        result.extend(self._prune_redundant_sequential_pairs(xor_split, xor_join))
 
         return np.asarray(list(set(result)), dtype=object)
 
@@ -288,6 +290,37 @@ class AlphaMiner:
                     if not np.any(np.all(self.not_following_pairs == powered_pair))]
         return []
 
+    def _prune_redundant_sequential_pairs(self, split_result: List[Tuple], join_result: List[Tuple]) -> np.ndarray:
+        """
+        Prunes redundant pairs from the sequential pairs.
+        When a maximal pair (y, z) appears in split_result or join_results as first or second item,
+        all sequential pairs (x, y) and (x, z) or (y, x) and (z, x) get removed.
+        Returns all remaining pairs from sequential_pairs, which were accordingly not used to find maximal pairs.
+
+        Parameters:
+            split_result (List[Tuple]): The result set of right side maximization.
+            join_result (List[Tuple]): The result set of left side maximization.
+
+        Returns:
+            np.ndarray: The set of sequential pairs that are not redundant.
+        """
+        minimal_pairs = np.copy(self.sequential_pairs)
+
+        if minimal_pairs.any():
+            # Remove entries (x, y) and (x, z) from stack, when (x, (y, z)) is in split_result
+            for x, (y, z) in split_result:
+                minimal_pairs = minimal_pairs[
+                    ~((minimal_pairs[:, 0] == x) & ((minimal_pairs[:, 1] == y) | (minimal_pairs[:, 1] == z)))
+                ]
+
+        if minimal_pairs.any():
+            # Remove entries (y, x) and (z, x) from stack, when ((y, z), x) is in join_result
+            for (y, z), x in join_result:
+                minimal_pairs = minimal_pairs[
+                    ~((minimal_pairs[:, 1] == x) & ((minimal_pairs[:, 0] == y) | (minimal_pairs[:, 0] == z)))
+                ]
+
+        return minimal_pairs
 
     def print_pairs(self, encoded: bool = True):
         """

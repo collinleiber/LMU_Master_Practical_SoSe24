@@ -289,7 +289,7 @@ class AlphaMiner:
                     if np.any([np.array_equal(powered_pair, pair) for pair in self.not_following_pairs])]
         return []
 
-    def _prune_redundant_sequential_pairs(self, split_result: List[Tuple], join_result: List[Tuple]) -> np.ndarray:
+    def _prune_redundant_sequential_pairs(self, split_result: List[Tuple], join_result: List[Tuple]) -> List[Tuple]:
         """
         Prunes redundant pairs from the sequential pairs. (Alpha-Algorithm Step 6)
         When a maximal pair (y, z) appears in split_result or join_results as first or second item,
@@ -301,7 +301,7 @@ class AlphaMiner:
             join_result (List[Tuple]): The result set of left side maximization.
 
         Returns:
-            np.ndarray: The set of sequential pairs that are not redundant.
+            List[Tuple]: The set of sequential pairs that are not redundant.
         """
         minimal_pairs = np.copy(self.sequential_pairs)
 
@@ -319,6 +319,7 @@ class AlphaMiner:
                     ~((minimal_pairs[:, 1] == x) & ((minimal_pairs[:, 0] == y) | (minimal_pairs[:, 0] == z)))
                 ]
 
+        minimal_pairs = [tuple(entry) for entry in minimal_pairs]
         return minimal_pairs
 
     def get_maximal_pairs(self) -> List[Tuple[Set[str], Set[str]]]:

@@ -25,14 +25,15 @@ class AlphaMiner:
         maximal_pairs (np.ndarray): The maximized pair set as result of the alpha miner algorithm.
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, case_id='case_id', activity_key='activity', timestamp_key='timestamp'):
         """
         Initializes the AlphaMiner class with a event log file.
 
         Parameters:
             file_path (str): The path to the event log file.
         """
-        self.event_log, self.activities, self.all_pairs = self._import_event_log(file_path)
+        self.event_log, self.activities, self.all_pairs = self._import_event_log(file_path, case_id,
+                                                                                 activity_key, timestamp_key)
         self.traces = self._extract_traces(self.event_log)
 
         self.t_in, self.t_out = self._get_start_end_activities(self.traces)
@@ -44,6 +45,45 @@ class AlphaMiner:
         self.before_pairs = self._get_before_pairs(self.not_following_pairs, self.sequential_pairs, self.parallel_pairs)
 
         self.maximal_pairs = self._get_maximized_pairs()
+
+    def discover_footprints(self) -> Dict:
+        """
+        Discovers the footprints of the process from the event log.
+
+        The footprints include:
+        - 'dfg': A set of tuples representing the directly-follows graph (DFG). Each tuple contains two activities where the first activity directly follows the second in the process.
+        - 'sequence': A set of tuples representing the sequential relations between activities. Each tuple contains two activities where the first activity is directly followed by the second activity in the process.
+        - 'parallel': A set of tuples representing the parallel relations between activities. Each tuple contains two activities that can occur in parallel in the process.
+        - 'activities': A set of all activities in the process.
+        - 'start_activities': A set of activities that can start a process instance.
+        - 'end_activities': A set of activities that can end a process instance.
+        - 'min_trace_length': The length of the shortest trace in the event log.
+
+        Returns:
+            Dict: A dictionary containing the footprints of the process.
+        """
+        footprints = {
+            'dfg': set((self._get_activity_name(pair[0]), self._get_activity_name(pair[1])) for pair in self.following_pairs),
+            'sequence': set((self._get_activity_name(pair[0]), self._get_activity_name(pair[1])) for pair in self.sequential_pairs),
+            'parallel': set((self._get_activity_name(pair[0]), self._get_activity_name(pair[1])) for pair in self.parallel_pairs),
+            'activities': set(self.activities.values()),
+            'start_activities': set(self._get_activity_name(activity) for activity in self.t_in),
+            'end_activities': set(self._get_activity_name(activity) for activity in self.t_out),
+            'min_trace_length': min([len(trace) for trace in self.traces])
+        }
+        return footprints
+
+    def _get_activity_name(self, activity_id: int) -> str:
+        """
+        Retrieves the name of an activity based on its ID.
+
+        Parameters:
+            activity_id (int): The ID of the activity.
+
+        Returns:
+            str: The name of the activity.
+        """
+        return self.activities[activity_id]
 
     def footprint_matrix(self) -> pd.DataFrame:
         """
@@ -70,7 +110,8 @@ class AlphaMiner:
 
         return matrix
 
-    def _import_event_log(self, file_path: str) -> Tuple[pd.DataFrame, Dict[int, str], List[Tuple[int, int]]]:
+    def _import_event_log(self, file_path: str, case_id='case_id', activity_key='activity',
+                          timestamp_key='timestamp') -> Tuple[pd.DataFrame, Dict[int, str], List[Tuple[int, int]]]:
         """
         Imports the event log from a file.
 
@@ -87,8 +128,8 @@ class AlphaMiner:
         extension = os.path.splitext(file_path)[1]
         if extension == '.csv':
             event_log = pd.read_csv(file_path, sep=';')
-            event_log = pm4py.format_dataframe(event_log, case_id='case_id', activity_key='activity',
-                                               timestamp_key='timestamp')
+            event_log = pm4py.format_dataframe(event_log, case_id=case_id, activity_key=activity_key,
+                                               timestamp_key=timestamp_key)
         elif extension == '.xes':
             event_log = pm4py.read_xes(file_path)
         else:

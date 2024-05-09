@@ -135,4 +135,4 @@ dmypy.json
 # Shell scripts
 *.sh
 
-/practical/ProcessMining/task2/full_alpha_miner_graph*
+/practical/ProcessMining/group1/task2/full_alpha_miner_graph*

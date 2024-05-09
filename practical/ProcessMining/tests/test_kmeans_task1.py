@@ -1,4 +1,4 @@
-from practical.ProcessMining import calculate_k_means
+from practical.ProcessMining.kmeans_task1 import calculate_k_means
 from sklearn.cluster import KMeans
 import numpy as np
 

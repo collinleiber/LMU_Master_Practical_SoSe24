@@ -3,6 +3,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def scratch_k_means(data, n_clusters=2, max_iterations=100):
+    # Step 1: Randomly initialize the centroids
+    centroids = data[:n_clusters]
+    clusters = []
+
+    for _ in range(max_iterations):
+        # Step 2: Assign each data point to the closest centroid
+        clusters = [[] for _ in range(n_clusters)]
+        for point in data:
+            distances = [sum((point - centroid)**2) for centroid in centroids]
+            closest_centroid = distances.index(min(distances))
+            clusters[closest_centroid].append(point)
+
+        # Step 3: Recalculate the centroids as the mean of all data points in the cluster
+        for i, cluster in enumerate(clusters):
+            centroids[i] = sum(cluster) / len(cluster)
+
+    return centroids, clusters
+
+
 def calculate_k_means(data: np.ndarray, n_clusters: int, init_centroids: np.ndarray = None) -> KMeans:
     # When centroids are not provided, the KMeans algorithm will initialize them randomly
     # -> result not deterministic / testable.

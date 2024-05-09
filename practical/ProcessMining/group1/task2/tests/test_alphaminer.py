@@ -1,7 +1,7 @@
 import pytest
 import pm4py
 import pandas as pd
-from practical.ProcessMining.task2.alphaminer import AlphaMiner
+from practical.ProcessMining.group1.task2.alphaminer import AlphaMiner
 from typing import Dict, Any
 
 FILE_PATH = '../example_files/common-example.csv'  # event log from the paper

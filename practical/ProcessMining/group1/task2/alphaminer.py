@@ -211,7 +211,7 @@ class AlphaMiner:
             following_pairs (np.ndarray): The pairs of activities that follow each other like a -> b.
 
         Returns:
-            np.ndarray: The pairs of activities that are potentially parallel.
+            np.ndarray: The unique pairs of activities that are potentially parallel.
         """
         parallel_pairs = []
         reversed_pairs = np.asarray([pair[::-1] for pair in following_pairs])
@@ -219,7 +219,9 @@ class AlphaMiner:
             for reverse_pair in reversed_pairs:
                 if np.array_equal(reverse_pair, pair):
                     parallel_pairs.append(pair)
-        return np.asarray(parallel_pairs)
+        # Remove all pairs from parallel_pairs where second > first to eliminate duplicates
+        unique_parallel_pairs = [pair for pair in parallel_pairs if pair[0] < pair[1]]
+        return np.asarray(unique_parallel_pairs)
 
     def _get_sequential_pairs(self, following_pairs: np.ndarray, parallel_pairs: np.ndarray) -> np.ndarray:
         """

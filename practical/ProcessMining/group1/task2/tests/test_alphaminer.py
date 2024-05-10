@@ -11,6 +11,7 @@ FILE_PATH = '../example_files/common-example.csv'  # event log from the paper
 def alpha_miner() -> AlphaMiner:
     return AlphaMiner(FILE_PATH)
 
+
 @pytest.fixture
 def event_log() -> pd.DataFrame:
     event_log = pd.read_csv(FILE_PATH, sep=';')

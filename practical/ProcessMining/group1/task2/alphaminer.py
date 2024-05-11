@@ -40,6 +40,7 @@ class AlphaMiner:
 
         self.following_pairs = self._get_following_pairs(self.traces)
         self.parallel_pairs = self._get_parallel_pairs(self.following_pairs)
+        self.unique_parallel_pairs = self._get_unique_mirrored_pairs(self.parallel_pairs)
         self.sequential_pairs = self._get_sequential_pairs(self.following_pairs, self.parallel_pairs)
         self.not_following_pairs = self._get_not_following_pairs(self.following_pairs)
         self.before_pairs = self._get_before_pairs(self.not_following_pairs, self.sequential_pairs, self.parallel_pairs)
@@ -220,6 +221,19 @@ class AlphaMiner:
                 if np.array_equal(reverse_pair, pair):
                     parallel_pairs.append(pair)
         return np.asarray(parallel_pairs)
+
+    def _get_unique_mirrored_pairs(self, pairs: np.ndarray) -> np.ndarray:
+        """
+        Gets the pairs of activities without mirrored duplicates. Order of activity pair does not matter.
+
+        Parameters:
+            pairs (np.ndarray): The potentially duplicate pairs of activities.
+
+        Returns:
+            np.ndarray: The unique pairs of activities without mirrored duplicates.
+        """
+        unique_pairs = np.asarray(list(set([tuple(np.sort(pair)) for pair in pairs])))
+        return unique_pairs
 
     def _get_sequential_pairs(self, following_pairs: np.ndarray, parallel_pairs: np.ndarray) -> np.ndarray:
         """

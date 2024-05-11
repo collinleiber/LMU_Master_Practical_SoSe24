@@ -31,7 +31,8 @@ def test_footprints_discovery(alpha_miner: AlphaMiner, footprints: Dict[str, Any
 
 
 def test_get_maximal_pairs(alpha_miner):
-    expected_result = [({'c'}, {'b'}), ({'a'}, {'b', 'e'}), ({'c', 'e'}, {'d'}), ({'b', 'e'}, {'d'}), ({'a'}, {'c', 'e'})]
+    expected_result = [({'c'}, {'b'}), ({'a'}, {'b', 'e'}), ({'c', 'e'}, {'d'}), ({'b', 'e'}, {'d'}),
+                       ({'a'}, {'c', 'e'})]
 
     maximal_pairs = alpha_miner.get_maximal_pairs()
 
@@ -108,7 +109,7 @@ def test_activity_encoder(alpha_miner: AlphaMiner):
 
     expected_test = [({'b'}, {'c'}), ({'d'}, {'e'}), ({'a'}, {'b', 'c'})]
     expected_sequential = [({'a'}, {'b'}), ({'a'}, {'e'}), ({'c'}, {'b'}), ({'e'}, {'d'}), ({'c'}, {'d'}), ({'a'}, {'c'}), ({'b'}, {'d'})]
-    expected_parallels = [({'b'}, {'c'})]
+    expected_parallels = [({'b'}, {'c'}), ({'c'}, {'b'})]
 
     decoded_test = alpha_miner._activity_encoder(test_pairs, encoded=False, getter=True)
     encoded_test = alpha_miner._activity_encoder(test_pairs, encoded=True, getter=True)

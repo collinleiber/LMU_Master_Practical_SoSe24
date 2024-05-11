@@ -424,11 +424,11 @@ class AlphaMiner:
         alphabet = self.activities
         int_only = True
 
-        if encoded:
-            for pair in pairs:
-                first = pair[0]
-                second = pair[1]
+        for pair in pairs:
+            first = pair[0]
+            second = pair[1]
 
+            if encoded:
                 if isinstance(first, tuple):
                     first = {alphabet.get(first[0]), alphabet.get(first[1])}
                     int_only = False
@@ -439,7 +439,7 @@ class AlphaMiner:
                     int_only = False
                 else:
                     second = {alphabet.get(second)}
-                output.append((first, second))
+            output.append((first, second))
 
         if not getter:
             print(description + ":")

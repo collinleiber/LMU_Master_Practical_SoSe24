@@ -1,19 +1,24 @@
+import copy
+import numpy as np
 import pytest
 import pm4py
 import pandas as pd
 from practical.ProcessMining.group1.task2.alphaminer import AlphaMiner
 from typing import Dict, Any
 
-FILE_PATH = '../example_files/common-example.csv'  # event log from the paper
+FILE_PATH_CSV = '../example_files/common-example.csv'  # event log from the paper
+FILE_PATH_XES = '../example_files/running-example.xes'
+FILE_PATH_TXT = '../example_files/example.txt'
 
 
 @pytest.fixture
 def alpha_miner() -> AlphaMiner:
-    return AlphaMiner(FILE_PATH)
+    return AlphaMiner(FILE_PATH_CSV)
+
 
 @pytest.fixture
 def event_log() -> pd.DataFrame:
-    event_log = pd.read_csv(FILE_PATH, sep=';')
+    event_log = pd.read_csv(FILE_PATH_CSV, sep=';')
     return pm4py.format_dataframe(event_log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
 
 
@@ -26,8 +31,68 @@ def footprints(event_log: pd.DataFrame) -> Dict[str, Any]:
 
 
 def test_footprints_discovery(alpha_miner: AlphaMiner, footprints: Dict[str, Any]) -> None:
-    # test if discovered footprints match PM4PY (ignoring frequency information)
-    assert alpha_miner.discover_footprints() == footprints
+    # Check if the returned dictionary has the expected keys
+    assert isinstance(footprints, dict), "The returned object is not a dictionary"
+    assert 'dfg' in footprints, "The dictionary does not contain the key 'dfg'"
+    assert 'sequence' in footprints, "The dictionary does not contain the key 'sequence'"
+    assert 'parallel' in footprints, "The dictionary does not contain the key 'parallel'"
+    assert 'activities' in footprints, "The dictionary does not contain the key 'activities'"
+    assert 'start_activities' in footprints, "The dictionary does not contain the key 'start_activities'"
+    assert 'end_activities' in footprints, "The dictionary does not contain the key 'end_activities'"
+    assert 'min_trace_length' in footprints, "The dictionary does not contain the key 'min_trace_length'"
+
+    # Check if discovered footprints match PM4PY (ignoring frequency information)
+    assert alpha_miner.discover_footprints() == footprints, "Discovered footprints do not match PM4PY"
+
+
+def test_get_activity_name(alpha_miner: AlphaMiner) -> None:
+    # Test decoding of activity ids
+    assert alpha_miner._get_activity_name(0) == 'a', "Activity name does not match expected value"
+    assert alpha_miner._get_activity_name(1) == 'b', "Activity name does not match expected value"
+    assert alpha_miner._get_activity_name(2) == 'c', "Activity name does not match expected value"
+    assert alpha_miner._get_activity_name(3) == 'd', "Activity name does not match expected value"
+    assert alpha_miner._get_activity_name(4) == 'e', "Activity name does not match expected value"
+    with pytest.raises(KeyError):
+        alpha_miner._get_activity_name(-1), "Failed to raise exception for invalid activity id"
+
+
+def test_footprint_matrix(alpha_miner: AlphaMiner) -> None:
+    miner = copy.deepcopy(alpha_miner)
+    miner.parallel_pairs = miner.parallel_pairs[:1]
+    matrix = miner.footprint_matrix()
+
+    assert isinstance(matrix, pd.DataFrame), "The returned object is not a DataFrame"
+    assert matrix.shape == (len(miner.activities), len(miner.activities)), "The DataFrame has incorrect shape"
+
+    # Check if the DataFrame contains the expected values
+    for pair in alpha_miner.all_pairs:
+        a1, a2 = pair
+        a1_value, a2_value = miner.activities[a1], miner.activities[a2]
+        if any(np.array_equal(pair, p) for p in miner.parallel_pairs):
+            assert matrix.at[a1_value, a2_value] == '||'
+        elif any(np.array_equal(pair, p) for p in miner.sequential_pairs):
+            assert matrix.at[a1_value, a2_value] == '→'
+        elif any(np.array_equal(pair, p) for p in miner.not_following_pairs):
+            assert matrix.at[a1_value, a2_value] == '#'
+        elif any(np.array_equal(pair, p) for p in miner.before_pairs):
+            assert matrix.at[a1_value, a2_value] == '←'
+        else:
+            assert matrix.at[a1_value, a2_value] == ''
+
+
+def test_import_event_log(alpha_miner: AlphaMiner) -> None:
+    # Test xes file
+    xes_miner = AlphaMiner(FILE_PATH_XES)
+    assert isinstance(xes_miner, AlphaMiner), "Failed to import XES file"
+
+    # Test unsupported file extension
+    open(FILE_PATH_TXT, "x")
+    with pytest.raises(Exception):
+        txt_miner = AlphaMiner(FILE_PATH_TXT), "Failed to raise exception for unsupported file extension"
+
+    # Test non-existent file
+    with pytest.raises(Exception):
+        unknown_miner = AlphaMiner("example_files/unknown_file.csv"), "Failed to raise exception for non-existent file"
 
 
 def test_get_maximal_pairs(alpha_miner):
@@ -108,7 +173,8 @@ def test_activity_encoder(alpha_miner: AlphaMiner):
     test_pairs = [(1, 2), (3, 4), (0, (1, 2))]  # Example input pairs
 
     expected_test = [({'b'}, {'c'}), ({'d'}, {'e'}), ({'a'}, {'b', 'c'})]
-    expected_sequential = [({'a'}, {'b'}), ({'a'}, {'e'}), ({'c'}, {'b'}), ({'e'}, {'d'}), ({'c'}, {'d'}), ({'a'}, {'c'}), ({'b'}, {'d'})]
+    expected_sequential = [({'a'}, {'b'}), ({'a'}, {'e'}), ({'c'}, {'b'}), ({'e'}, {'d'}), ({'c'}, {'d'}),
+                           ({'a'}, {'c'}), ({'b'}, {'d'})]
     expected_parallels = [({'b'}, {'c'}), ({'c'}, {'b'})]
 
     decoded_test = alpha_miner._activity_encoder(test_pairs, encoded=False, getter=True)

@@ -5,6 +5,8 @@ import numpy as np
 import time
 import pm4py
 from pm4py.visualization.footprints import visualizer
+import matplotlib.pyplot as plt
+from graphviz import Digraph
 #import graphviz
 #from pm4py.objects.log.importer.xes import factory as xes_importer
 
@@ -30,6 +32,7 @@ class AlphaMinerplus:
 
         # set of places between maximal pairs 
         self.places = []
+    
 
         self.length_one_loops = None
 
@@ -455,12 +458,12 @@ class AlphaMinerplus:
 
         # connect the initial transition with the first place, after the for loop we connect the last transition to the last place 
         place_counter = 0
-        self.places.append(("Place_"+str(place_counter),self.initial_transitions))
+        self.places.append(((),"Place_"+str(place_counter),self.initial_transitions))
         place_counter = 1  
         for pair in self.maximal_pairs:
             self.places.append((pair[0],"Place_"+str(place_counter),pair[1]))
             place_counter =  place_counter+1
-        self.places.append((self.final_transitions,"Place_"+str(place_counter)))
+        self.places.append((self.final_transitions,("Place_"+str(place_counter)),()))
         print("input for the visualisation: ", self.places)
 
 
@@ -489,8 +492,23 @@ class AlphaMinerplus:
 
         #TODO add visualization here
 
+        alphaminerplusobject.visualization()
 
+    def visualization(self):
+        dot = Digraph()
 
+        for transition in self.places:
+            input_places, transition_name, output_places = transition[0], transition[1], transition[2]
+                
+            for input_place in input_places:
+                dot.node(str(input_place), shape='circle')
+                dot.edge(str(input_place), str(transition_name))
+            dot.node(str(transition_name), shape='square')
+            for output_place in output_places:
+                dot.node(str(output_place), shape='circle')
+                dot.edge(str(transition_name), str(output_place))
+
+        dot.render('petri_net', format='png', cleanup=True)
 """ 
 
 events_xes = pm4py.read_xes("Logs/pdc2023_000000.xes")
@@ -544,7 +562,7 @@ for case_id, group in events_xes.groupby('case:concept:name'):
 #with open("Logs/log_from_paper.csv","r") as my_file :
 #with open("Logs/simple_log.csv","r") as my_file :
 
-with open("Logs/log_2loop.csv","r") as my_file :
+with open("Logs/log.csv","r") as my_file :
 
 #with open("Logs/test_alphaplus2.csv","r") as my_file :
     traces = SortedDict()

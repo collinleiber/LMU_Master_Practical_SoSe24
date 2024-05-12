@@ -40,6 +40,7 @@ class AlphaMiner:
 
         self.following_pairs = self._get_following_pairs(self.traces)
         self.parallel_pairs = self._get_parallel_pairs(self.following_pairs)
+        self.unique_parallel_pairs = self._get_unique_mirrored_pairs(self.parallel_pairs)
         self.sequential_pairs = self._get_sequential_pairs(self.following_pairs, self.parallel_pairs)
         self.not_following_pairs = self._get_not_following_pairs(self.following_pairs)
         self.before_pairs = self._get_before_pairs(self.not_following_pairs, self.sequential_pairs, self.parallel_pairs)
@@ -211,7 +212,7 @@ class AlphaMiner:
             following_pairs (np.ndarray): The pairs of activities that follow each other like a -> b.
 
         Returns:
-            np.ndarray: The unique pairs of activities that are potentially parallel.
+            np.ndarray: The pairs of activities that are potentially parallel.
         """
         parallel_pairs = []
         reversed_pairs = np.asarray([pair[::-1] for pair in following_pairs])
@@ -219,9 +220,20 @@ class AlphaMiner:
             for reverse_pair in reversed_pairs:
                 if np.array_equal(reverse_pair, pair):
                     parallel_pairs.append(pair)
-        # Remove all pairs from parallel_pairs where second > first to eliminate duplicates
-        unique_parallel_pairs = [pair for pair in parallel_pairs if pair[0] < pair[1]]
-        return np.asarray(unique_parallel_pairs)
+        return np.asarray(parallel_pairs)
+
+    def _get_unique_mirrored_pairs(self, pairs: np.ndarray) -> np.ndarray:
+        """
+        Gets the pairs of activities without mirrored duplicates. Order of activity pair does not matter.
+
+        Parameters:
+            pairs (np.ndarray): The potentially duplicate pairs of activities.
+
+        Returns:
+            np.ndarray: The unique pairs of activities without mirrored duplicates.
+        """
+        unique_pairs = np.asarray(list(set([tuple(np.sort(pair)) for pair in pairs])))
+        return unique_pairs
 
     def _get_sequential_pairs(self, following_pairs: np.ndarray, parallel_pairs: np.ndarray) -> np.ndarray:
         """

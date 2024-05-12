@@ -80,13 +80,13 @@ def test_footprint_matrix(alpha_miner: AlphaMiner) -> None:
             assert matrix.at[a1_value, a2_value] == ''
 
 
-def test_import_event_log(alpha_miner: AlphaMiner) -> None:
+def test_import_event_log(alpha_miner: AlphaMiner, tmp_path) -> None:
     # Test xes file
     xes_miner = AlphaMiner(FILE_PATH_XES)
     assert isinstance(xes_miner, AlphaMiner), "Failed to import XES file"
 
     # Test unsupported file extension
-    open(FILE_PATH_TXT, "x")
+    tmp_txt = tmp_path / FILE_PATH_TXT
     with pytest.raises(Exception):
         txt_miner = AlphaMiner(FILE_PATH_TXT), "Failed to raise exception for unsupported file extension"
 

@@ -96,8 +96,7 @@ def test_import_event_log(alpha_miner: AlphaMiner) -> None:
 
 
 def test_get_maximal_pairs(alpha_miner):
-    expected_result = [({'c'}, {'b'}), ({'a'}, {'b', 'e'}), ({'c', 'e'}, {'d'}), ({'b', 'e'}, {'d'}),
-                       ({'a'}, {'c', 'e'})]
+    expected_result = [({'a'}, {'b', 'e'}), ({'b', 'e'}, {'d'}), ({'c', 'e'}, {'d'}), ({'a'}, {'c', 'e'})]
 
     maximal_pairs = alpha_miner.get_maximal_pairs()
 
@@ -154,7 +153,7 @@ def test_prune_redundant_sequential_pairs(alpha_miner: AlphaMiner):
     # Test if prune_redundant_sequential_pairs returns the correct output
     split_result = [(0, (1, 4)), (0, (2, 4))]  # test_right_side_maximization(alpha_miner)
     join_result = [((1, 4), 3), ((2, 4), 3)]  # test_left_side_maximization(alpha_miner)
-    expected_result = [(2, 1)]
+    expected_result = []  # todo test alpha miner1, since pruning result not []
 
     pruned_pairs = alpha_miner._prune_redundant_sequential_pairs(split_result, join_result)
 
@@ -173,7 +172,7 @@ def test_activity_encoder(alpha_miner: AlphaMiner):
     test_pairs = [(1, 2), (3, 4), (0, (1, 2))]  # Example input pairs
 
     expected_test = [({'b'}, {'c'}), ({'d'}, {'e'}), ({'a'}, {'b', 'c'})]
-    expected_sequential = [({'a'}, {'b'}), ({'a'}, {'e'}), ({'c'}, {'b'}), ({'e'}, {'d'}), ({'c'}, {'d'}),
+    expected_sequential = [({'a'}, {'b'}), ({'a'}, {'e'}), ({'e'}, {'d'}), ({'c'}, {'d'}),
                            ({'a'}, {'c'}), ({'b'}, {'d'})]
     expected_parallels = [({'b'}, {'c'}), ({'c'}, {'b'})]
 

@@ -1,13 +1,14 @@
+import os
 from itertools import combinations
 from typing import Dict, List, Tuple, Set
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import pm4py
-import os
-from pm4py.visualization.petri_net import visualizer as pn_visualizer
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to
-import graphviz
+from pm4py.visualization.petri_net import visualizer as pn_visualizer
+
 
 class AlphaMiner:
     """
@@ -67,9 +68,12 @@ class AlphaMiner:
             Dict: A dictionary containing the footprints of the process.
         """
         footprints = {
-            'dfg': set((self._get_activity_name(pair[0]), self._get_activity_name(pair[1])) for pair in self.following_pairs),
-            'sequence': set((self._get_activity_name(pair[0]), self._get_activity_name(pair[1])) for pair in self.sequential_pairs),
-            'parallel': set((self._get_activity_name(pair[0]), self._get_activity_name(pair[1])) for pair in self.parallel_pairs),
+            'dfg': set(
+                (self._get_activity_name(pair[0]), self._get_activity_name(pair[1])) for pair in self.following_pairs),
+            'sequence': set(
+                (self._get_activity_name(pair[0]), self._get_activity_name(pair[1])) for pair in self.sequential_pairs),
+            'parallel': set(
+                (self._get_activity_name(pair[0]), self._get_activity_name(pair[1])) for pair in self.parallel_pairs),
             'activities': set(self.activities.values()),
             'start_activities': set(self._get_activity_name(activity) for activity in self.t_in),
             'end_activities': set(self._get_activity_name(activity) for activity in self.t_out),
@@ -526,12 +530,12 @@ class AlphaMiner:
 
         # Visualization settings
         parameters = {
-            'format': 'png'  # can change later to 'png'
+            'format': 'png'  # can change later to other format
         }
         gviz = pn_visualizer.apply(net, initial_marking, final_marking, parameters=parameters)
         pn_visualizer.view(gviz)
 
-# enter path to the event log file
-alpha_miner = AlphaMiner(file_path='example_files/common-example.csv')  #can change later
-alpha_miner.build_and_visualize_petrinet()
 
+# enter path to the event log file
+alpha_miner = AlphaMiner(file_path='example_files/common-example.csv')  # can change later
+alpha_miner.build_and_visualize_petrinet()

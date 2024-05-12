@@ -194,3 +194,24 @@ def test_activity_encoder(alpha_miner: AlphaMiner):
     assert all(
         isinstance(pair, tuple) and len(pair) == 2 and isinstance(pair[0], set) and isinstance(pair[1], set)
         for pair in encoded_test), "Not all elements in encoded_test are tuples of two sets"
+
+
+def test_print_single_pair_type(alpha_miner: AlphaMiner):
+    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type(">", encoded=False, getter=True)),
+                           alpha_miner.following_pairs)
+            ), "Function is incorrect printing following pairs"
+    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type("||", encoded=False, getter=True)),
+                           alpha_miner.parallel_pairs)
+            ), "Function is incorrect printing parallel pairs"
+    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type("->", encoded=False, getter=True)),
+                           alpha_miner.sequential_pairs)
+            ), "Function is incorrect printing sequential pairs"
+    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type("#", encoded=False, getter=True)),
+                           alpha_miner.not_following_pairs)
+            ), "Function is incorrect printing not following pairs"
+    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type("<-", encoded=False, getter=True)),
+                           alpha_miner.before_pairs)
+            ), "Function is incorrect printing before pairs"
+    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type("max", encoded=False, getter=True)),
+                           alpha_miner.maximal_pairs)
+            ), "Function is incorrect printing maximal pairs"

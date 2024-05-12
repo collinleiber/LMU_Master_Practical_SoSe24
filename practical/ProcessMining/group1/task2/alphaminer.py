@@ -531,5 +531,7 @@ class AlphaMiner:
         gviz = pn_visualizer.apply(net, initial_marking, final_marking, parameters=parameters)
         pn_visualizer.view(gviz)
 
-
+# enter path to the event log file
+alpha_miner = AlphaMiner(file_path='example_files/common-example.csv')  #can change later
+alpha_miner.build_and_visualize_petrinet()
 

@@ -401,26 +401,33 @@ class AlphaMiner:
         self._activity_encoder(self.before_pairs, "Before pairs", encoded=encoded)
         self._activity_encoder(self.maximal_pairs, "Maximal pairs", encoded=encoded)
 
-    def print_single_pair_type(self, pair_type: str = ">", encoded: bool = True) -> None:
+    def print_single_pair_type(self, pair_type: str = ">", encoded: bool = True, getter: bool = False) -> None or List:
         """
         Debugging method.
 
         Parameters:
             pair_type (str): The pair type to print. Options are: ">", "||", "->", "#", "<-", "max".
             encoded (bool): Whether to print the pairs with activity IDs or names.
+            getter (bool): Whether to return value instead of console printing.
         """
         if pair_type == ">":
-            self._activity_encoder(self.following_pairs, "Following pairs", encoded=encoded)
+            return self._activity_encoder(self.following_pairs, "Following pairs",
+                                          encoded=encoded, getter=getter)
         elif pair_type == "||":
-            self._activity_encoder(self.parallel_pairs, "Parallel pairs", encoded=encoded)
+            return self._activity_encoder(self.parallel_pairs, "Parallel pairs",
+                                          encoded=encoded, getter=getter)
         elif pair_type == "->":
-            self._activity_encoder(self.sequential_pairs, "Sequential pairs", encoded=encoded)
+            return self._activity_encoder(self.sequential_pairs, "Sequential pairs",
+                                          encoded=encoded, getter=getter)
         elif pair_type == "#":
-            self._activity_encoder(self.not_following_pairs, "Not following pairs", encoded=encoded)
+            return self._activity_encoder(self.not_following_pairs, "Not following pairs",
+                                          encoded=encoded, getter=getter)
         elif pair_type == "<-":
-            self._activity_encoder(self.before_pairs, "Before pairs", encoded=encoded)
+            return self._activity_encoder(self.before_pairs, "Before pairs",
+                                          encoded=encoded, getter=getter)
         elif pair_type == "max":
-            self._activity_encoder(self.maximal_pairs, "Maximal pairs", encoded=encoded)
+            return self._activity_encoder(self.maximal_pairs, "Maximal pairs",
+                                          encoded=encoded, getter=getter)
 
     def _activity_encoder(self, pairs: np.ndarray, description: str = "",
                           encoded: bool = True, getter: bool = False) -> None or List[Tuple[Set, Set]]:
@@ -431,6 +438,7 @@ class AlphaMiner:
             pairs (np.ndarray): The pairs to print.
             description (str): The description, naming the pair type.
             encoded (bool): Whether to print the pairs with activity IDs or names.
+            getter (bool): Whether to return value instead of console printing.
         """
         output = []
         alphabet = self.activities
@@ -451,7 +459,9 @@ class AlphaMiner:
                     int_only = False
                 else:
                     second = {alphabet.get(second)}
-            output.append((first, second))
+                output.append((first, second))
+            else:
+                output.append(pair)
 
         if not getter:
             print(description + ":")

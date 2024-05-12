@@ -249,6 +249,9 @@ class AlphaMiner:
         Returns:
             np.ndarray: The pairs of activities that are sequential.
         """
+        if not parallel_pairs.any():
+            return following_pairs
+
         sequential_pairs = np.asarray([pair for pair in following_pairs
                                        if not np.any(np.all(parallel_pairs == pair, axis=1))])
         return sequential_pairs
@@ -283,10 +286,15 @@ class AlphaMiner:
         Returns:
             np.ndarray: The pairs of activities where the first activity occurs before the second.
         """
-        before_pairs = np.asarray([pair for pair in self.all_pairs
-                                   if not np.any(np.all(not_following_pairs == pair, axis=1))
-                                   and not np.any(np.all(sequential_pairs == pair, axis=1))
-                                   and not np.any(np.all(parallel_pairs == pair, axis=1))])
+        if not parallel_pairs.any():
+            before_pairs = np.asarray([pair for pair in self.all_pairs
+                                       if not np.any(np.all(not_following_pairs == pair, axis=1))
+                                       and not np.any(np.all(sequential_pairs == pair, axis=1))])
+        else:
+            before_pairs = np.asarray([pair for pair in self.all_pairs
+                                       if not np.any(np.all(not_following_pairs == pair, axis=1))
+                                       and not np.any(np.all(sequential_pairs == pair, axis=1))
+                                       and not np.any(np.all(parallel_pairs == pair, axis=1))])
         return before_pairs
 
     def _get_maximized_pairs(self) -> np.ndarray:
@@ -518,7 +526,7 @@ class AlphaMiner:
 
         # Visualization settings
         parameters = {
-            'format': 'svg'  # can change later to 'png'
+            'format': 'png'  # can change later to 'png'
         }
         gviz = pn_visualizer.apply(net, initial_marking, final_marking, parameters=parameters)
         pn_visualizer.view(gviz)

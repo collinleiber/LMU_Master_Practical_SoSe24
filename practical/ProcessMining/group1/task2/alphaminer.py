@@ -309,6 +309,8 @@ class AlphaMiner:
         """
         xor_split, xor_join, result = [], [], []
         for activity in self.activities:
+            if [True for x, y in self.unique_parallel_pairs if (activity, activity) == (x, y)]:
+                continue
             xor_split.extend(self._right_side_maximization(activity))
             xor_join.extend(self._left_side_maximization(activity))
 
@@ -385,6 +387,13 @@ class AlphaMiner:
             for (y, z), x in join_result:
                 minimal_pairs = minimal_pairs[
                     ~((minimal_pairs[:, 1] == x) & ((minimal_pairs[:, 0] == y) | (minimal_pairs[:, 0] == z)))
+                ]
+
+        if minimal_pairs.any():
+            # Remove entries with x in it where (x, x) exists in parallel_pairs
+            for x, _ in np.copy(self.parallel_pairs):
+                minimal_pairs = minimal_pairs[
+                    ~((minimal_pairs[:, 0] == x) | (minimal_pairs[:, 1] == x))
                 ]
 
         minimal_pairs = [tuple(entry) for entry in minimal_pairs]
@@ -534,6 +543,3 @@ class AlphaMiner:
         pn_visualizer.view(gviz)
 
 
-# enter path to the event log file
-alpha_miner = AlphaMiner(file_path='example_files/common-example.csv')  # can change later
-alpha_miner.build_and_visualize_petrinet()

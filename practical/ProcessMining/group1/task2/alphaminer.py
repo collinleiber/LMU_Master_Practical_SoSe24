@@ -330,8 +330,9 @@ class AlphaMiner:
         Returns:
             np.ndarray: The right side maximized pair set.
         """
-        if candidates := sorted([pair[1] for pair in self.sequential_pairs if pair[0] == activity]):
-            # When not null, create tuples of each pair that is in not_following_pairs and the given activity
+        # When list of after activities is not empty, where before activity is first in sequential pairs
+        if candidates := sorted([after for before, after in self.sequential_pairs if before == activity]):
+            # ...Create tuples of activity and each candidates combination that is in not_following_pairs
             return [(activity, powered_pair) for powered_pair in list(combinations(candidates, 2))
                     if np.any([np.array_equal(powered_pair, pair) for pair in self.not_following_pairs])]
         return []
@@ -349,8 +350,9 @@ class AlphaMiner:
         Returns:
             np.ndarray: The left side maximized pair set.
         """
-        if candidates := sorted([pair[0] for pair in self.sequential_pairs if pair[1] == activity]):
-            # When not null, create tuples of each pair that is in not_following_pairs and the given activity
+        # When list of before activities is not empty, where after activity is second in sequential pairs
+        if candidates := sorted([before for before, after in self.sequential_pairs if after == activity]):
+            # ...Create tuples of each candidates combination that is in not_following_pairs and activity
             return [(powered_pair, activity) for powered_pair in list(combinations(candidates, 2))
                     if np.any([np.array_equal(powered_pair, pair) for pair in self.not_following_pairs])]
         return []

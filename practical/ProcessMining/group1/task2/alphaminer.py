@@ -1,5 +1,5 @@
 import os
-from itertools import combinations
+from itertools import combinations, pairwise
 from typing import Dict, List, Tuple, Set
 
 import numpy as np
@@ -203,11 +203,7 @@ class AlphaMiner:
         Returns:
             np.ndarray: The pairs of activities that follow each other like a -> b.
         """
-        pairs = []
-        for trace in traces:
-            for i in range(0, len(trace) - 1):
-                if (i + 1) <= len(traces):
-                    pairs.append((trace[i], trace[i + 1]))
+        pairs = sorted([tuple(pair) for trace in traces for pair in pairwise(trace)])
         unique_pairs = np.asarray(list(set(pairs)))
         return unique_pairs
 

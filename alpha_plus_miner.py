@@ -7,8 +7,6 @@ import pm4py
 from pm4py.visualization.footprints import visualizer
 import matplotlib.pyplot as plt
 from graphviz import Digraph
-#import graphviz
-#from pm4py.objects.log.importer.xes import factory as xes_importer
 
 # Alpha Miner plus class
 class AlphaMinerplus:
@@ -32,7 +30,6 @@ class AlphaMinerplus:
 
         # set of places between maximal pairs 
         self.places = []
-    
 
         self.length_one_loops = None
 
@@ -43,19 +40,14 @@ class AlphaMinerplus:
 
         self.W_minusL1L = SortedDict()
 
-        
-        
        # self.footprint_matrix_reshaped #= self.getFootprint()
 
     def getTransitions(self) -> SortedSet: 
         #returns all transitions for the current petri net
         for trace in self.traces.values():
-          #  print("current trace: ", trace)
             for activity in trace:
                 self.transitions.add(activity)
-            #    print("current activity: " , activity)
 
-       # print("getTransition returns: ", self.transitions)
         return self.transitions
     
 
@@ -63,17 +55,12 @@ class AlphaMinerplus:
         
         #For each trace get the first activity and add it to the set of initial transitions
         for index, trace in enumerate(self.traces.values(), start=1):
-          #  print(f"Initial transition for trace {index}: {trace[0]}")
-           
             self.initial_transitions.add(trace[0])
         return self.initial_transitions
 
     def getFinalTransitions(self) -> SortedSet:
         #For each trace get the last activity and add it to the set of final transitions
         for index, trace in enumerate(self.traces.values(), start=1):
-        
-          #  print(f"Final transition for trace {index}: {trace[len(trace)-1]}")
-
             self.final_transitions.add(trace[len(trace)-1])
         return self.final_transitions
  
@@ -99,50 +86,28 @@ class AlphaMinerplus:
                 # eg aba, we also need bab
                 three_element_transition_2 = transition_1+transition_2+transition_1
 
-          #      print(two_element_transitions)
-           #     print(three_element_transition_1)
-            #    print(three_element_transition_2)
-
-
-
                 all_relations = None
                 for trace in traces_without_duplicates:
-                    
                     if all_relations == None :
                         if trace.find(two_element_transitions) >= 0:
-                          
                             all_relations = "->"
-                          
                         elif trace.find(two_element_transitions[::-1]) >= 0:
-                           
                             all_relations = "<-"
                     else:
                         if trace.find(two_element_transitions) >= 0:
                             if all_relations == "<-": 
                                 if trace.find(three_element_transition_1) <= 0 and trace.find(three_element_transition_2) <= 0:
-                                  
                                     all_relations = "||"
                         elif trace.find(two_element_transitions[::-1]) >= 0:
                             if all_relations == "->":
                                 if trace.find(three_element_transition_1) <= 0 and trace.find(three_element_transition_2) <= 0:
-                               
                                     all_relations = "||"                      
 
                 if all_relations == None:
-                 
                     all_relations = "#"
                 self.relations[transition_1][transition_2] = all_relations
 
-        #print(self.relations)
-      
         return self.relations
-
-        
-      
-
-
-
-
 
 
     def getPairs(self):
@@ -154,21 +119,13 @@ class AlphaMinerplus:
       #causally related (i.e. a →L b), all elements in A are independent (a1#a2), and all elements in B
       #are independent (b1#Lb2) as well
 
-
         choice_pairs = []
-
     
         causality_pairs = []
         
         #Extract all possible pairs of activities with the causality relation
         for activity1 ,relations1 in self.relations.items():
-          #  print("activity1: ", activity1)
-         #   print("relation1: ",  relations1)
-           
             for activity2 , relation in relations1.items():
-              #  print("activity2: ", activity2)
-              #  print("relation: ",  relation)
-            
                 if relation == "->" :
                     causality_pairs.append((activity1,activity2))
                 if relation == "#":
@@ -177,9 +134,7 @@ class AlphaMinerplus:
                     else:
                         choice_pairs.append((activity1,activity2))
 
-      #  print("causality_pairs: ", causality_pairs)
         pairs = causality_pairs
-     #   print("choice_pairs: ", choice_pairs)
         #causality_pairs:  [('a', 'b'), ('a', 'c'), ('a', 'e'), ('b', 'd'), ('c', 'd'), ('e', 'd')]
 #       choice_pairs:  [('a',), ('a', 'd'), ('b',), ('b', 'e'), ('c',), ('c', 'e'), ('d', 'a'), ('d',), ('e', 'b'), ('e', 'c'), ('e',)]
 
@@ -191,8 +146,6 @@ class AlphaMinerplus:
       #  ('d', 'e'), ('d', 'f'), ('e', 'a'), ('e', 'b'), ('e', 'c'), ('e', 'd'), ('e',), ('f', 'a'), ('f', 'b'), ('f', 'c'), ('f', 'd'), ('f',)]
      
         # We need to check the combinations too, while checking if the activities are independent in their respective sets
-
-
        
         i = 0
         j = len(choice_pairs)
@@ -201,10 +154,6 @@ class AlphaMinerplus:
             current_choice_pair = choice_pairs[i]
             for pair in choice_pairs:
                 union = True
-            #    print(SortedSet(current_choice_pair))
-             #   print(SortedSet(pair))
-             #   print(len(SortedSet(current_choice_pair).intersection(SortedSet(pair))))
-           
                 if len(SortedSet(current_choice_pair).intersection(SortedSet(pair))) != 0:
                     for e1 in pair:
                         if union == False:
@@ -213,18 +162,11 @@ class AlphaMinerplus:
                             if self.relations[e1][e2] != "#":  #check if the activities are independent
                                 union = False
                                 break
-                    if union :  # if not independent, create a new pair which is the union of the 2 activities eg  [a,d]  +  [a, f] -> [a, d, f]
-                        
+                    if union:  # if not independent, create a new pair which is the union of the 2 activities eg  [a,d]  +  [a, f] -> [a, d, f]
                         new_pair = SortedSet(current_choice_pair) | SortedSet(pair) 
-                   #     print("potential new constructed pair: ", new_pair)
-                      
                         if tuple(new_pair) not in choice_pairs:
-                      #      print("new_pair: ", new_pair)
-                        
                             choice_pairs.append(tuple(new_pair))
                             j = j + 1
-                            
-                
             i = i + 1
 
         print("choice_pairs: ", choice_pairs)
@@ -246,32 +188,23 @@ class AlphaMinerplus:
             for pair_choices2 in choice_pairs:
                 relation_between_pair = None
                 makePair = True
-             #   print("pair 1 ",pair_choices1)
-             #   print("pair 2 ",pair_choices2)
              
                 intersection = SortedSet(pair_choices1).intersection(pair_choices2)
-             #   print("intersection: ", intersection)
                 pair_choices2 = SortedSet(pair_choices2)
-              #  print("pair_choices: ", pair_choices2)
               
                 if len(intersection) != 0 :
                     # remove intersection terms in the second pair
                     for term in intersection:
-                    #    print("term to discard:" , term)
-                     
                         pair_choices2.discard(term)
                     
                 if(len(pair_choices2) == 0):
                     continue
-                pair_choices2= tuple(pair_choices2)
-              #  print("pair_choices2 with discarded items :",pair_choices2)
+                pair_choices2 = tuple(pair_choices2)
 
                 for activity1 in pair_choices1:
-                #    print(activity1)
                     if makePair == False:
                         break
                     for activity2 in pair_choices2:
-                   #     print(activity2)
                         relation = self.relations[activity1][activity2]
                         if relation_between_pair != None and relation_between_pair != relation:
                             makePair = False
@@ -282,10 +215,6 @@ class AlphaMinerplus:
                             makePair = False
                             break
                 if makePair == True:
-                 #   print("makepair reached")
-                  #  print(pair_choices1)
-                  #  print(pair_choices2)
-                    
                     if relation_between_pair == "->":
                         new_pair = (pair_choices1,pair_choices2)
                     else:
@@ -312,8 +241,6 @@ class AlphaMinerplus:
                 for pair_element in pair1:
                     for e in pair_element:
                         flat_pair1.append(e)
-             #   print("pair1 :",pair1)
-            #    print("flat_pair1 :",flat_pair1)
             
                 pos2 = 0
                 for pair2 in self.pairs:
@@ -322,33 +249,22 @@ class AlphaMinerplus:
                         for pair_element in pair2:
                             for e in pair_element:
                                 flat_pair2.append(e)
-                    #    print("pair2 :",pair2)
-                     #   print("flat_pair2 :",flat_pair2)
                         # flat the pair 1
 
                         # flat the pair 2
                         # check if pair1 issubset of pair 2 or pair 2 is subset of 1
                         if SortedSet(flat_pair1).issubset(flat_pair2) and SortedSet(flat_pair1)!= SortedSet(flat_pair2):
-                      #      print("is a subset")
                             append_flag = False
                     pos2 = pos2 + 1
 
                 if append_flag == True:
 
-             #       print("append")
                     if SortedSet(flat_pair1) not in pair_appended:
                         maximal_pairs.append(pair1)
                         pair_appended.append(SortedSet(flat_pair1))
                 pos1 = pos1 + 1
-        #    print("maximal_pairs:" , maximal_pairs)
           
             self.maximal_pairs = maximal_pairs
-
-
-
-
-
-
 
 
     def get_length_one_loops(self) -> SortedSet:
@@ -363,17 +279,12 @@ class AlphaMinerplus:
             if self.relations[transition][transition] == "->":
                 self.length_one_loops.add(transition)
 
-     #   print("Length 1 loop: ", self.length_one_loops)
         return self.length_one_loops
-
-
 
     
     def remove_length_one_loops(self) ->SortedSet:
         # This function corresponds to step 3 of the alpha plus algorithm:  3) T' := T \ L1L 
         self.log_without_length_one_loops = self.transitions.difference(self.length_one_loops)
-     #   print(self.transitions)
-      #  print(self.log_without_length_one_loops)
         
         return self.log_without_length_one_loops
 
@@ -389,7 +300,6 @@ class AlphaMinerplus:
         #(b) B = {b ∈ T'  | t >W a}
         #(c) FL1L := FL1L ∪ {(t, p(A\B,B\A)),(p(A\B,B\A),t)}
 
-
         self.F_L1L = SortedSet()
         place_counter = 1
         self.getTransitions()
@@ -399,15 +309,10 @@ class AlphaMinerplus:
             B = SortedSet()
             for transition2 in self.log_without_length_one_loops:
                 if self.relations[transition2][transition1] == "->":
-                  #  print("for transition ",transition1," : ",transition2)
                     A.add(transition2)
                 if  self.relations[transition1][transition2] == "->":
-                  #  print("for transition ",transition1," : ",transition2)
                     B.add(transition2)
-           
 
-            print(len(A) == len(B))
-            
             place = 'p'+str(place_counter)
             for _ in A.difference(B):
                 # Add input places
@@ -420,13 +325,6 @@ class AlphaMinerplus:
           
 
             place_counter += 1
-      #  print(self.F_L1L)  
-      
-
-
-
-
-
     
     # We want the difference between 2 lists in generate_W_minus_L1L
     def diff(self,first, second) -> list:
@@ -440,22 +338,12 @@ class AlphaMinerplus:
     def generate_W_minus_L1L(self):
         #W_minusL1L
         length_one_loops = self.length_one_loops
-      #  print('length one loops',length_one_loops)
         for trace_key,trace in self.traces.items():
              trace_pr = trace
-            # print('trace',trace_pr)
-            
-            
              trace_pr = self.diff(trace_pr,length_one_loops)
-            # print('trace without length one loops',trace_pr)
              self.W_minusL1L[trace_key] = trace_pr
-       
-        #print('W_minusL1L ',self.W_minusL1L)
-
 
     def add_places(self):
-        
-
         # connect the initial transition with the first place, after the for loop we connect the last transition to the last place 
         place_counter = 0
         self.places.append(((),"Place_"+str(place_counter),self.initial_transitions))
@@ -467,11 +355,6 @@ class AlphaMinerplus:
         print("input for the visualisation: ", self.places)
 
 
-
-
-
-
-
     def run_alphaMiner_plus(self):
                 
         alphaminerplusobject = AlphaMinerplus(self.W_minusL1L)
@@ -481,16 +364,10 @@ class AlphaMinerplus:
         alphaminerplusobject.getTransitions()
         alphaminerplusobject.getFootprint()
 
-
-            
-
         alphaminerplusobject.getPairs()
         alphaminerplusobject.get_maximal_pairs()
 
         alphaminerplusobject.add_places()
-
-
-        #TODO add visualization here
 
         alphaminerplusobject.visualization()
 
@@ -509,62 +386,9 @@ class AlphaMinerplus:
                 dot.edge(str(transition_name), str(output_place))
 
         dot.render('petri_net', format='png', cleanup=True)
-""" 
-
-events_xes = pm4py.read_xes("Logs/pdc2023_000000.xes")
-
-# Extract case IDs and activities
-case_ids = events_xes['case:concept:name']
-activities = events_xes['concept:name']
-# test without unique()
-# Print case IDs and activities
-print("Case IDs:")
-print(case_ids)
-print("\nActivities:")
-print(activities)
-
-
-traces = SortedDict()
-# Group by case IDs and iterate through each group
-for case_id, group in events_xes.groupby('case:concept:name'):
-    activities = group['concept:name'].unique()
-    
-    
-
-    # Remove "trace" and the space
-    print("case_id before: ", case_id)
-    cleaned_string = case_id.replace("trace", "").replace(" ", "")
-    print("case_id ", cleaned_string)
- 
-    print(activities)
-   
-    activities_with_commas = ", ".join(activities.tolist())
-    activities_test = ", ".join(activities)
-   
-    
-    act = activities_test.split(", ")
-    
-    if cleaned_string not in traces:
-            traces[cleaned_string] = [] 
-            
-   
-
-            traces[cleaned_string].extend(act)
-   
-
-
- """
-
-
-
-
-
-#with open("Logs/log_from_paper.csv","r") as my_file :
-#with open("Logs/simple_log.csv","r") as my_file :
 
 with open("Logs/log.csv","r") as my_file :
 
-#with open("Logs/test_alphaplus2.csv","r") as my_file :
     traces = SortedDict()
     logdata = my_file.read()
     print("logdata: \n", logdata)
@@ -588,17 +412,10 @@ with open("Logs/log.csv","r") as my_file :
        
         
     print("traces", traces) 
-   
-    
-    
-
-
-
 
 #alpha plus miner doesnt get regular traces as input, rather it gets self.W_minusL1L, which is step 8 of the algorithm
 # α(W_−L1L)
 alphaminerplusobject = AlphaMinerplus(traces)
-
 
 
 print("Length One Loops ",alphaminerplusobject.get_length_one_loops())
@@ -607,10 +424,3 @@ print("getF_L1L" ,alphaminerplusobject.get_FL1L())
 print("Value for W_minus_L1L" ,alphaminerplusobject.generate_W_minus_L1L())
 
 alphaminerplusobject.run_alphaMiner_plus()
-
-
-
-
-
-
-

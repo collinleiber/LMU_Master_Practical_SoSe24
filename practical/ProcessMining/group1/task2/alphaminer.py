@@ -1,13 +1,12 @@
-import os
 from itertools import combinations, pairwise
-from typing import Dict, List, Tuple, Set
-
 import numpy as np
+import os
 import pandas as pd
 import pm4py
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to
 from pm4py.visualization.petri_net import visualizer as pn_visualizer
+from typing import Dict, List, Tuple, Set
 
 
 class AlphaMiner:
@@ -393,7 +392,7 @@ class AlphaMiner:
             # Remove entries with x in it where (x, x) exists in parallel_pairs
             for x, _ in np.copy(self.parallel_pairs):
                 minimal_pairs = minimal_pairs[
-                    ~((minimal_pairs[:, 0] == x) | (minimal_pairs[:, 1] == x))
+                    ~((minimal_pairs[:, 0] == x) | (minimal_pairs[:, 1] == x) & (x == _))
                 ]
 
         minimal_pairs = [tuple(entry) for entry in minimal_pairs]

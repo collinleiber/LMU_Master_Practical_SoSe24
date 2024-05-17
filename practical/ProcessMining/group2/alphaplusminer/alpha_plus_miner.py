@@ -3,13 +3,11 @@ from itertools import chain
 import numpy as np
 from graphviz import Digraph
 
-# TODO - Adjust method names to snake_case
-
 
 # Alpha Miner plus class
 class AlphaMinerplus:
-    def __init__(self, Traces):
-        self.traces = Traces  # Traces from an event log
+    def __init__(self, traces):
+        self.traces = traces  # Traces from an event log
         self.transitions = SortedSet()
         self.initial_transitions = SortedSet()
         self.final_transitions = SortedSet()
@@ -167,7 +165,7 @@ class AlphaMinerplus:
                     if relation_between_pair == "->":
                         new_pair = (pair_choices1, pair_choices2)
                     else:
-                        new_pair = (pair_choices2, pair_choices1)
+                        new_pair = (pair_choices2, pair_choices1) # TODO- include in tests
                     pairs.append(new_pair)
 
         self.pairs = pairs
@@ -220,7 +218,7 @@ class AlphaMinerplus:
 
         for transition in self.transitions:
             if self.relations[transition][transition] == "->":
-                self.length_one_loops.add(transition)
+                self.length_one_loops.add(transition) # TODO- include in tests
 
     def remove_length_one_loops(self) -> SortedSet:
         # This function corresponds to step 3 of the alpha plus algorithm:  3) T' := T \ L1L
@@ -237,7 +235,7 @@ class AlphaMinerplus:
         self.F_L1L = SortedSet()
         place_counter = 1
         self.get_transitions()
-        for transition1 in self.length_one_loops:
+        for transition1 in self.length_one_loops: # TODO- include in tests
             A = SortedSet()
             B = SortedSet()
             for transition2 in self.log_without_length_one_loops:
@@ -283,7 +281,6 @@ class AlphaMinerplus:
         self.places.append(
             (self.final_transitions, ("Place_" + str(place_counter)), ())
         )
-        print("input for the visualisation: ", self.places)
 
     def visualize(self):
         dot = Digraph()

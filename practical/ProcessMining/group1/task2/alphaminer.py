@@ -248,7 +248,7 @@ class AlphaMiner:
         Returns:
             np.ndarray: The pairs of activities that are sequential.
         """
-        if not parallel_pairs.any():
+        if parallel_pairs.size == 0:
             return following_pairs
 
         sequential_pairs = np.asarray([pair for pair in following_pairs
@@ -285,7 +285,12 @@ class AlphaMiner:
         Returns:
             np.ndarray: The pairs of activities where the first activity occurs before the second.
         """
-        if not parallel_pairs.any():
+
+        if not not_following_pairs.any():
+            before_pairs = np.asarray([pair for pair in self.all_pairs
+                                       if not np.any(np.all(parallel_pairs == pair, axis=1))
+                                       and not np.any(np.all(sequential_pairs == pair, axis=1))])
+        elif not parallel_pairs.any():
             before_pairs = np.asarray([pair for pair in self.all_pairs
                                        if not np.any(np.all(not_following_pairs == pair, axis=1))
                                        and not np.any(np.all(sequential_pairs == pair, axis=1))])

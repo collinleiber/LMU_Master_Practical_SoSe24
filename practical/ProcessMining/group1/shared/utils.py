@@ -4,9 +4,9 @@ import pandas as pd
 import pm4py
 import shutil
 import uuid
+import re
 from datetime import datetime
 from pathlib import Path
-
 
 TMP_LOGS_PATH = './tmp_logs'
 
@@ -36,3 +36,19 @@ def event_log_to_csv(event_log):
                 writer.writerow([i, activity, timestamp])
     return filename
 
+
+def read_txt_test_logs(file):
+    event_dict = {}
+    with open(file, 'r') as file:
+        for line in file:
+            key, traces = re.match(r'(L\d+) = \[(.*)\]', line.strip()).groups()
+            traces = re.findall(r'<(.*?)>\^(\d+)', traces)
+            event_dict[key] = []
+            for trace, frequency in traces:
+                for _ in range(int(frequency)):
+                    event_dict[key].append(tuple(trace.replace(' ', '').split(',')))
+    return event_dict
+
+
+def deduplicate_list(list_with_duplicates):
+    return list(set(list_with_duplicates))

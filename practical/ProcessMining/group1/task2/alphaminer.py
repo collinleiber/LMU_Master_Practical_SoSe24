@@ -396,9 +396,10 @@ class AlphaMiner:
         if minimal_pairs.any():
             # Remove entries with x in it where (x, x) exists in parallel_pairs
             for x, _ in np.copy(self.parallel_pairs):
-                minimal_pairs = minimal_pairs[
-                    ~((minimal_pairs[:, 0] == x) | (minimal_pairs[:, 1] == x) & (x == _))
-                ]
+                if x == _:
+                    minimal_pairs = minimal_pairs[
+                        ~((minimal_pairs[:, 0] == x) | (minimal_pairs[:, 1] == x))
+                    ]
 
         minimal_pairs = [tuple(entry) for entry in minimal_pairs]
         return minimal_pairs

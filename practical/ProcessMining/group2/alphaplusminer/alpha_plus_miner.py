@@ -22,21 +22,21 @@ class AlphaMinerplus:
         self.F_L1L = None
         self.W_minusL1L = SortedDict()
 
-    def get_transitions(self) -> SortedSet:
+    def get_transitions(self):
         # Sets all transitions for the current petri net
         self.transitions = set(chain.from_iterable(self.traces.values()))
 
-    def get_initial_transitions(self) -> SortedSet:
+    def get_initial_transitions(self):
         # For each trace, get the first activity and add it to the set of initial transitions
         for index, trace in enumerate(self.traces.values(), start=1):
             self.initial_transitions.add(trace[0])
 
-    def get_final_transitions(self) -> SortedSet:
+    def get_final_transitions(self):
         # For each trace get the last activity and add it to the set of final transitions
         for index, trace in enumerate(self.traces.values(), start=1):
             self.final_transitions.add(trace[len(trace) - 1])
 
-    def get_footprint(self) -> np.ndarray:
+    def get_footprint(self):
         # Step 1: remove duplicate traces
         traces_without_duplicates = SortedSet()
         for trace in self.traces.values():

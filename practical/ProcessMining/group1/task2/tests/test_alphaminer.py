@@ -37,16 +37,24 @@ def footprints(event_log: pd.DataFrame) -> Dict[str, Any]:
     return footprints
 
 
-def test_footprints_discovery(alpha_miner: AlphaMiner, footprints: Dict[str, Any]) -> None:
-    # Check if the returned dictionary has the expected keys
+@pytest.mark.parametrize(
+    "key",
+    [
+        'dfg',
+        'sequence',
+        'parallel',
+        'activities',
+        'start_activities',
+        'end_activities',
+        'min_trace_length',
+    ]
+)
+def test_footprints_discovery(alpha_miner: AlphaMiner, key: str, footprints: Dict[str, Any]) -> None:
+
     assert isinstance(footprints, dict), "The returned object is not a dictionary"
-    assert 'dfg' in footprints, "The dictionary does not contain the key 'dfg'"
-    assert 'sequence' in footprints, "The dictionary does not contain the key 'sequence'"
-    assert 'parallel' in footprints, "The dictionary does not contain the key 'parallel'"
-    assert 'activities' in footprints, "The dictionary does not contain the key 'activities'"
-    assert 'start_activities' in footprints, "The dictionary does not contain the key 'start_activities'"
-    assert 'end_activities' in footprints, "The dictionary does not contain the key 'end_activities'"
-    assert 'min_trace_length' in footprints, "The dictionary does not contain the key 'min_trace_length'"
+
+    # Check if the returned dictionary has the expected keys
+    assert key in footprints, f"The dictionary does not contain the key {key}"
 
     # Check if discovered footprints match PM4PY (ignoring frequency information)
     assert alpha_miner.discover_footprints() == footprints, "Discovered footprints do not match PM4PY"

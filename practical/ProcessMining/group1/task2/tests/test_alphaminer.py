@@ -105,19 +105,32 @@ def test_footprint_matrix(alpha_miner: AlphaMiner) -> None:
             assert matrix.at[a1_value, a2_value] == ''
 
 
-def test_import_event_log(alpha_miner: AlphaMiner, tmp_path) -> None:
-    # Test xes file
-    xes_miner = AlphaMiner(FILE_PATH_XES)
-    assert isinstance(xes_miner, AlphaMiner), "Failed to import XES file"
+@pytest.mark.parametrize(
+    "file",
+    [
+        'common-example.csv',
+        'running-example.xes',
+        'example.txt',
+        'unknown_file.csv',
+    ]
+)
+def test_import_event_log(file: str) -> None:
+    log_path = str(Path("../example_files") / file)
+    if Path(log_path).exists():
+        # Test valid file formats
+        if file.endswith(".xes") or file.endswith('.csv'):
+            valid_miner = AlphaMiner(log_path)
+            assert isinstance(valid_miner, AlphaMiner), "Failed to import file"
 
-    # Test unsupported file extension
-    tmp_txt = tmp_path / FILE_PATH_TXT
-    with pytest.raises(Exception):
-        txt_miner = AlphaMiner(FILE_PATH_TXT), "Failed to raise exception for unsupported file extension"
+        # Test unsupported file extension
+        elif file.endswith(".txt"):
+            with pytest.raises(Exception):
+                AlphaMiner(log_path), "Failed to raise exception for unsupported file extension"
 
-    # Test non-existent file
-    with pytest.raises(Exception):
-        unknown_miner = AlphaMiner("example_files/unknown_file.csv"), "Failed to raise exception for non-existent file"
+    else:
+        # Test non-existent file
+        with pytest.raises(Exception):
+            AlphaMiner(log_path), "Failed to raise exception for non-existent file"
 
 
 def test_get_maximal_pairs(alpha_miner):

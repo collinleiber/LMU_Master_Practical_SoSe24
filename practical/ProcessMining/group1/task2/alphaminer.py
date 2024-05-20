@@ -25,6 +25,8 @@ class AlphaMiner:
         sequential_pairs (np.ndarray): The pairs of activities that are sequential.
         not_following_pairs (np.ndarray): The pairs of activities that do not follow each other.
         before_pairs (np.ndarray): The pairs of activities where the first activity occurs before the second.
+        xor_split_pairs (List): The pairs of activities maximized on the right side.
+        xor_join_pairs (List): The pairs of activities maximized on the left side.
         maximal_pairs (np.ndarray): The maximized pair set as result of the alpha miner algorithm.
     """
 
@@ -48,6 +50,7 @@ class AlphaMiner:
         self.not_following_pairs = self._get_not_following_pairs(self.following_pairs)
         self.before_pairs = self._get_before_pairs(self.not_following_pairs, self.sequential_pairs, self.parallel_pairs)
 
+        self.xor_split_pairs, self.xor_join_pairs = [], []
         self.maximal_pairs = self._get_maximized_pairs()
 
     def discover_footprints(self) -> Dict:
@@ -311,15 +314,15 @@ class AlphaMiner:
         Returns:
             np.ndarray: The maximized pair set as result of the alpha miner algorithm step 6.
         """
-        xor_split, xor_join, result = [], [], []
         for activity in self.activities:
             if [True for x, y in self.unique_parallel_pairs if (activity, activity) == (x, y)]:
                 continue
-            xor_split.extend(self._right_side_maximization(activity))
-            xor_join.extend(self._left_side_maximization(activity))
+            self.xor_split_pairs.extend(self._right_side_maximization(activity))
+            self.xor_join_pairs.extend(self._left_side_maximization(activity))
 
-        result.extend(xor_split), result.extend(xor_join)
-        result.extend(self._prune_redundant_sequential_pairs(xor_split, xor_join))
+        result = []
+        result.extend(self._prune_redundant_sequential_pairs())
+        result.extend(self.xor_split_pairs), result.extend(self.xor_join_pairs)
 
         return np.asarray(list(set(result)), dtype=object)
 
@@ -363,16 +366,12 @@ class AlphaMiner:
                     if np.any([np.array_equal(powered_pair, pair) for pair in self.not_following_pairs])]
         return []
 
-    def _prune_redundant_sequential_pairs(self, split_result: List[Tuple], join_result: List[Tuple]) -> List[Tuple]:
+    def _prune_redundant_sequential_pairs(self) -> List[Tuple]:
         """
         Prunes redundant pairs from the sequential pairs. (Alpha-Algorithm Step 6)
         When a maximal pair (y, z) appears in split_result or join_results as first or second item,
         all sequential pairs (x, y) and (x, z) or (y, x) and (z, x) get removed.
         Returns all remaining pairs from sequential_pairs, which were accordingly not used to find maximal pairs.
-
-        Parameters:
-            split_result (List[Tuple]): The result set of right side maximization.
-            join_result (List[Tuple]): The result set of left side maximization.
 
         Returns:
             List[Tuple]: The set of sequential pairs that are not redundant.
@@ -381,14 +380,14 @@ class AlphaMiner:
 
         if minimal_pairs.any():
             # Remove entries (x, y) and (x, z) from stack, when (x, (y, z)) is in split_result
-            for x, (y, z) in split_result:
+            for x, (y, z) in self.xor_split_pairs:
                 minimal_pairs = minimal_pairs[
                     ~((minimal_pairs[:, 0] == x) & ((minimal_pairs[:, 1] == y) | (minimal_pairs[:, 1] == z)))
                 ]
 
         if minimal_pairs.any():
             # Remove entries (y, x) and (z, x) from stack, when ((y, z), x) is in join_result
-            for (y, z), x in join_result:
+            for (y, z), x in self.xor_join_pairs:
                 minimal_pairs = minimal_pairs[
                     ~((minimal_pairs[:, 1] == x) & ((minimal_pairs[:, 0] == y) | (minimal_pairs[:, 0] == z)))
                 ]
@@ -401,8 +400,8 @@ class AlphaMiner:
                         ~((minimal_pairs[:, 0] == x) | (minimal_pairs[:, 1] == x))
                     ]
 
-        minimal_pairs = [tuple(entry) for entry in minimal_pairs]
-        return minimal_pairs
+        result = [tuple(entry) for entry in minimal_pairs]
+        return result
 
     def get_maximal_pairs(self) -> List[Tuple[Set[str], Set[str]]]:
         """

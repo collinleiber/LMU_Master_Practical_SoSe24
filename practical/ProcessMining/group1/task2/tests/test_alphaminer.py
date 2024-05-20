@@ -133,8 +133,38 @@ def test_import_event_log(file: str) -> None:
             AlphaMiner(log_path), "Failed to raise exception for non-existent file"
 
 
-def test_get_maximal_pairs(alpha_miner):
-    expected_result = [({'a'}, {'b', 'e'}), ({'b', 'e'}, {'d'}), ({'c', 'e'}, {'d'}), ({'a'}, {'c', 'e'})]
+@pytest.mark.parametrize(
+    "alpha_miner,expected_result",
+    [
+        (AlphaMiner(FILE_PATH_CSV),
+         [({'a'}, {'b', 'e'}), ({'b', 'e'}, {'d'}), ({'c', 'e'}, {'d'}), ({'a'}, {'c', 'e'})]),
+        (AlphaMiner(get_test_case(case="L1")),
+         [({'a'}, {'e', 'b'}), ({'e', 'b'}, {'d'}), ({'e', 'c'}, {'d'}), ({'a'}, {'e', 'c'})]),
+        (AlphaMiner(get_test_case(case="L2")),
+         [({'f', 'a'}, {'c'}), ({'b'}, {'e', 'd'}), ({'f', 'a'}, {'b'}), ({'e'}, {'f'}), ({'c'}, {'e', 'd'})]),
+        (AlphaMiner(get_test_case(case="L3")),
+         [({'c'}, {'e'}), ({'b'}, {'c'}), ({'d'}, {'e'}), ({'e'}, {'f', 'g'}), ({'f', 'a'}, {'b'}), ({'b'}, {'d'})]),
+        (AlphaMiner(get_test_case(case="L4")),
+         [({'c'}, {'e', 'd'}), ({'a', 'b'}, {'c'})]),
+        (AlphaMiner(get_test_case(case="L5")),
+         [({'a', 'd'}, {'b'}), ({'a'}, {'e'}), ({'c'}, {'d'}), ({'e'}, {'f'}), ({'b'}, {'f', 'c'})]),
+        (AlphaMiner(get_test_case(case="L6")),
+         [({'a'}, {'e'}), ({'b'}, {'f'}), ({'c', 'd'}, {'g'}), ({'e', 'f'}, {'g'}), ({'e', 'd'}, {'g'}), ({'a'}, {'c'}), ({'f', 'c'}, {'g'}), ({'b'}, {'d'})]),
+        (AlphaMiner(get_test_case(case="L7")),
+         [({'a'}, {'c'})]),
+        (AlphaMiner(get_test_case(case="L8")),
+         [({'a'}, {'b'}), ({'b'}, {'d'})]),
+        (AlphaMiner(get_test_case(case="L9")),
+         [({'c'}, {'e', 'd'}), ({'a', 'b'}, {'c'})]),
+        (AlphaMiner(get_test_case(case="L10")),
+         []),
+        (AlphaMiner(get_test_case(case="L11")),
+         [({'a'}, {'b'}), ({'a'}, {'c'}), ({'b'}, {'c'})]),
+        (AlphaMiner(get_test_case(case="L12")),
+         [({'c'}, {'e', 'd'}), ({'a', 'b'}, {'c'})])
+    ],
+)
+def test_get_maximal_pairs(alpha_miner: AlphaMiner, expected_result: list):
 
     maximal_pairs = alpha_miner.get_maximal_pairs()
 

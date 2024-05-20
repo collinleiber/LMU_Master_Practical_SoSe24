@@ -289,23 +289,7 @@ def test_print_single_pair_type(alpha_miner: AlphaMiner, pair_type: str, field_n
     ), "Returned list does not match to expected list"
 
 
+def test_print_pairs(capfd, alpha_miner: AlphaMiner):
+    alpha_miner.print_pairs(encoded=True)
 
-def test_print_single_pair_type(alpha_miner: AlphaMiner):
-    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type(">", encoded=False, getter=True)),
-                           alpha_miner.following_pairs)
-            ), "Function is incorrect printing following pairs"
-    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type("||", encoded=False, getter=True)),
-                           alpha_miner.parallel_pairs)
-            ), "Function is incorrect printing parallel pairs"
-    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type("->", encoded=False, getter=True)),
-                           alpha_miner.sequential_pairs)
-            ), "Function is incorrect printing sequential pairs"
-    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type("#", encoded=False, getter=True)),
-                           alpha_miner.not_following_pairs)
-            ), "Function is incorrect printing not following pairs"
-    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type("<-", encoded=False, getter=True)),
-                           alpha_miner.before_pairs)
-            ), "Function is incorrect printing before pairs"
-    assert (np.array_equal(np.asarray(alpha_miner.print_single_pair_type("max", encoded=False, getter=True)),
-                           alpha_miner.maximal_pairs)
-            ), "Function is incorrect printing maximal pairs"
+    assert capfd.readouterr()

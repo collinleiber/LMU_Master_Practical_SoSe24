@@ -271,6 +271,23 @@ def test_activity_encoder(alpha_miner: AlphaMiner, is_encoded: bool, field_name,
             for pair in output_pairs), "Not all elements in encoded_test are tuples of two sets"
 
 
+@pytest.mark.parametrize(
+    "pair_type,field_name",
+    [
+        (">", "following_pairs"),
+        ("||", "parallel_pairs"),
+        ("->", "sequential_pairs"),
+        ("#", "not_following_pairs"),
+        ("<-", "before_pairs"),
+        ("max", "maximal_pairs"),
+    ]
+)
+def test_print_single_pair_type(alpha_miner: AlphaMiner, pair_type: str, field_name: np.ndarray or List):
+    assert (np.array_equal(np.asarray(
+        alpha_miner.print_single_pair_type(pair_type=pair_type, encoded=False, getter=True)),
+        getattr(alpha_miner, field_name))
+    ), "Returned list does not match to expected list"
+
 
 
 def test_print_single_pair_type(alpha_miner: AlphaMiner):

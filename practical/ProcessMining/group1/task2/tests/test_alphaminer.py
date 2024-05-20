@@ -240,34 +240,37 @@ def test_prune_redundant_sequential_pairs(miner: AlphaMiner, expected_result: Li
     assert all(isinstance(pair, tuple) for pair in result), "Not all elements in pruned_pairs are tuples"
 
 
-
-def test_activity_encoder(alpha_miner: AlphaMiner):
+@pytest.mark.parametrize(
+    "is_encoded,field_name,sample_pairs,expected_result",
+    [
+        (False, None, [(1, 2), (3, 4), (0, (1, 2))],
+         [(1, 2), (3, 4), (0, (1, 2))]),
+        (True, None, [(1, 2), (3, 4), (0, (1, 2))],
+         [({'b'}, {'c'}), ({'d'}, {'e'}), ({'a'}, {'b', 'c'})]),
+        (True, 'sequential_pairs', None,
+         [({'a'}, {'b'}), ({'a'}, {'e'}), ({'e'}, {'d'}), ({'c'}, {'d'}), ({'a'}, {'c'}), ({'b'}, {'d'})]),
+        (True, 'parallel_pairs', None,
+         [({'b'}, {'c'}), ({'c'}, {'b'})])
+    ]
+)
+def test_activity_encoder(alpha_miner: AlphaMiner, is_encoded: bool, field_name, sample_pairs, expected_result):
     # Test if activity_encoder returns the correct output
-    test_pairs = [(1, 2), (3, 4), (0, (1, 2))]  # Example input pairs
+    input_pairs = (sample_pairs if sample_pairs else getattr(alpha_miner, field_name))
+    output_pairs = alpha_miner._activity_encoder(input_pairs, encoded=is_encoded, getter=True)
 
-    expected_test = [({'b'}, {'c'}), ({'d'}, {'e'}), ({'a'}, {'b', 'c'})]
-    expected_sequential = [({'a'}, {'b'}), ({'a'}, {'e'}), ({'e'}, {'d'}), ({'c'}, {'d'}),
-                           ({'a'}, {'c'}), ({'b'}, {'d'})]
-    expected_parallels = [({'b'}, {'c'}), ({'c'}, {'b'})]
+    # Check for different list, if encoding worked as expected
+    assert expected_result == output_pairs
 
-    decoded_test = alpha_miner._activity_encoder(test_pairs, encoded=False, getter=True)
-    encoded_test = alpha_miner._activity_encoder(test_pairs, encoded=True, getter=True)
-    encoded_parallels = alpha_miner._activity_encoder(alpha_miner.parallel_pairs, encoded=True, getter=True)
-    encoded_sequential = alpha_miner._activity_encoder(alpha_miner.sequential_pairs, encoded=True, getter=True)
+    if is_encoded:
+        # Check if encoded_test is a list
+        assert isinstance(output_pairs, list), "encoded_test is not a list"
 
-    # Check for different list, if encoding worked
-    assert decoded_test == test_pairs
-    assert encoded_test == expected_test
-    assert encoded_parallels == expected_parallels
-    assert encoded_sequential == expected_sequential
+        # Check if all elements in encoded_test are tuples of sets
+        assert all(
+            isinstance(pair, tuple) and len(pair) == 2 and isinstance(pair[0], set) and isinstance(pair[1], set)
+            for pair in output_pairs), "Not all elements in encoded_test are tuples of two sets"
 
-    # Check if encoded_test is a list
-    assert isinstance(encoded_test, list), "encoded_test is not a list"
 
-    # Check if all elements in encoded_test are tuples of sets
-    assert all(
-        isinstance(pair, tuple) and len(pair) == 2 and isinstance(pair[0], set) and isinstance(pair[1], set)
-        for pair in encoded_test), "Not all elements in encoded_test are tuples of two sets"
 
 
 def test_print_single_pair_type(alpha_miner: AlphaMiner):

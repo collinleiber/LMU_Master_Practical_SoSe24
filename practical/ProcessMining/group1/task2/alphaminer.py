@@ -468,7 +468,6 @@ class AlphaMiner:
         """
         output = []
         alphabet = self.activities
-        int_only = True
 
         for pair in pairs:
             first = pair[0]
@@ -477,24 +476,17 @@ class AlphaMiner:
             if encoded:
                 if isinstance(first, tuple):
                     first = {alphabet.get(first[0]), alphabet.get(first[1])}
-                    int_only = False
                 else:
                     first = {alphabet.get(first)}
                 if isinstance(second, tuple):
                     second = {alphabet.get(second[0]), alphabet.get(second[1])}
-                    int_only = False
                 else:
                     second = {alphabet.get(second)}
                 output.append((first, second))
             else:
                 output.append(pair)
 
-        if not getter:
-            print(description + ":")
-            print(sorted(output)) if int_only else print(output)
-            print()
-        else:
-            return output
+        return output if getter else print(description + ":\n" + str(output) + "\n")
 
     def build_and_visualize_petrinet(self):
         """
@@ -502,8 +494,7 @@ class AlphaMiner:
         """
         # Create an empty Petri net and markings
         net = PetriNet("Alpha Miner Petri Net")
-        initial_marking = Marking()
-        final_marking = Marking()
+        initial_marking, final_marking = Marking(), Marking()
 
         # Add activities as transitions in the Petri net
         transitions = {activity: PetriNet.Transition(str(activity), label=activity) for activity in
@@ -540,10 +531,7 @@ class AlphaMiner:
             final_marking[global_end] = 1
 
         # Visualization settings
-        parameters = {
-            'format': 'png'  # can change later to other format
-        }
+        parameters = {'format': 'png'}  # can change later to other format
         gviz = pn_visualizer.apply(net, initial_marking, final_marking, parameters=parameters)
         pn_visualizer.view(gviz)
-
 

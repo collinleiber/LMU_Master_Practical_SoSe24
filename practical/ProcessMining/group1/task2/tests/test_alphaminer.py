@@ -60,15 +60,25 @@ def test_footprints_discovery(alpha_miner: AlphaMiner, key: str, footprints: Dic
     assert alpha_miner.discover_footprints() == footprints, "Discovered footprints do not match PM4PY"
 
 
-def test_get_activity_name(alpha_miner: AlphaMiner) -> None:
+@pytest.mark.parametrize(
+    "activity_id,expected_encoding",
+    [
+        (0, 'a'),
+        (1, 'b'),
+        (2, 'c'),
+        (3, 'd'),
+        (4, 'e'),
+        (-1, KeyError),
+    ]
+)
+def test_get_activity_name(alpha_miner: AlphaMiner, activity_id: int, expected_encoding: str) -> None:
     # Test decoding of activity ids
-    assert alpha_miner._get_activity_name(0) == 'a', "Activity name does not match expected value"
-    assert alpha_miner._get_activity_name(1) == 'b', "Activity name does not match expected value"
-    assert alpha_miner._get_activity_name(2) == 'c', "Activity name does not match expected value"
-    assert alpha_miner._get_activity_name(3) == 'd', "Activity name does not match expected value"
-    assert alpha_miner._get_activity_name(4) == 'e', "Activity name does not match expected value"
-    with pytest.raises(KeyError):
-        alpha_miner._get_activity_name(-1), "Failed to raise exception for invalid activity id"
+    if expected_encoding == KeyError:
+        with pytest.raises(KeyError):
+            alpha_miner._get_activity_name(activity_id), "Failed to raise exception for invalid activity id"
+    else:
+        assert alpha_miner._get_activity_name(activity_id) == expected_encoding, \
+            "Activity name does not match expected value"
 
 
 def test_footprint_matrix(alpha_miner: AlphaMiner) -> None:

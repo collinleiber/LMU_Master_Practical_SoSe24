@@ -3,12 +3,19 @@ import numpy as np
 import pytest
 import pm4py
 import pandas as pd
+from pathlib import Path
+from typing import Dict, Any, List
+
+from practical.ProcessMining.group1.shared import utils
 from practical.ProcessMining.group1.task2.alphaminer import AlphaMiner
-from typing import Dict, Any
 
 FILE_PATH_CSV = '../example_files/common-example.csv'  # event log from the paper
-FILE_PATH_XES = '../example_files/running-example.xes'
-FILE_PATH_TXT = '../example_files/example.txt'
+TEST_LOGS = utils.read_txt_test_logs('../example_files/simple_event_logs.txt')
+
+
+def get_test_case(case: str):
+    cleaned = utils.deduplicate_list(TEST_LOGS[case])
+    return utils.event_log_to_csv(cleaned)
 
 
 @pytest.fixture

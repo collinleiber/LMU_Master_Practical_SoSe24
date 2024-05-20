@@ -180,41 +180,44 @@ def test_get_maximal_pairs(alpha_miner: AlphaMiner, expected_result: list):
         for pair in maximal_pairs), "Not all elements in maximal_pairs are tuples of two sets"
 
 
-def test_right_side_maximization(alpha_miner):
+@pytest.mark.parametrize(
+    "miner,activity,expected_result",
+    [
+        (AlphaMiner(FILE_PATH_CSV), 0, [(0, (1, 4)), (0, (2, 4))]),
+        (AlphaMiner(FILE_PATH_CSV), 1, [])
+    ])
+def test_right_side_maximization(miner: AlphaMiner, activity: int, expected_result: List):
     # Test if right_side_maximization returns the correct output
-    expected_result_0 = [(0, (1, 4)), (0, (2, 4))]
-    expected_result_1 = []
+    result = miner._right_side_maximization(activity=activity)
 
-    right_side_0 = alpha_miner._right_side_maximization(activity=0)
-    right_side_1 = alpha_miner._right_side_maximization(activity=1)
+    assert result == expected_result
 
-    assert right_side_0 == expected_result_0
-    assert right_side_1 == expected_result_1
+    # Check if result is a list
+    assert isinstance(result, list), "result is not a list"
 
-    # Check if right_side_0 is a list
-    assert isinstance(right_side_0, list), "right_side_0 is not a list"
-
-    # Check if all elements in right_side_0 are tuples
+    # Check if all elements in result are tuples
     assert all(isinstance(pair, tuple) and len(pair) == 2 and isinstance(pair[1], tuple)
-               for pair in right_side_0), "Not all elements in right_side_0 are tuples"
+               for pair in result), "Not all elements in result are tuples"
 
 
-def test_left_side_maximization(alpha_miner):
-    expected_result_3 = [((1, 4), 3), ((2, 4), 3)]
-    expected_result_2 = []
+@pytest.mark.parametrize(
+    "miner,activity,expected_result",
+    [
+        (AlphaMiner(FILE_PATH_CSV), 3, [((1, 4), 3), ((2, 4), 3)]),
+        (AlphaMiner(FILE_PATH_CSV), 2, [])
+    ])
+def test_left_side_maximization(miner: AlphaMiner, activity: int, expected_result: List):
+    # Test if left_side_maximization returns the correct output
+    result = miner._left_side_maximization(activity=activity)
 
-    left_side_3 = alpha_miner._left_side_maximization(activity=3)
-    left_side_2 = alpha_miner._left_side_maximization(activity=2)
+    assert result == expected_result
 
-    assert left_side_3 == expected_result_3
-    assert left_side_2 == expected_result_2
+    # Check if result is a list
+    assert isinstance(result, list), "result is not a list"
 
-    # Check if left_side_3 is a list
-    assert isinstance(left_side_3, list), "left_side_3 is not a list"
-
-    # Check if all elements in left_side_3 are tuples
+    # Check if all elements in result are tuples
     assert all(isinstance(pair, tuple) and len(pair) == 2 and isinstance(pair[0], tuple)
-               for pair in left_side_3), "Not all elements in left_side_3 are tuples"
+               for pair in result), "Not all elements in result are tuples"
 
 
 def test_prune_redundant_sequential_pairs(alpha_miner: AlphaMiner):

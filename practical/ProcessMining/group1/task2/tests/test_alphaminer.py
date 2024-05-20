@@ -220,22 +220,25 @@ def test_left_side_maximization(miner: AlphaMiner, activity: int, expected_resul
                for pair in result), "Not all elements in result are tuples"
 
 
-def test_prune_redundant_sequential_pairs(alpha_miner: AlphaMiner):
+@pytest.mark.parametrize(
+    "miner,expected_result",
+    [
+        (AlphaMiner(FILE_PATH_CSV), []),
+    ]
+)
+def test_prune_redundant_sequential_pairs(miner: AlphaMiner, expected_result: List):
     # Test if prune_redundant_sequential_pairs returns the correct output
-    split_result = [(0, (1, 4)), (0, (2, 4))]  # test_right_side_maximization(alpha_miner)
-    join_result = [((1, 4), 3), ((2, 4), 3)]  # test_left_side_maximization(alpha_miner)
-    expected_result = []  # todo test alpha miner1, since pruning result not []
-
-    pruned_pairs = alpha_miner._prune_redundant_sequential_pairs(split_result, join_result)
-
-    # Check if pruned_pairs is a list
-    assert isinstance(pruned_pairs, list), "pruned_pairs is not a list"
-
-    # Check if all elements in pruned_pairs are tuples
-    assert all(isinstance(pair, tuple) for pair in pruned_pairs), "Not all elements in pruned_pairs are tuples"
+    result = miner._prune_redundant_sequential_pairs()
 
     # Perform assertions based on expected output
-    assert pruned_pairs == expected_result
+    assert result == expected_result
+
+    # Check if pruned_pairs is a list
+    assert isinstance(result, list), "pruned_pairs is not a list"
+
+    # Check if all elements in pruned_pairs are tuples
+    assert all(isinstance(pair, tuple) for pair in result), "Not all elements in pruned_pairs are tuples"
+
 
 
 def test_activity_encoder(alpha_miner: AlphaMiner):

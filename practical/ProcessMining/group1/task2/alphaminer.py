@@ -376,32 +376,22 @@ class AlphaMiner:
         Returns:
             List[Tuple]: The set of sequential pairs that are not redundant.
         """
-        minimal_pairs = np.copy(self.sequential_pairs)
+        minimal_pairs = self.sequential_pairs.copy()
 
-        if minimal_pairs.any():
-            # Remove entries (x, y) and (x, z) from stack, when (x, (y, z)) is in split_result
-            for x, (y, z) in self.xor_split_pairs:
-                minimal_pairs = minimal_pairs[
-                    ~((minimal_pairs[:, 0] == x) & ((minimal_pairs[:, 1] == y) | (minimal_pairs[:, 1] == z)))
-                ]
+        # Remove entries (x, y) and (x, z) from stack, when (x, (y, z)) is in split_result
+        minimal_pairs = [pair for pair in minimal_pairs if not any(
+            pair[0] == x and (pair[1] == y or pair[1] == z) for x, (y, z) in self.xor_split_pairs)]
 
-        if minimal_pairs.any():
-            # Remove entries (y, x) and (z, x) from stack, when ((y, z), x) is in join_result
-            for (y, z), x in self.xor_join_pairs:
-                minimal_pairs = minimal_pairs[
-                    ~((minimal_pairs[:, 1] == x) & ((minimal_pairs[:, 0] == y) | (minimal_pairs[:, 0] == z)))
-                ]
+        # Remove entries (y, x) and (z, x) from stack, when ((y, z), x) is in join_result
+        minimal_pairs = [pair for pair in minimal_pairs if not any(
+            (pair[0] == y or pair[0] == z) and pair[1] == x for (y, z), x in self.xor_join_pairs)]
 
-        if minimal_pairs.any():
-            # Remove entries with x in it where (x, x) exists in parallel_pairs
-            for x, _ in np.copy(self.parallel_pairs):
-                if x == _:
-                    minimal_pairs = minimal_pairs[
-                        ~((minimal_pairs[:, 0] == x) | (minimal_pairs[:, 1] == x))
-                    ]
+        # Remove entries with x in it where (x, x) exists in parallel_pairs
+        minimal_pairs = [pair for pair in minimal_pairs if not any(
+            (pair[0] == x or pair[1] == x) and x == y for x, y in self.parallel_pairs if x == y)]
 
-        result = [tuple(entry) for entry in minimal_pairs]
-        return result
+        minimal_pairs = [tuple(entry) for entry in minimal_pairs]
+        return minimal_pairs
 
     def get_maximal_pairs(self) -> List[Tuple[Set[str], Set[str]]]:
         """

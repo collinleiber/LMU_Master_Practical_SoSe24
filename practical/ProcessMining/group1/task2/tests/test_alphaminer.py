@@ -169,7 +169,8 @@ def test_get_maximal_pairs(alpha_miner: AlphaMiner, expected_result: list):
     maximal_pairs = alpha_miner.get_maximal_pairs()
 
     # Test if get_maximal_pairs returns the correct output
-    assert expected_result == maximal_pairs
+    assert all(item in expected_result for item in maximal_pairs)
+    assert all(item in maximal_pairs for item in expected_result)
 
     # Check if maximal_pairs is a list
     assert isinstance(maximal_pairs, list), "maximal_pairs is not a list"

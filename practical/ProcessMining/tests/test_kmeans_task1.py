@@ -1,11 +1,11 @@
-from practical.ProcessMining.kmeans_task1 import calculate_k_means
+from practical.ProcessMining.kmeans_task1 import k_means_lib, k_means_scratch
 from sklearn.cluster import KMeans
 import numpy as np
 
 
 def test_case_random_centroids(clusters: int = 2) -> KMeans:
     data = np.array([[1, 2], [1, 4], [1, 0], [4, 2], [4, 4], [4, 0]])
-    return calculate_k_means(data, clusters)
+    return k_means_lib(data, clusters)
 
 
 def test_case_given_centroids(clusters: int = 2) -> KMeans:
@@ -17,7 +17,7 @@ def test_case_given_centroids(clusters: int = 2) -> KMeans:
     init_centroids = np.array(list(zip(x_coords, y_coords)))
 
     assert (init_centroids.size / 2) == clusters
-    return calculate_k_means(data, clusters, init_centroids)
+    return k_means_lib(data, clusters, init_centroids)
 
 
 def test_k_means():
@@ -48,3 +48,26 @@ def test_amount_clusters_matches_unique_labels(result: KMeans):
 def test_deterministic_results_match_expected(result: KMeans, expected_labels: np.ndarray):
     assert np.array_equal(result.labels_, expected_labels), \
         f"Expected labels {expected_labels} do not match result labels {result.labels_}."
+
+
+def test_k_means_scratch():
+    data = np.array([[1, 2], [1, 4], [1, 0], [4, 2], [4, 4], [4, 0]])
+    clusters = 2
+
+    centroids, clusters_result = k_means_scratch(data, clusters)
+
+    # Check if the number of clusters is correct
+    assert len(clusters_result) == clusters, \
+        f"Expected number of clusters ({clusters}) does not match result ({len(clusters_result)})."
+
+    # Check if all data points are assigned to a cluster
+    all_points = [point for cluster in clusters_result for point in cluster]
+    assert np.array_equal(np.sort(data, axis=0), np.sort(all_points, axis=0)), \
+        "Not all data points are assigned to a cluster."
+
+    # Check if centroids are in the correct range
+    for centroid in centroids:
+        assert np.min(data) <= centroid[0] <= np.max(data), \
+            f"Centroid {centroid} is not in the correct range."
+        assert np.min(data) <= centroid[1] <= np.max(data), \
+            f"Centroid {centroid} is not in the correct range."

@@ -20,6 +20,10 @@ def scratch_k_means(data, n_clusters=2, max_iterations=100):
         for i, cluster in enumerate(clusters):
             centroids[i] = sum(cluster) / len(cluster)
 
+    # Generate labels for the data points
+    labels = [i for i, cluster in enumerate(clusters) for _ in cluster]
+
+    visualize_clusters(data=data, labels=labels, centroids=centroids)
     return centroids, clusters
 
 

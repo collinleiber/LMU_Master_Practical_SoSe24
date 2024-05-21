@@ -320,9 +320,8 @@ class AlphaMiner:
             self.xor_split_pairs.extend(self._right_side_maximization(activity))
             self.xor_join_pairs.extend(self._left_side_maximization(activity))
 
-        result = []
-        result.extend(self._prune_redundant_sequential_pairs())
-        result.extend(self.xor_split_pairs), result.extend(self.xor_join_pairs)
+        result = [] + self.xor_join_pairs + self.xor_split_pairs
+        result += self._prune_redundant_sequential_pairs()
 
         return np.asarray(list(set(result)), dtype=object)
 

@@ -1,8 +1,11 @@
 from alpha_plus_miner import AlphaMinerplus
 from sortedcontainers import SortedSet, SortedDict
 
+
+
 # TODO: which log to test efficiently?
 with open("Logs/log.csv", "r") as my_file:
+    
     traces = SortedDict()
     logdata = my_file.read()
 
@@ -14,8 +17,11 @@ with open("Logs/log.csv", "r") as my_file:
 
         traces[case_id].append(activity)
 
+        
+
 
 def test_run_alphaMiner_plus():
+    print("test")
     # Preprocessing
     alpha_miner = AlphaMinerplus(traces)
     assert alpha_miner is not None
@@ -101,3 +107,5 @@ def test_run_alphaMiner_plus():
                                        (SortedSet(['f']), 'Place_6', ())] # TODO: check if this is correct
 
     alpha_miner_plus.visualize()
+
+test_run_alphaMiner_plus()

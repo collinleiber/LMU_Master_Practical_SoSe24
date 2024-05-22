@@ -3,7 +3,7 @@ from itertools import chain
 import numpy as np
 from graphviz import Digraph
 
-
+print("alpha")
 # Alpha Miner plus class
 class AlphaMinerplus:
     def __init__(self, traces):
@@ -283,7 +283,10 @@ class AlphaMinerplus:
         )
 
     def visualize(self):
+        print(self.places)
         dot = Digraph()
+        
+        dot.graph_attr['ratio'] = '1.5'
 
         for transition in self.places:
             input_places, transition_name, output_places = (
@@ -291,13 +294,27 @@ class AlphaMinerplus:
                 transition[1],
                 transition[2],
             )
+            if len(input_places)>0:
+                for input_place in input_places:
+                    dot.node(str(input_place), shape='square', width= '0.7',height='0.7')
+                    dot.edge(str(input_place), str(transition_name)) 
+            else: 
+                dot.node('•', shape='circle', width= '0.7',height='0.7', fontsize='34pt')
+                dot.node('Start', shape='square', width= '0.7',height='0.7')
+                dot.edge('Start', str(transition_name))
+                dot.edge('•','Start')
 
-            for input_place in input_places:
-                dot.node(str(input_place), shape='circle')
-                dot.edge(str(input_place), str(transition_name))
-            dot.node(str(transition_name), shape='square')
-            for output_place in output_places:
-                dot.node(str(output_place), shape='circle')
-                dot.edge(str(transition_name), str(output_place))
+            dot.node(str(transition_name), shape='circle', width= '0.7',height='0.7')
 
-        dot.render('petri_net', format='png', cleanup=True)
+            if len(output_places)>0:
+                for output_place in output_places:
+                    dot.node(str(output_place), shape='square', width= '0.7',height='0.7')
+                    dot.edge(str(transition_name), str(output_place))
+            else:
+                dot.node('End', shape='square', width= '0.7',height='0.7')
+                dot.node(' ', shape='circle', width= '0.7',height='0.7', fontsize='34pt')
+                dot.edge(str(transition_name), 'End')
+                dot.edge('End',' ')
+
+        dot.render('petri_net2', format='png', cleanup=True)
+ 

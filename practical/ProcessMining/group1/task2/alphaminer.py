@@ -288,20 +288,10 @@ class AlphaMiner:
         Returns:
             np.ndarray: The pairs of activities where the first activity occurs before the second.
         """
-
-        if not not_following_pairs.any():
-            before_pairs = np.asarray([pair for pair in self.all_pairs
-                                       if not np.any(np.all(parallel_pairs == pair, axis=1))
-                                       and not np.any(np.all(sequential_pairs == pair, axis=1))])
-        elif not parallel_pairs.any():
-            before_pairs = np.asarray([pair for pair in self.all_pairs
-                                       if not np.any(np.all(not_following_pairs == pair, axis=1))
-                                       and not np.any(np.all(sequential_pairs == pair, axis=1))])
-        else:
-            before_pairs = np.asarray([pair for pair in self.all_pairs
-                                       if not np.any(np.all(not_following_pairs == pair, axis=1))
-                                       and not np.any(np.all(sequential_pairs == pair, axis=1))
-                                       and not np.any(np.all(parallel_pairs == pair, axis=1))])
+        other_pairs = [pair_arr for pair_arr in [not_following_pairs, parallel_pairs, sequential_pairs]
+                       if pair_arr.size > 0]
+        before_pairs = np.asarray([pair for pair in self.all_pairs
+                                   if all(not np.any(np.all(pair_arr == pair, axis=1)) for pair_arr in other_pairs)])
         return before_pairs
 
     def _get_maximized_pairs(self) -> np.ndarray:
@@ -523,4 +513,3 @@ class AlphaMiner:
         parameters = {'format': 'png'}  # can change later to other format
         gviz = pn_visualizer.apply(net, initial_marking, final_marking, parameters=parameters)
         pn_visualizer.view(gviz)
-

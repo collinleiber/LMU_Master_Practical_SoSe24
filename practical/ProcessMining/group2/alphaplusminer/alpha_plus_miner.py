@@ -286,8 +286,8 @@ class AlphaMinerplus:
         print(self.places)
         dot = Digraph()
         
-        dot.graph_attr['ratio'] = '1.5'
-
+        dot.graph_attr['ratio'] = '0.3'
+        dot.graph_attr['rankdir'] = 'LR'
         for transition in self.places:
             input_places, transition_name, output_places = (
                 transition[0],
@@ -296,25 +296,25 @@ class AlphaMinerplus:
             )
             if len(input_places)>0:
                 for input_place in input_places:
-                    dot.node(str(input_place), shape='square', width= '0.7',height='0.7')
+                    dot.node(str(input_place), shape='square', width= '0.7',height='0.7',fontname= 'bold')
                     dot.edge(str(input_place), str(transition_name)) 
             else: 
-                dot.node('•', shape='circle', width= '0.7',height='0.7', fontsize='34pt')
-                dot.node('Start', shape='square', width= '0.7',height='0.7')
+                dot.node('•', shape='circle', width= '0.7',height='0.7', fontsize='34pt',fontname= 'bold')
+                dot.node('Start', shape='square', width= '0.7',height='0.7', fontname= 'bold')
                 dot.edge('Start', str(transition_name))
                 dot.edge('•','Start')
 
-            dot.node(str(transition_name), shape='circle', width= '0.7',height='0.7')
+            dot.node(str(transition_name), shape='circle', width= '0.7',height='0.7',fontname='bold')
 
             if len(output_places)>0:
                 for output_place in output_places:
-                    dot.node(str(output_place), shape='square', width= '0.7',height='0.7')
+                    dot.node(str(output_place), shape='square', width= '0.7',height='0.7',fontname= 'bold')
                     dot.edge(str(transition_name), str(output_place))
             else:
-                dot.node('End', shape='square', width= '0.7',height='0.7')
-                dot.node(' ', shape='circle', width= '0.7',height='0.7', fontsize='34pt')
-                dot.edge(str(transition_name), 'End')
-                dot.edge('End',' ')
+                dot.node('End', shape='square', width= '0.7',height='0.7',fontname= 'bold')
+                dot.node(' ', shape='circle', width= '0.7',height='0.7', fontsize='34pt',fontname= 'bold')
+                dot.edge(str(transition_name), 'End',fontname= 'bold')
+                dot.edge('End',' ',fontname= 'bold')
 
-        dot.render('petri_net2', format='png', cleanup=True)
+        dot.render('petri_net', format='png', cleanup=True)
  

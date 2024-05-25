@@ -296,11 +296,6 @@ def test_print_pairs(capfd, alpha_miner: AlphaMiner):
 
     assert capfd.readouterr()
 
-@pytest.fixture
-def prepared_alpha_miner():
-    # 这里设置你的 AlphaMiner 与一个已知的数据集，可以预测生成特定的 Petri 网络结构
-    return AlphaMiner(FILE_PATH_CSV)  # 假定 FILE_PATH_CSV 已定义并指向你的测试 CSV 文件
-
 
 def test_build_and_visualize_petrinet(alpha_miner):
     with patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.apply') as mock_apply, \

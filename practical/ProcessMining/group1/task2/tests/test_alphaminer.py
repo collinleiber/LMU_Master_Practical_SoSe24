@@ -5,7 +5,7 @@ import pm4py
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, List
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch,MagicMock
 
 from practical.ProcessMining.group1.shared import utils
 from practical.ProcessMining.group1.task2.alphaminer import AlphaMiner
@@ -305,6 +305,7 @@ def test_visualization_calls(alpha_miner):
         mock_apply.assert_called_once()
         mock_view.assert_called_once()
 
+
 def test_petrinet_structure(alpha_miner):
     alpha_miner.build_and_visualize_petrinet()
 
@@ -322,6 +323,44 @@ def test_petrinet_structure(alpha_miner):
 
     # check specific connections based on known input scenarios
     # require access to `transitions` and `places` by name or id
+
+
+def test_transition_connections(alpha_miner):
+    # check transitions are connected to the right place
+    alpha_miner.build_and_visualize_petrinet()
+
+    net = alpha_miner.net
+    transitions = {t.label: t for t in net.transitions}
+    places = net.places  # places is a set, so we'll iterate over it directly
+
+    # Check connections from transitions to places
+    global_start = None
+    global_end = None
+    for place in places:
+        if place.name == 'global_start':
+            global_start = place
+        elif place.name == 'global_end':
+            global_end = place
+
+    # Verify global start and end are correctly found
+    assert global_start, "Global start place not found in the Petri net."
+    assert global_end, "Global end place not found in the Petri net."
+
+    # Check connections from start place to initial transitions
+    for activity in alpha_miner.t_in:
+        activity_name = alpha_miner._get_activity_name(activity)
+        assert global_start.out_arcs, "Global start place has no outgoing arcs."
+        assert any(arc.target == transitions[activity_name] for arc in global_start.out_arcs), \
+            f"Initial activity {activity_name} is not correctly connected from start place."
+
+    # Check connections to end place from final transitions
+    for activity in alpha_miner.t_out:
+        activity_name = alpha_miner._get_activity_name(activity)
+        assert global_end.in_arcs, "Global end place has no incoming arcs."
+        assert any(arc.source == transitions[activity_name] for arc in global_end.in_arcs), \
+            f"Terminal activity {activity_name} is not correctly connected to end place."
+
+
 @pytest.mark.integration
 def test_complete_petrinet_functionality(alpha_miner):
     # This test will incorporate visualization mock tests and structure tests

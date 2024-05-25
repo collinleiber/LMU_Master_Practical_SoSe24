@@ -9,6 +9,7 @@ from pm4py.visualization.petri_net import visualizer as pn_visualizer
 from typing import Dict, List, Tuple, Set
 
 
+
 class AlphaMiner:
     """
     The AlphaMiner class implements the alpha miner algorithm for process mining.

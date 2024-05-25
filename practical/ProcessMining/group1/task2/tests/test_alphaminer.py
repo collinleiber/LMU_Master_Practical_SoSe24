@@ -5,6 +5,7 @@ import pm4py
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, List
+from unittest.mock import patch, MagicMock
 
 from practical.ProcessMining.group1.shared import utils
 from practical.ProcessMining.group1.task2.alphaminer import AlphaMiner
@@ -294,3 +295,30 @@ def test_print_pairs(capfd, alpha_miner: AlphaMiner):
     alpha_miner.print_pairs(encoded=True)
 
     assert capfd.readouterr()
+
+@pytest.fixture
+def prepared_alpha_miner():
+    # 这里设置你的 AlphaMiner 与一个已知的数据集，可以预测生成特定的 Petri 网络结构
+    return AlphaMiner(FILE_PATH_CSV)  # 假定 FILE_PATH_CSV 已定义并指向你的测试 CSV 文件
+
+
+def test_build_and_visualize_petrinet(alpha_miner):
+    with patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.apply') as mock_apply, \
+         patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.view') as mock_view:
+
+        alpha_miner.build_and_visualize_petrinet()
+
+        mock_apply.assert_called_once()
+        mock_view.assert_called_once()
+
+        # Diagnostics to help debug
+        print("End Activities:", alpha_miner.t_out)
+        print("Final Marking Keys:", alpha_miner.final_marking.keys())
+
+        expected_min_places = 2
+        expected_min_transitions = len(alpha_miner.activities)
+
+        assert len(alpha_miner.net.places) >= expected_min_places
+        assert len(alpha_miner.net.transitions) == expected_min_transitions
+        assert len(alpha_miner.initial_marking) > 0
+        assert len(alpha_miner.final_marking) > 0, "Final marking is not set correctly."

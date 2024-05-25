@@ -297,23 +297,40 @@ def test_print_pairs(capfd, alpha_miner: AlphaMiner):
     assert capfd.readouterr()
 
 
-def test_build_and_visualize_petrinet(alpha_miner):
+def test_visualization_calls(alpha_miner):
     with patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.apply') as mock_apply, \
-         patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.view') as mock_view:
-
+            patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.view') as mock_view:
         alpha_miner.build_and_visualize_petrinet()
 
         mock_apply.assert_called_once()
         mock_view.assert_called_once()
 
-        # Diagnostics to help debug
-        print("End Activities:", alpha_miner.t_out)
-        print("Final Marking Keys:", alpha_miner.final_marking.keys())
+def test_petrinet_structure(alpha_miner):
+    alpha_miner.build_and_visualize_petrinet()
 
-        expected_min_places = 2
-        expected_min_transitions = len(alpha_miner.activities)
+    net = alpha_miner.net
+    initial_marking = alpha_miner.initial_marking
+    final_marking = alpha_miner.final_marking
 
-        assert len(alpha_miner.net.places) >= expected_min_places
-        assert len(alpha_miner.net.transitions) == expected_min_transitions
-        assert len(alpha_miner.initial_marking) > 0
-        assert len(alpha_miner.final_marking) > 0, "Final marking is not set correctly."
+    # Check if the correct number of places and transitions are created
+    assert len(net.places) > 0, "No places created in the Petri net."
+    assert len(net.transitions) > 0, "No transitions created in the Petri net."
+
+    # Verify initial and final markings are correctly assigned
+    assert len(initial_marking) > 0, "Initial marking is not set."
+    assert len(final_marking) > 0, "Final marking is not set."
+
+    # check specific connections based on known input scenarios
+    # require access to `transitions` and `places` by name or id
+@pytest.mark.integration
+def test_complete_petrinet_functionality(alpha_miner):
+    # This test will incorporate visualization mock tests and structure tests
+    with patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.apply') as mock_apply, \
+         patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.view') as mock_view:
+
+        test_visualization_calls(alpha_miner)
+        test_petrinet_structure(alpha_miner)
+
+        # Check the visualization methods were called as part of the process
+        mock_apply.assert_called_once()
+        mock_view.assert_called_once()

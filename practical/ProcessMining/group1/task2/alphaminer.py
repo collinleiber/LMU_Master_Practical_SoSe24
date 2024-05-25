@@ -53,6 +53,11 @@ class AlphaMiner:
         self.xor_split_pairs, self.xor_join_pairs = [], []
         self.maximal_pairs = self._get_maximized_pairs()
 
+        # Attributes to hold Petri net components
+        self.net = None
+        self.initial_marking = None
+        self.final_marking = None
+
     def discover_footprints(self) -> Dict:
         """
         Discovers the footprints of the process from the event log.
@@ -472,44 +477,44 @@ class AlphaMiner:
         Builds and visualizes the Petri net based on the maximal pairs determined by the AlphaMiner.
         """
         # Create an empty Petri net and markings
-        net = PetriNet("Alpha Miner Petri Net")
-        initial_marking, final_marking = Marking(), Marking()
+        self.net = PetriNet("Alpha Miner Petri Net")
+        self.initial_marking, self.final_marking = Marking(), Marking()
 
         # Add activities as transitions in the Petri net
         transitions = {activity: PetriNet.Transition(str(activity), label=activity) for activity in
                        self.activities.values()}
         for trans in transitions.values():
-            net.transitions.add(trans)
+            self.net.transitions.add(trans)
 
         # Add places and arcs based on maximal pairs
         for pair in self.get_maximal_pairs():
             p = PetriNet.Place("p" + str(pair))
-            net.places.add(p)
+            self.net.places.add(p)
 
             for a in pair[0]:
-                add_arc_from_to(transitions[a], p, net)
+                add_arc_from_to(transitions[a], p, self.net)
             for b in pair[1]:
-                add_arc_from_to(p, transitions[b], net)
+                add_arc_from_to(p, transitions[b], self.net)
 
         # Create global start and end places
         global_start = PetriNet.Place('global_start')
         global_end = PetriNet.Place('global_end')
-        net.places.add(global_start)
-        net.places.add(global_end)
+        self.net.places.add(global_start)
+        self.net.places.add(global_end)
 
         # Connect the global start place to all initial activities
         for activity in self.t_in:
             activity_name = self._get_activity_name(activity)
-            add_arc_from_to(global_start, transitions[activity_name], net)
-            initial_marking[global_start] = 1
+            add_arc_from_to(global_start, transitions[activity_name], self.net)
+            self.initial_marking[global_start] = 1
 
         # Connect all terminal activities to the global end place
         for activity in self.t_out:
             activity_name = self._get_activity_name(activity)
-            add_arc_from_to(transitions[activity_name], global_end, net)
-            final_marking[global_end] = 1
+            add_arc_from_to(transitions[activity_name], global_end, self.net)
+            self.final_marking[global_end] = 1
 
         # Visualization settings
         parameters = {'format': 'png'}  # can change later to other format
-        gviz = pn_visualizer.apply(net, initial_marking, final_marking, parameters=parameters)
+        gviz = pn_visualizer.apply(self.net, self.initial_marking, self.final_marking, parameters=parameters)
         pn_visualizer.view(gviz)

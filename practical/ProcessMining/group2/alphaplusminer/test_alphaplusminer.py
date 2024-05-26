@@ -53,7 +53,7 @@ def test_run_alphaMiner_plus():
 
     alpha_miner_plus.add_places()
    
-    assert alpha_miner_plus.places == [(' i ', SortedSet(['a'])), ('a', 'Place_1', 'c'), (SortedSet(['c']), ' o ')]
+    assert alpha_miner_plus.places == [('input', SortedSet(['a'])), ('a', 'Place_1', 'c'), (SortedSet(['c']), 'output')]
 
    # alpha_miner_plus.visualize(alpha_miner.F_L1L)
 
@@ -142,7 +142,7 @@ def test_run_alphaMiner_plus():
                                               (('b',), ('c', 'f'))]
 
     alpha_miner_plus.add_places()
-    assert alpha_miner_plus.places == [(' i ', SortedSet(['a'])), ('a', 'Place_1', 'e'), ('c', 'Place_2', 'd'), ('e', 'Place_3', 'f'), (('a', 'd'), 'Place_4', ('b',)), (('b',), 'Place_5', ('c', 'f')), (SortedSet(['f']), ' o ')]
+    assert alpha_miner_plus.places == [('input', SortedSet(['a'])), ('a', 'Place_1', 'e'), ('c', 'Place_2', 'd'), ('e', 'Place_3', 'f'), (('a', 'd'), 'Place_4', ('b',)), (('b',), 'Place_5', ('c', 'f')), (SortedSet(['f']), 'output')]
     
     
     

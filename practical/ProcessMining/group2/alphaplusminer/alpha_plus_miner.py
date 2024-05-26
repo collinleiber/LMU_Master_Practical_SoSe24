@@ -378,7 +378,7 @@ class AlphaMinerplus:
         place_counter = 0
 
         #self.places.append(("Place_"+str(place_counter),self.initial_transitions))
-        self.places.append((" i ", self.initial_transitions))
+        self.places.append(("input", self.initial_transitions))
 
         place_counter = 1  
 
@@ -388,7 +388,7 @@ class AlphaMinerplus:
             self.places.append((pair[0],"Place_"+str(place_counter),pair[1]))
             place_counter =  place_counter+1
     
-        self.places.append((self.final_transitions," o "))
+        self.places.append((self.final_transitions,"output"))
 
 
 
@@ -416,7 +416,9 @@ class AlphaMinerplus:
             self.places.append(i)
 
        
-        dot.graph_attr['ratio'] = '1.5'
+        dot.graph_attr['ratio'] = '0.3'
+        dot.graph_attr['rankdir'] = 'LR'
+
         input_places = []
         output_places = []
        
@@ -433,28 +435,15 @@ class AlphaMinerplus:
                     element[2],
                 )
                
-                if len(input_places)>0:
-                    for input_place in input_places:
-                        dot.node(str(input_place), shape='square', width= '0.7',height='0.7')
-                        dot.edge(str(input_place), str(transition_name)) 
-                else: 
-                    dot.node('•', shape='square', width= '0.7',height='0.7', fontsize='34pt')
-                    dot.node('Start', shape='square', width= '0.7',height='0.7')
-                    dot.edge('Start', str(transition_name))
-                    dot.edge('•','Start')
+                for input_place in input_places:
+                    dot.node(str(input_place), shape='square', width= '0.7',height='0.7', fontname= 'bold')
+                    dot.edge(str(input_place), str(transition_name)) 
 
-                dot.node(str(transition_name), shape='circle', width= '0.7',height='0.7')
+                dot.node(str(transition_name), shape='circle', width= '0.7',height='0.7', fontname= 'bold')
 
-                if len(output_places)>0:
-                    for output_place in output_places:
-                        dot.node(str(output_place), shape='square', width= '0.7',height='0.7')
-                        dot.edge(str(transition_name), str(output_place))
-                else:
-                    dot.node('End', shape='square', width= '0.7',height='0.7')
-                    dot.node(' ', shape='square', width= '0.7',height='0.7', fontsize='34pt')
-                    dot.edge(str(transition_name), 'End')
-                    dot.edge('End',' ')
-
+                for output_place in output_places:
+                    dot.node(str(output_place), shape='square', width= '0.7',height='0.7', fontname= 'bold')
+                    dot.edge(str(transition_name), str(output_place))
 
 
             elif len(element) == 2:
@@ -466,25 +455,25 @@ class AlphaMinerplus:
                 if type(source) == SortedSet or type(target) == SortedSet:
                    # non loops
                 
-                    if type(source) == SortedSet:
-                        
-                      
-                       
-                        for i in range(len(source)): 
-                          
-                            dot.edge(source[i], target)
+                   
                      
                     if type(target) == SortedSet:
                         
-                      
                         for i2 in range(len(target)):
-                         
+                            dot.node(source, shape='circle', width= '0.7',height='0.7', fontname= 'bold')
                            
                             dot.edge(source, target[i2])
+                
+
+                    if type(source) == SortedSet:
+                        
+                        for i in range(len(source)): 
+                            dot.node(target, shape='circle', width= '0.7',height='0.7', fontname= 'bold')
+                            dot.edge(source[i], target)
                      
 
                 elif len(source) <2 : # to remove place_i
-                    dot.node(source, shape='square', width= '0.7',height='0.7')
+                    dot.node(source, shape='square', width= '0.7',height='0.7',fontname= 'bold')
                    
                     dot.edge(source, target) 
                     #catch the loops here

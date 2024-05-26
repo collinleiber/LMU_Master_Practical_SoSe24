@@ -36,7 +36,7 @@ class AlphaMinerplus:
             try:
 
                 self.initial_transitions.add(trace[0])
-            except IndexError:
+            except IndexError: # TODO - test this
             
                 self.initial_transitions = SortedSet()
         return self.initial_transitions
@@ -47,7 +47,7 @@ class AlphaMinerplus:
         
             try:
                 self.final_transitions.add(trace[len(trace)-1])
-            except IndexError:
+            except IndexError: # TODO - test this
                 self.final_transitions= SortedSet()   
         return self.final_transitions
  
@@ -134,7 +134,6 @@ class AlphaMinerplus:
         # We need to check the combinations too, while checking if the activities are independent in their respective sets
      
 
-        # TODO - there should be a more pythonic way to do this
         i = 0
         j = len(choice_pairs)
 
@@ -262,7 +261,7 @@ class AlphaMinerplus:
 
         for transition in self.transitions:
             if self.relations[transition][transition] == "->":
-                self.length_one_loops.add(transition) # TODO- include in tests
+                self.length_one_loops.add(transition)
 
 
 
@@ -314,7 +313,7 @@ class AlphaMinerplus:
             length_composition = len(AB_composition)
             duplicate_substring_trigger = False
             for j in range(length_composition - 2):
-                if AB_composition[j] == AB_composition[2 + j]:
+                if AB_composition[j] == AB_composition[2 + j]: # TODO - test this
                     
                    
                 
@@ -322,7 +321,7 @@ class AlphaMinerplus:
                     duplicate_substring_trigger = True
             
             if duplicate_substring_trigger == True:
-                place_counter -= 1
+                place_counter -= 1 # TODO - test this
             
 
     
@@ -402,7 +401,7 @@ class AlphaMinerplus:
             # Check if the palindrome is in the set
             if palindrome not in F_L1L:
                 # Add the palindrome to the set if it's not already present
-                F_L1L.add(palindrome)
+                F_L1L.add(palindrome) # TODO - test this
 
         dot = Digraph()
         

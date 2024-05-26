@@ -57,8 +57,7 @@ def test_run_alphaMiner_plus():
 
    # alpha_miner_plus.visualize(alpha_miner.F_L1L)
 
-
-
+    alpha_miner_plus.visualize(alpha_miner.F_L1L,'trace_1')
     #Test 2 for length 2 loops
 
     trace_2 = SortedDict({'1': ['a', 'b', 'e', 'f'], 
@@ -97,7 +96,7 @@ def test_run_alphaMiner_plus():
                                                  '4': ['a', 'b', 'c', 'd', 'e', 'b', 'f'], 
                                                  '5': ['a', 'e', 'b', 'c', 'd', 'b', 'f']})
 
-
+    alpha_miner_plus.visualize(alpha_miner.F_L1L,'trace_2')
     alpha_miner_plus = AlphaMinerplus(alpha_miner.W_minusL1L)
     assert alpha_miner_plus is not None
 
@@ -143,10 +142,10 @@ def test_run_alphaMiner_plus():
 
     alpha_miner_plus.add_places()
     assert alpha_miner_plus.places == [('input', SortedSet(['a'])), ('a', 'Place_1', 'e'), ('c', 'Place_2', 'd'), ('e', 'Place_3', 'f'), (('a', 'd'), 'Place_4', ('b',)), (('b',), 'Place_5', ('c', 'f')), (SortedSet(['f']), 'output')]
+    alpha_miner_plus.visualize(alpha_miner.F_L1L,'trace_3')
     
     
-    
-    alpha_miner_plus.visualize(alpha_miner.F_L1L)
+   
 
 test_run_alphaMiner_plus()
 

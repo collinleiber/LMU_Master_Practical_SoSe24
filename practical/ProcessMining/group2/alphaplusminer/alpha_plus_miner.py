@@ -392,9 +392,7 @@ class AlphaMinerplus:
 
 
 
-    def visualize(self, F_L1L):
-        
-      
+    def visualize(self, F_L1L,file_name):
         # we need to add both transition directions for the loops
         # Iterate through the set
         for item in list(F_L1L):  
@@ -406,16 +404,11 @@ class AlphaMinerplus:
                 # Add the palindrome to the set if it's not already present
                 F_L1L.add(palindrome)
 
-      
-       
-
-
         dot = Digraph()
         
         for i in F_L1L:
             self.places.append(i)
 
-       
         dot.graph_attr['ratio'] = '0.3'
         dot.graph_attr['rankdir'] = 'LR'
 
@@ -423,11 +416,8 @@ class AlphaMinerplus:
         output_places = []
        
         for element in self.places:
-          
-          
-            if len(element) == 3:
 
-                
+            if len(element) == 3:
               
                 input_places, transition_name, output_places = (
                     element[0],
@@ -442,28 +432,23 @@ class AlphaMinerplus:
                 dot.node(str(transition_name), shape='circle', width= '0.7',height='0.7', fontname= 'bold')
 
                 for output_place in output_places:
-                    dot.node(str(output_place), shape='square', width= '0.7',height='0.7', fontname= 'bold')
+                    dot.node(str(output_place), shat='square', width= '0.7',height='0.7', fontname= 'bold')
                     dot.edge(str(transition_name), str(output_place))
-
 
             elif len(element) == 2:
                 
                 source, target = element
-               
-                
+                    
                 # first off handle first and last place
                 if type(source) == SortedSet or type(target) == SortedSet:
                    # non loops
                 
-                   
-                     
                     if type(target) == SortedSet:
                         
                         for i2 in range(len(target)):
                             dot.node(source, shape='circle', width= '0.7',height='0.7', fontname= 'bold')
                            
                             dot.edge(source, target[i2])
-                
 
                     if type(source) == SortedSet:
                         
@@ -481,15 +466,12 @@ class AlphaMinerplus:
                     if (target, source) in list(F_L1L):
                        
                         dot.edge(target,source)
-              
-
-
-
-        dot.render('petri_net', format='png', view=True)
+    
+        dot.render('petri_net_{}'.format(file_name) , format='png', view=True)
        
 
 
-    
+
 
 
 

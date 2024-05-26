@@ -1,21 +1,33 @@
 class EventLog:
-    def __init__(self, event_log):
-        self.event_log = event_log
-        # TODO - which properties for a log?
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.traces = {}
 
-    def load_from_file(self, file_path): # TODO - what is the format of the log file?
-        pass
-
+    def load_from_file(self): # TODO - what is the format of the log file?
+        with open(self.file_path, 'r') as file:
+            for line in file:
+                trace = line.strip()
+                if trace in self.traces:
+                    self.traces[trace] += 1
+                else:
+                    self.traces[trace] = 1
+        
     # TODO - other input methods?
 
 class DirectlyFollowsGraph:
-    def __init__(self):
-        # TODO - better data structures for nodes and edges?
-        self.nodes = [] # Format: "node_id"
-        self.edges = [] # Format: (node1, node2)
+    def __init__(self, event_log: EventLog):
+        self.event_log = event_log
+        self.nodes = {} # Format: "node_id" : [children]
 
-    def construct_dfg(self, event_log):
-        pass
+    def construct_dfg(self):
+        for trace in self.event_log.traces.keys():
+            for i in range(len(trace) - 1):
+                current_activity = trace[i]
+                next_activity = trace[i + 1]
+                if current_activity not in self.nodes:
+                    self.nodes[current_activity] = []
+                if next_activity not in self.nodes[current_activity]:
+                    self.nodes[current_activity].append(next_activity)
 
 class ProcessTree:
     def __init__(self):
@@ -44,21 +56,18 @@ class InductiveMiner():
 
     def mine_process_model(self, event_log):
         # Step 1: Construct Directly-Follows Graph (DFG)
-        dfg = DirectlyFollowsGraph()
-        dfg.construct_dfg(event_log)
+        dfg = DirectlyFollowsGraph(event_log)
+        dfg.construct_dfg()
 
         # Step 2: Construct Process Tree from DFG
         process_tree = ProcessTree()
         process_tree.construct_process_tree(dfg)
 
-        # Step 3: Refine and simplify the process tree
-        process_tree.refine()
-
         return process_tree
 
 if __name__ == "__main__":
-    event_log = EventLog()
-    event_log.load_from_file("../data/log_from_paper.txt")
+    event_log = EventLog("../data/log_from_paper.txt")
+    event_log.load_from_file()
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)
 

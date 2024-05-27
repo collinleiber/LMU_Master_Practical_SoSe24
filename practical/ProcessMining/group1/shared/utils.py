@@ -52,3 +52,12 @@ def read_txt_test_logs(file):
 
 def deduplicate_list(list_with_duplicates):
     return list(set(list_with_duplicates))
+
+
+def event_log_to_dataframe(event_log):
+    data = []
+    for i, activities in enumerate(event_log, start=1):
+        for activity in activities:
+            timestamp = datetime.now().isoformat()
+            data.append([i, activity, timestamp])
+    return pd.DataFrame(data, columns=["case_id", "activity", "timestamp"])

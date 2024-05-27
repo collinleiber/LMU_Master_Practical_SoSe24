@@ -40,7 +40,7 @@ def identify_short_loops(directly_follows):
     return loops
 
 
-# 删除日志中的短循环
+# remove loops
 def remove_cycles_from_logs(logs, loops):
     modified_logs = []
 
@@ -48,12 +48,12 @@ def remove_cycles_from_logs(logs, loops):
         new_activities = []
         i = 0
         while i < len(activities):
-            # 检查自循环
+            # check self loops
             if i < len(activities) - 1 and activities[i] in loops['self_loops'] and activities[i] == activities[i + 1]:
                 while i < len(activities) - 1 and activities[i] == activities[i + 1]:
                     i += 1
 
-            # 检查长度为 2 的循环
+            # check 2-length loops
             elif i < len(activities) - 2 and (activities[i], activities[i + 1]) in loops['length_2_loops'] and activities[i] == activities[i + 2]:
                 while i < len(activities) - 2 and activities[i] == activities[i + 2]:
                     i += 2

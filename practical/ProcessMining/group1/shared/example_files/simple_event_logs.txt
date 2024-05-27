@@ -1,5 +1,5 @@
 L1 = [<a,b,c,d>^3,<a,c,b,d>^2,<a,e,d>^1]
-L2 = [<a,b,c,d>^3,<a,c,b,d>^4,<a,b,c,e,f,b,c,d>^2,<a,b,c,e,f,c,b,d>^1,<a,c,b,e,f,b,c,d>^2,<a,c,b,e,f,b,c,e,f,c,b,d>^1]
+L2 = [<a,b,c,d>^3,<b,c,b,d>^4,<a,b,c,e,f,b,c,d>^2,<a,b,c,e,f,c,b,d>^1,<a,c,b,e,f,b,c,d>^2,<a,c,b,e,f,b,c,e,f,c,b,d>^1]
 L3 = [<a,b,c,d,e,f,b,d,c,e,g>^1,<a,b,d,c,e,g>^2,<a,b,c,d,e,f,b,c,d,e,f,b,d,c,e,g>^1]
 L4 = [<a,c,d>^45,<b,c,d>^42,<a,c,e>^38,<b,c,e>^22]
 L5 = [<a,b,e,f>^2,<a,b,e,c,d,b,f>^3,<a,b,c,e,d,b,f>^2,<a,b,c,d,e,b,f>^4,<a,e,b,c,d,b,f>^3]

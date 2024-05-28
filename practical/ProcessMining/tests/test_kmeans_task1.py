@@ -29,22 +29,22 @@ def test_k_means():
         'static2': test_case_given_centroids(clusters=6),
     }
 
-    test_amount_clusters_matches_unique_labels(cases['random1'])
-    test_amount_clusters_matches_unique_labels(cases['random2'])
-    test_amount_clusters_matches_unique_labels(cases['static2'])
+    amount_clusters_matches_unique_labels(cases['random1'])
+    amount_clusters_matches_unique_labels(cases['random2'])
+    amount_clusters_matches_unique_labels(cases['static2'])
 
-    test_deterministic_results_match_expected(result=cases['static1'],
+    deterministic_results_match_expected(result=cases['static1'],
                                               expected_labels=np.array([0, 1, 0, 1, 1, 0]))
-    test_deterministic_results_match_expected(result=cases['static2'],
+    deterministic_results_match_expected(result=cases['static2'],
                                               expected_labels=np.array([2, 3, 1, 4, 5, 0]))
 
 
-def test_amount_clusters_matches_unique_labels(result: KMeans):
+def amount_clusters_matches_unique_labels(result: KMeans):
     unique_labels = np.unique(result.labels_).size
     assert result.n_clusters == unique_labels, \
         f"Number of clusters ({result.n_clusters}) does not match unique labels ({unique_labels})."
 
 
-def test_deterministic_results_match_expected(result: KMeans, expected_labels: np.ndarray):
+def deterministic_results_match_expected(result: KMeans, expected_labels: np.ndarray):
     assert np.array_equal(result.labels_, expected_labels), \
         f"Expected labels {expected_labels} do not match result labels {result.labels_}."

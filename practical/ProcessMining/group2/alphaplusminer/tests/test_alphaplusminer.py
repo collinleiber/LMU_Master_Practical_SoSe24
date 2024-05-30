@@ -1,4 +1,4 @@
-from alpha_plus_miner import AlphaMinerplus
+from practical.ProcessMining.group2.alphaplusminer.alpha_plus_miner import AlphaMinerplus
 from sortedcontainers import SortedSet, SortedDict
 import os 
 
@@ -55,7 +55,7 @@ def test_without_length_2_loops():
    
     assert alpha_miner_plus.places == [('input', SortedSet(['a'])), ('a', 'Place_1', 'c'), (SortedSet(['c']), 'output')]
 
-    alpha_miner_plus.visualize(alpha_miner.F_L1L)
+    alpha_miner_plus.visualize(alpha_miner.F_L1L, 'test1')
 
 def test_with_length_2_loops():
     trace_2 = SortedDict({'1': ['a', 'b', 'e', 'f'], 
@@ -141,7 +141,7 @@ def test_with_length_2_loops():
     alpha_miner_plus.add_places()
     assert alpha_miner_plus.places == [('input', SortedSet(['a'])), ('a', 'Place_1', 'e'), ('c', 'Place_2', 'd'), ('e', 'Place_3', 'f'), (('a', 'd'), 'Place_4', ('b',)), (('b',), 'Place_5', ('c', 'f')), (SortedSet(['f']), 'output')]
     
-    alpha_miner_plus.visualize(alpha_miner.F_L1L)
+    alpha_miner_plus.visualize(alpha_miner.F_L1L, 'test2')
 
 def test_edge_cases():
     traces = SortedDict({'1': ['a','b','d'],
@@ -221,4 +221,4 @@ def test_edge_cases():
                                         (SortedSet(['d']), 'output')
                                     ]
 
-    alpha_miner_plus.visualize(alpha_miner.F_L1L)
+    alpha_miner_plus.visualize(alpha_miner.F_L1L, 'test3')

@@ -24,5 +24,6 @@ setup(
                       'scikit-learn',
                       'matplotlib',
                       'pandas',
-                      'sortedcontainers']
+                      'sortedcontainers',
+                      'graphviz']
 )

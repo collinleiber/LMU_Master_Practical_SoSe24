@@ -24,7 +24,7 @@ class InductiveMiner:
         elif self._is_nontrivial(loop_cut):
             self.log = self._split_log(self.log, loop_cut)
         else:  # flower model
-            flower_groups = [{activity} for activity in self.alphabet]
+            flower_groups = [{activity} for activity in sorted(list(self.alphabet))]
             self.log = self._split_log(self.log, flower_groups)
             pass
 
@@ -62,7 +62,7 @@ class InductiveMiner:
             for i, group in enumerate(groups[:-1]):
                 other_group = groups[i + 1]
                 # Check if there are no edges between the two groups
-                if all((a, b) not in edges and (b, a) not in edges for a in group for b in other_group):
+                if any((a, b) not in edges or (b, a) not in edges for a in group for b in other_group):
                     # Merge groups
                     groups[i] = group.union(other_group)
                     groups.pop(i + 1)
@@ -157,7 +157,7 @@ class InductiveMiner:
                     sublog = self._find_subsequence_in_arbitrary_order(trace, new_trace)
                     if len(sublog) > 0:
                         new_log.append(tuple(sublog))
-                        trace = trace.replace(sublog, '', 1)
+                        trace = trace.replace(sublog, '_', 1)  # TODO: breaks if activity name includes '_'
                     else:
                         break
         return new_log
@@ -171,21 +171,3 @@ class InductiveMiner:
             if sorted(window) == sorted_sub:
                 return window
         return ''
-
-
-if __name__ == '__main__':
-    # test_logs = read_txt_test_logs('../shared/example_files/simple_event_logs.txt')
-    # log = test_logs['L2']
-    log_parallel1 = [('c', 'b'), ('b', 'c')]
-    log_parallel2 = [('c', 'b'), ('b', 'c')]
-    log_loop = [('b', 'c'),
-                ('c', 'b'),
-                ('b', 'c', 'e', 'f', 'b', 'c'),
-                ('c', 'b', 'e', 'f', 'b', 'c'),
-                ('b', 'c', 'e', 'f', 'c', 'b'),
-                ('c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b')]
-    log_flower = [('a', 'b', 'c', 'd', 'e', 'f', 'g')]
-
-    miner = InductiveMiner(log_flower)
-    miner.run()
-    print(miner.log)

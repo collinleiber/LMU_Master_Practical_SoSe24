@@ -23,45 +23,52 @@ class InductiveMiner:
 
     def run(self):
         sublogs = [self.logs]
-        while any(len(log) > 1 for log in sublogs):
-            for log in sublogs:
-                # update dfg, start_activities, end_activities
-                dfg, start_activities, end_activities = self._get_dfg(log)
+        i = 0
+        while i < len(sublogs):
+            log = sublogs[i]
+            # update dfg, start_activities, end_activities
+            dfg, start_activities, end_activities = self._get_dfg(log)
 
-                # check for base cases
-                log = self._handle_base_cases(log)
+            # check for base cases
+            log = self._handle_base_cases(log)
 
-                # cut selection and log splitting
-                sequence_cut = self._sequence_cut(dfg, start_activities, end_activities)
-                xor_cut = self._xor_cut(dfg, start_activities, end_activities)
-                parallel_cut = self._parallel_cut(dfg, start_activities, end_activities)
-                loop_cut = self._loop_cut(dfg, start_activities, end_activities)
+            # cut selection and log splitting
+            sequence_cut = self._sequence_cut(dfg, start_activities, end_activities)
+            xor_cut = self._xor_cut(dfg, start_activities, end_activities)
+            parallel_cut = self._parallel_cut(dfg, start_activities, end_activities)
+            loop_cut = self._loop_cut(dfg, start_activities, end_activities)
 
-                if self._is_nontrivial(sequence_cut):
-                    sublogs = self._split_log(log, sequence_cut)
-                    self._build_process_tree(sequence_cut, CutType.SEQUENCE)
-                    break
-                elif self._is_nontrivial(xor_cut):
-                    sublogs = self._split_log(log, xor_cut)
-                    self._build_process_tree(xor_cut, CutType.XOR)
-                    break
-                elif self._is_nontrivial(parallel_cut):
-                    sublogs = self._split_log(log, parallel_cut)
-                    self._build_process_tree(parallel_cut, CutType.PARALLEL)
-                    break
-                elif self._is_nontrivial(loop_cut):
-                    sublogs = self._split_log(log, loop_cut)
-                    self._build_process_tree(loop_cut, CutType.LOOP)
-                    break
-                else:  # fall through - flower model
-                    if len(log) > 0:
-                        flower_groups = [{activity} for activity in sorted(list(self._get_alphabet(log)))]
-                        sublogs = self._split_log(log, flower_groups)
-                        self._build_process_tree(flower_groups, CutType.LOOP)
-                        break
+            new_sublogs = None
+            if self._is_nontrivial(sequence_cut):
+                new_sublogs = self._split_log(log, sequence_cut)
+                self._build_process_tree(sequence_cut, CutType.SEQUENCE)
+            elif self._is_nontrivial(xor_cut):
+                new_sublogs = self._split_log(log, xor_cut)
+                self._build_process_tree(xor_cut, CutType.XOR)
+            elif self._is_nontrivial(parallel_cut):
+                new_sublogs = self._split_log(log, parallel_cut)
+                self._build_process_tree(parallel_cut, CutType.PARALLEL)
+            elif self._is_nontrivial(loop_cut):
+                new_sublogs = self._split_log(log, loop_cut)
+                self._build_process_tree(loop_cut, CutType.LOOP)
+            else:  # fall through - flower model
+                flower_groups = [{activity} for activity in sorted(list(self._get_alphabet(log)))]
+                new_sublogs = self._split_log(log, flower_groups)
+                self._build_process_tree(flower_groups, CutType.LOOP)
+
+            if new_sublogs:
+                sublogs.pop(i)
+                sublogs.extend(new_sublogs)
+            else:
+                i += 1
+
+        self._clean_process_tree()
         return sublogs
 
     def _build_process_tree(self, groups: List[Set[str]], cut_type: CutType = None, ) -> str:
+        if not groups:
+            return self.process_tree_str
+
         tree = self.process_tree_str
         if cut_type:
             tree = tree.replace('()', f'({cut_type.value}, ())')
@@ -73,8 +80,11 @@ class InductiveMiner:
                 groups_string += f'{"".join(group)}, '
         tree = tree.replace('()', f'{groups_string}()')
         self.process_tree_str = tree
-        self.print_process_tree()
         return tree
+
+    def _clean_process_tree(self):
+        self.process_tree_str = self.process_tree_str.replace(', ()', '')
+        return self.process_tree_str
 
     def _is_nontrivial(self, max_groups: List[Set[str]]) -> bool:
         return len(max_groups) > 1 if max_groups else False
@@ -90,7 +100,7 @@ class InductiveMiner:
                                                          activity_key='activity', timestamp_key='timestamp'))
 
     def _handle_base_cases(self, log: List[Tuple[str]]) -> List[Tuple[str]]:
-        # TODO: Implement base case handling
+        # TODO: Implement base case handling properly (e.g. empty log, single trace, etc.)
         return [trace for trace in log if len(trace) > 1]
 
     def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],

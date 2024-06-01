@@ -5,24 +5,27 @@ from practical.ProcessMining.group1.shared.utils import read_txt_test_logs, even
 
 class InductiveMiner:
     def __init__(self, log: List[Tuple] = None):
-        self.alphabet = self._get_alphabet(log)
-        self.dfg, self.start_activities, self.end_activities = self._get_dfg(log)
+        self.log = log
+        self.alphabet = self._get_alphabet(self.log)
+        self.dfg, self.start_activities, self.end_activities = self._get_dfg(self.log)
 
     def run(self):
-        if self._is_nontrivial(self._sequence_cut(self.dfg, self.start_activities, self.end_activities)):
-            # Do sequence split
-            pass
-        elif self._is_nontrivial(self._xor_cut(self.dfg, self.start_activities, self.end_activities)):
-            # Do xor split
-            pass
-        elif self._is_nontrivial(self._parallel_cut(self.dfg, self.start_activities, self.end_activities)):
-            # Do parallel split
-            pass
-        elif self._is_nontrivial(self._loop_cut(self.dfg, self.start_activities, self.end_activities)):
-            # Do loop split
-            pass
-        else:
-            # Do flower model
+        sequence_cut = self._sequence_cut(self.dfg, self.start_activities, self.end_activities)
+        xor_cut = self._xor_cut(self.dfg, self.start_activities, self.end_activities)
+        parallel_cut = self._parallel_cut(self.dfg, self.start_activities, self.end_activities)
+        loop_cut = self._loop_cut(self.dfg, self.start_activities, self.end_activities)
+
+        if self._is_nontrivial(sequence_cut):
+            self.log = self._split_log(self.log, sequence_cut)
+        elif self._is_nontrivial(xor_cut):
+            self.log = self._split_log(self.log, xor_cut)
+        elif self._is_nontrivial(parallel_cut):
+            self.log = self._split_log(self.log, parallel_cut)
+        elif self._is_nontrivial(loop_cut):
+            self.log = self._split_log(self.log, loop_cut)
+        else:  # flower model
+            flower_groups = [{activity} for activity in self.alphabet]
+            self.log = self._split_log(self.log, flower_groups)
             pass
 
     def _is_nontrivial(self, max_groups: List[Set[str]]) -> bool:
@@ -144,16 +147,45 @@ class InductiveMiner:
         # return cut if more than one group (i.e. do- and loop-group found)
         return groups if len(groups) > 1 else []
 
+    def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[Tuple[str]]:
+        new_traces = [''.join(map(str, group)) for group in cut]
+        new_log = []
+        for trace in log:
+            trace = ''.join(map(str, trace))
+            for new_trace in new_traces:
+                while True:
+                    sublog = self._find_subsequence_in_arbitrary_order(trace, new_trace)
+                    if len(sublog) > 0:
+                        new_log.append(tuple(sublog))
+                        trace = trace.replace(sublog, '', 1)
+                    else:
+                        break
+        return new_log
+
+    def _find_subsequence_in_arbitrary_order(self, main: str, sub: str) -> str:
+        sub_len = len(sub)
+        sorted_sub = sorted(sub)
+
+        for i in range(len(main) - sub_len + 1):
+            window = main[i:i + sub_len]
+            if sorted(window) == sorted_sub:
+                return window
+        return ''
+
 
 if __name__ == '__main__':
     # test_logs = read_txt_test_logs('../shared/example_files/simple_event_logs.txt')
     # log = test_logs['L2']
-    log_parallel = [('c', 'b'), ('b', 'c')]
+    log_parallel1 = [('c', 'b'), ('b', 'c')]
+    log_parallel2 = [('c', 'b'), ('b', 'c')]
     log_loop = [('b', 'c'),
                 ('c', 'b'),
                 ('b', 'c', 'e', 'f', 'b', 'c'),
                 ('c', 'b', 'e', 'f', 'b', 'c'),
                 ('b', 'c', 'e', 'f', 'c', 'b'),
                 ('c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b')]
-    miner = InductiveMiner(log_loop)
-    print(miner.run())
+    log_flower = [('a', 'b', 'c', 'd', 'e', 'f', 'g')]
+
+    miner = InductiveMiner(log_flower)
+    miner.run()
+    print(miner.log)

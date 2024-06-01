@@ -5,8 +5,8 @@ from practical.ProcessMining.group1.shared.utils import read_txt_test_logs, even
 
 
 class CutType(Enum):
-    SEQUENCE = '×'
-    XOR = '→'
+    SEQUENCE = '→'
+    XOR = '×'
     PARALLEL = '∧'
     LOOP = '↺'
 

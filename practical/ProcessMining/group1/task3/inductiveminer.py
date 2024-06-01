@@ -1,49 +1,105 @@
+from enum import Enum
 from typing import List, Tuple, Dict, Set
 import pm4py
 from practical.ProcessMining.group1.shared.utils import read_txt_test_logs, event_log_to_dataframe
 
 
+class CutType(Enum):
+    SEQUENCE = '×'
+    XOR = '→'
+    PARALLEL = '∧'
+    LOOP = '↺'
+
+
 class InductiveMiner:
     def __init__(self, log: List[Tuple] = None):
-        self.log = log
-        self.alphabet = self._get_alphabet(self.log)
-        self.dfg, self.start_activities, self.end_activities = self._get_dfg(self.log)
+        self.logs = log
+        self.alphabet = self._get_alphabet(self.logs)
+        self.dfg, self.start_activities, self.end_activities = self._get_dfg(self.logs)
+        self.process_tree_str = '()'
+
+    def print_process_tree(self):
+        print(self.process_tree_str)
 
     def run(self):
-        sequence_cut = self._sequence_cut(self.dfg, self.start_activities, self.end_activities)
-        xor_cut = self._xor_cut(self.dfg, self.start_activities, self.end_activities)
-        parallel_cut = self._parallel_cut(self.dfg, self.start_activities, self.end_activities)
-        loop_cut = self._loop_cut(self.dfg, self.start_activities, self.end_activities)
+        sublogs = [self.logs]
+        while any(len(log) > 1 for log in sublogs):
+            for log in sublogs:
+                # update dfg, start_activities, end_activities
+                dfg, start_activities, end_activities = self._get_dfg(log)
 
-        if self._is_nontrivial(sequence_cut):
-            self.log = self._split_log(self.log, sequence_cut)
-        elif self._is_nontrivial(xor_cut):
-            self.log = self._split_log(self.log, xor_cut)
-        elif self._is_nontrivial(parallel_cut):
-            self.log = self._split_log(self.log, parallel_cut)
-        elif self._is_nontrivial(loop_cut):
-            self.log = self._split_log(self.log, loop_cut)
-        else:  # flower model
-            flower_groups = [{activity} for activity in sorted(list(self.alphabet))]
-            self.log = self._split_log(self.log, flower_groups)
-            pass
+                # check for base cases
+                log = self._handle_base_cases(log)
+
+                # cut selection and log splitting
+                sequence_cut = self._sequence_cut(dfg, start_activities, end_activities)
+                xor_cut = self._xor_cut(dfg, start_activities, end_activities)
+                parallel_cut = self._parallel_cut(dfg, start_activities, end_activities)
+                loop_cut = self._loop_cut(dfg, start_activities, end_activities)
+
+                if self._is_nontrivial(sequence_cut):
+                    sublogs = self._split_log(log, sequence_cut)
+                    self._build_process_tree(sequence_cut, CutType.SEQUENCE)
+                    break
+                elif self._is_nontrivial(xor_cut):
+                    sublogs = self._split_log(log, xor_cut)
+                    self._build_process_tree(xor_cut, CutType.XOR)
+                    break
+                elif self._is_nontrivial(parallel_cut):
+                    sublogs = self._split_log(log, parallel_cut)
+                    self._build_process_tree(parallel_cut, CutType.PARALLEL)
+                    break
+                elif self._is_nontrivial(loop_cut):
+                    sublogs = self._split_log(log, loop_cut)
+                    self._build_process_tree(loop_cut, CutType.LOOP)
+                    break
+                else:  # fall through - flower model
+                    if len(log) > 0:
+                        flower_groups = [{activity} for activity in sorted(list(self._get_alphabet(log)))]
+                        sublogs = self._split_log(log, flower_groups)
+                        self._build_process_tree(flower_groups, CutType.LOOP)
+                        break
+        return sublogs
+
+    def _build_process_tree(self, groups: List[Set[str]], cut_type: CutType = None, ) -> str:
+        tree = self.process_tree_str
+        if cut_type:
+            tree = tree.replace('()', f'({cut_type.value}, ())')
+        groups_string = ''
+        for group in groups:
+            if len(group) > 1:
+                groups_string += f'({", ".join(group)}),'
+            else:
+                groups_string += f'{"".join(group)}, '
+        tree = tree.replace('()', f'{groups_string}()')
+        self.process_tree_str = tree
+        self.print_process_tree()
+        return tree
 
     def _is_nontrivial(self, max_groups: List[Set[str]]) -> bool:
         return len(max_groups) > 1 if max_groups else False
 
     def _get_alphabet(self, log: List[Tuple]) -> Set[str]:
         return set([activity for trace in log for activity in trace])
+    def _get_alphabet_from_dfg(self, dfg: Dict[Tuple[str, str], int]) -> Set[str]:
+        return set([activity for edge in dfg.keys() for activity in edge])
 
     def _get_dfg(self, log: List[Tuple]) -> Tuple[Dict[Tuple[str, str], int], Dict[str, int], Dict[str, int]]:
         # TODO: Own implementation of dfg
         return pm4py.discover_dfg(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
                                                          activity_key='activity', timestamp_key='timestamp'))
 
+    def _handle_base_cases(self, log: List[Tuple[str]]) -> List[Tuple[str]]:
+        # TODO: Implement base case handling
+        return [trace for trace in log if len(trace) > 1]
+
     def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
                       end: Dict[str, int]) -> List[Set[str]]:
+        # TODO: Implement sequence cut
         pass
 
     def _xor_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
+        # TODO: Implement xor cut
         pass
 
     def _parallel_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
@@ -53,7 +109,7 @@ class InductiveMiner:
         edges = dfg.keys()
         start_activities = set(start.keys())
         end_activities = set(end.keys())
-        groups = [{activity} for activity in sorted(list(self.alphabet))]
+        groups = [{activity} for activity in set([activity for edge in edges for activity in edge])]
 
         # Merge groups that are connected by edges
         done = False
@@ -145,21 +201,25 @@ class InductiveMiner:
                 i += 1
 
         # return cut if more than one group (i.e. do- and loop-group found)
+        groups = [group for group in groups if group != set()]
         return groups if len(groups) > 1 else []
 
-    def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[Tuple[str]]:
-        new_traces = [''.join(map(str, group)) for group in cut]
+    def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
+        # projective splitting is used for sequence / parallel cuts and fall through
+        new_cases = [''.join(map(str, group)) for group in cut]
+        old_cases = [''.join(map(str, case)) for case in log]
         new_log = []
-        for trace in log:
-            trace = ''.join(map(str, trace))
-            for new_trace in new_traces:
+        for new_case in new_cases:
+            sub_log = []
+            for i, old_case in enumerate(old_cases):
                 while True:
-                    sublog = self._find_subsequence_in_arbitrary_order(trace, new_trace)
-                    if len(sublog) > 0:
-                        new_log.append(tuple(sublog))
-                        trace = trace.replace(sublog, '_', 1)  # TODO: breaks if activity name includes '_'
+                    sub_trace = self._find_subsequence_in_arbitrary_order(old_case, new_case)
+                    if len(sub_trace) > 0:
+                        sub_log.append(tuple(sub_trace))
+                        old_case = old_case.replace(sub_trace, '_', 1)  # TODO: breaks if activity name includes '_'
                     else:
                         break
+            new_log.append(sub_log)
         return new_log
 
     def _find_subsequence_in_arbitrary_order(self, main: str, sub: str) -> str:

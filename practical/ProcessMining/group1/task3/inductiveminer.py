@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Tuple, Dict, Set
 import pm4py
-from practical.ProcessMining.group1.shared.utils import read_txt_test_logs, event_log_to_dataframe
+from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe
 
 
 class CutType(Enum):
@@ -9,6 +9,7 @@ class CutType(Enum):
     XOR = '×'
     PARALLEL = '∧'
     LOOP = '↺'
+    NONE = ''
 
 
 class InductiveMiner:
@@ -30,7 +31,11 @@ class InductiveMiner:
             dfg, start_activities, end_activities = self._get_dfg(log)
 
             # check for base cases
-            log = self._handle_base_cases(log)
+            base_cut, operator = self._handle_base_cases(log)
+            if base_cut:
+                self._build_process_tree(base_cut, operator)
+                sublogs.pop(i)
+                continue
 
             # cut selection and log splitting
             sequence_cut = self._sequence_cut(dfg, start_activities, end_activities)
@@ -70,7 +75,7 @@ class InductiveMiner:
             return self.process_tree_str
 
         tree = self.process_tree_str
-        if cut_type:
+        if cut_type != CutType.NONE:
             tree = tree.replace('()', f'({cut_type.value}, ())')
         groups_string = ''
         for group in groups:
@@ -78,7 +83,8 @@ class InductiveMiner:
                 groups_string += f'({", ".join(group)}),'
             else:
                 groups_string += f'{"".join(group)}, '
-        tree = tree.replace('()', f'{groups_string}()')
+        if groups_string not in tree:
+            tree = tree.replace('()', f'{groups_string}()')
         self.process_tree_str = tree
         return tree
 
@@ -99,9 +105,29 @@ class InductiveMiner:
         return pm4py.discover_dfg(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
                                                          activity_key='activity', timestamp_key='timestamp'))
 
-    def _handle_base_cases(self, log: List[Tuple[str]]) -> List[Tuple[str]]:
-        # TODO: Implement base case handling properly (e.g. empty log, single trace, etc.)
-        return [trace for trace in log if len(trace) > 1]
+    def _handle_base_cases(self, log: List[Tuple[str]]) -> Tuple[List[Set[str]], CutType]:
+        traces = [''.join(map(str, trace)) for trace in log]
+        alphabet = [a for a in self._get_alphabet(log) if a != '']
+        base_activity = set(alphabet[0])
+        tau_activity = set('𝜏')
+        operator = CutType.NONE
+        groups = []
+
+        if len(alphabet) == 1:
+            if all(len(trace) == 1 for trace in traces):  # exactly once (1)
+                operator = CutType.NONE
+                groups = [base_activity]
+            elif all(len(trace) <= 1 for trace in traces):  # never or once (0,1)
+                operator = CutType.XOR
+                groups += [base_activity, tau_activity]
+            elif all(len(trace) > 0 for trace in traces):  # once or many times (1..*)
+                operator = CutType.LOOP
+                groups += [base_activity, tau_activity]
+            else:  # never, once or many times (0..*)
+                operator = CutType.LOOP
+                groups += [tau_activity, base_activity]
+
+        return groups, operator
 
     def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
                       end: Dict[str, int]) -> List[Set[str]]:
@@ -216,17 +242,17 @@ class InductiveMiner:
 
     def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
         # projective splitting is used for sequence / parallel cuts and fall through
-        new_cases = [''.join(map(str, group)) for group in cut]
-        old_cases = [''.join(map(str, case)) for case in log]
+        new_traces = [''.join(map(str, group)) for group in cut]
+        old_traces = [''.join(map(str, trace)) for trace in log]
         new_log = []
-        for new_case in new_cases:
+        for new_trace in new_traces:
             sub_log = []
-            for i, old_case in enumerate(old_cases):
+            for i, old_trace in enumerate(old_traces):
                 while True:
-                    sub_trace = self._find_subsequence_in_arbitrary_order(old_case, new_case)
+                    sub_trace = self._find_subsequence_in_arbitrary_order(old_trace, new_trace)
                     if len(sub_trace) > 0:
                         sub_log.append(tuple(sub_trace))
-                        old_case = old_case.replace(sub_trace, '_', 1)  # TODO: breaks if activity name includes '_'
+                        old_trace = old_trace.replace(sub_trace, '_', 1)  # TODO: breaks if activity name includes '_'
                     else:
                         break
             new_log.append(sub_log)

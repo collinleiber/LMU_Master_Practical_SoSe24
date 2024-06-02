@@ -1,4 +1,4 @@
-from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner
+from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
 
 
 class TestInductiveMiner:
@@ -41,6 +41,32 @@ class TestInductiveMiner:
                            ('c', 'b'), ('c', 'b'), ('b', 'c'), ('c', 'b')]),
                    sorted([('e', 'f'), ('e', 'f'), ('e', 'f'), ('e', 'f'), ('e', 'f')])]
         assert all(sorted(sl) in sublogs for sl in loop_split)
+
+    def test_handle_base_case(self):
+        # exactly once
+        log = [('a',), ('a',), ('a',)]
+        miner = InductiveMiner(log)
+        base_cut, operator = miner._handle_base_cases(log)
+        assert base_cut == [set('a')]
+        assert operator == CutType.NONE
+        # never or once
+        log = [('',), ('a',), ('a',)]
+        miner = InductiveMiner(log)
+        base_cut, operator = miner._handle_base_cases(log)
+        assert base_cut == [set('a'), set('𝜏')]
+        assert operator == CutType.XOR
+        # once or more than once
+        log = [('a',), ('a', 'a'), ('a', 'a', 'a')]
+        miner = InductiveMiner(log)
+        base_cut, operator = miner._handle_base_cases(log)
+        assert base_cut == [set('a'), set('𝜏')]
+        assert operator == CutType.LOOP
+        # never, once or more than once
+        log = [('',), ('a',), ('a', 'a')]
+        miner = InductiveMiner(log)
+        base_cut, operator = miner._handle_base_cases(log)
+        assert base_cut == [set('𝜏'), set('a')]
+        assert operator == CutType.LOOP
 
     def test_fall_through_flower_model(self):
         log = [('a', 'b', 'c', 'd', 'e', 'f', 'g')]

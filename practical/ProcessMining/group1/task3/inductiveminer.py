@@ -151,15 +151,20 @@ class InductiveMiner:
         done = False
         while not done:
             done = True
-            for i, group in enumerate(groups[:-1]):
-                other_group = groups[i + 1]
-                # Check if there are no edges between the two groups
-                if any((a, b) not in edges or (b, a) not in edges for a in group for b in other_group):
-                    # Merge groups
-                    groups[i] = group.union(other_group)
-                    groups.pop(i + 1)
-                    done = False
+            i = 0
+            while i < len(groups):
+                j = i + 1
+                while j < len(groups):
+                    group_a, group_b = groups[i], groups[j]
+                    if any((a, b) not in edges or (b, a) not in edges for a in group_a for b in group_b):
+                        groups[i] = group_a.union(group_b)
+                        groups.pop(j)
+                        done = False
+                    else:
+                        j += 1
+                if not done:
                     break
+                i += 1
 
         # Filter out groups that do not contain start and end activities
         groups = sorted((group for group in groups if group & start_activities and group & end_activities), key=len)

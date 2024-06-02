@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import List, Tuple, Dict, Set
 import pm4py
+import re
 from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe
 
 
@@ -74,22 +75,20 @@ class InductiveMiner:
         return sublogs
 
     def _build_process_tree(self, groups: List[Set[str]], cut_type: CutType = None, ) -> str:
-        if not groups:
-            return self.process_tree_str
-
         tree = self.process_tree_str
-        if cut_type != CutType.NONE:
-            tree = tree.replace('()', f'({cut_type.value}, ())')
-        groups_string = ''
-        for group in groups:
-            if len(group) > 1:
-                groups_string += f'({", ".join(group)}),'
-            else:
-                groups_string += f'{"".join(group)}, '
-        if groups_string not in tree:
-            tree = tree.replace('()', f'{groups_string}()')
+        group_str = ', '.join([', '.join(activity) for group in groups for activity in group])
+        cut_str = f'{cut_type.value}' if cut_type != CutType.NONE else ''
+        if len(group_str) > 1:
+            new_cut_str = f'{cut_str}({group_str})'
+        else:
+            new_cut_str = f'{cut_str}{group_str}'
+        if tree == '()':
+            tree = new_cut_str
+        else:
+            match = self._find_subsequence_in_arbitrary_order(tree, group_str.replace(f', {self.TAU}', ''))
+            tree = tree.replace(match, f'{new_cut_str}')
         self.process_tree_str = tree
-        return tree
+        return self.process_tree_str
 
     def _clean_process_tree(self):
         self.process_tree_str = self.process_tree_str.replace(', ()', '')
@@ -134,7 +133,7 @@ class InductiveMiner:
 
     def _handle_fall_through(self, log: List[Tuple[str]]) -> List[Set[str]]:
         flower_groups = [set(activity) for activity in sorted(list(self._get_alphabet(log)))]
-        flower_groups.insert(0, set(self.TAU))
+        flower_groups.append(set(self.TAU))
         return flower_groups
 
     def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],

@@ -22,6 +22,6 @@ setup(
     install_requires=['numpy',
                       'scipy',
                       'scikit-learn',
-                      'matplotlib',
+                      'matplotlib==3.8.0',
                       'pandas']
 )

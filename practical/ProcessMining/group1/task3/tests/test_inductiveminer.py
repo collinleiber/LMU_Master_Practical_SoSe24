@@ -71,7 +71,6 @@ class TestInductiveMiner:
     def test_fall_through_flower_model(self):
         log = [('a', 'b', 'c', 'd', 'e', 'f', 'g')]
         miner = InductiveMiner(log)
-        sublogs = [sorted([('a',)]), sorted([('b',)]), sorted([('c',)]), sorted([('d',)]),
-                   sorted([('e',)]), sorted([('f',)]), sorted([('g',)])]
-        assert miner.run() == sublogs
+        miner.run()
+        assert miner.process_tree_str == f'({CutType.LOOP.value}, {InductiveMiner.TAU}, a, b, c, d, e, f, g)'
 

@@ -13,6 +13,8 @@ class CutType(Enum):
 
 
 class InductiveMiner:
+    TAU = '𝜏'
+
     def __init__(self, log: List[Tuple] = None):
         self.logs = log
         self.alphabet = self._get_alphabet(self.logs)
@@ -57,9 +59,10 @@ class InductiveMiner:
                 new_sublogs = self._split_log(log, loop_cut)
                 self._build_process_tree(loop_cut, CutType.LOOP)
             else:  # fall through - flower model
-                flower_groups = [{activity} for activity in sorted(list(self._get_alphabet(log)))]
+                flower_groups = self._handle_fall_through(log)
                 new_sublogs = self._split_log(log, flower_groups)
                 self._build_process_tree(flower_groups, CutType.LOOP)
+                break  # flower model is the last cut?
 
             if new_sublogs:
                 sublogs.pop(i)
@@ -108,8 +111,8 @@ class InductiveMiner:
     def _handle_base_cases(self, log: List[Tuple[str]]) -> Tuple[List[Set[str]], CutType]:
         traces = [''.join(map(str, trace)) for trace in log]
         alphabet = [a for a in self._get_alphabet(log) if a != '']
-        base_activity = set(alphabet[0])
-        tau_activity = set('𝜏')
+        base_activity = set(alphabet[0]) if alphabet else set()
+        tau_activity = set(self.TAU)
         operator = CutType.NONE
         groups = []
 
@@ -128,6 +131,11 @@ class InductiveMiner:
                 groups += [tau_activity, base_activity]
 
         return groups, operator
+
+    def _handle_fall_through(self, log: List[Tuple[str]]) -> List[Set[str]]:
+        flower_groups = [set(activity) for activity in sorted(list(self._get_alphabet(log)))]
+        flower_groups.insert(0, set(self.TAU))
+        return flower_groups
 
     def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
                       end: Dict[str, int]) -> List[Set[str]]:
@@ -247,7 +255,7 @@ class InductiveMiner:
 
     def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
         # projective splitting is used for sequence / parallel cuts and fall through
-        new_traces = [''.join(map(str, group)) for group in cut]
+        new_traces = [''.join(map(str, group)).replace(self.TAU, '') for group in cut]
         old_traces = [''.join(map(str, trace)) for trace in log]
         new_log = []
         for new_trace in new_traces:

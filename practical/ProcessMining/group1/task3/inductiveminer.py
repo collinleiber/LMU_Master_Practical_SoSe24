@@ -136,14 +136,68 @@ class InductiveMiner:
         flower_groups.append(set(self.TAU))
         return flower_groups
 
-    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
-                      end: Dict[str, int]) -> List[Set[str]]:
-        # TODO: Implement sequence cut
-        pass
+    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[
+        Set[str]]:
+        alphabet = self._get_alphabet_from_dfg(dfg)
+        if not alphabet:
+            return []
+
+        start_activities = set(start.keys())
+        end_activities = set(end.keys())
+
+        partitions = []
+
+        all_activities = set()
+        for (a, b) in dfg:
+            all_activities.add(a)
+            all_activities.add(b)
+
+        first_partition = start_activities
+        partitions.append(first_partition)
+
+        remaining_activities = all_activities - start_activities - end_activities
+        middle_partition = remaining_activities
+        final_partition = end_activities
+
+        if middle_partition:
+            partitions.append(middle_partition)
+
+        partitions.append(final_partition)
+        return partitions
 
     def _xor_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
-        # TODO: Implement xor cut
-        pass
+        partitions = []
+
+        all_activities = set()
+        for (a, b) in dfg:
+            all_activities.add(a)
+            all_activities.add(b)
+
+        components = []
+        visited = set()
+
+        def dfs(activity, component):
+            stack = [activity]
+            while stack:
+                node = stack.pop()
+                if node not in visited:
+                    visited.add(node)
+                    component.add(node)
+                    for successor in [b for (a, b) in dfg if a == node]:
+                        stack.append(successor)
+                    for predecessor in [a for (a, b) in dfg if b == node]:
+                        stack.append(predecessor)
+
+        for activity in all_activities:
+            if activity not in visited:
+                component = set()
+                dfs(activity, component)
+                components.append(component)
+
+        for component in components:
+            partitions.append(component)
+
+        return partitions
 
     def _parallel_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
                       end: Dict[str, int]) -> List[Set[str]]:

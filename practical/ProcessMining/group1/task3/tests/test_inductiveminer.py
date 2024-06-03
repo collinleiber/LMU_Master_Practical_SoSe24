@@ -26,6 +26,37 @@ class TestInductiveMiner:
                    sorted([('c', 'd', 'b'), ('b', 'c', 'd'), ('b', 'c', 'd')])]
         assert all(sorted(sl) in sublogs for sl in parallel_split)
 
+    def test_sequence_cut(self):
+        log = [
+            ('a', 'b', 'c', 'd'),
+            ('a', 'c', 'b', 'd'),
+            ('a', 'b', 'c', 'e', 'f', 'b', 'c', 'd'),
+            ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'd'),
+            ('a', 'b', 'c', 'e', 'f', 'c', 'b', 'd'),
+            ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b', 'd')
+        ]
+        miner = InductiveMiner(log)
+        dfg, start_activities, end_activities = miner._get_dfg(log)
+        sequence_cut = miner._sequence_cut(dfg, start_activities, end_activities)
+        print("DFG:", dfg)
+        print("Start Activities:", start_activities)
+        print("End Activities:", end_activities)
+        print("Sequence Cut Result:", sequence_cut)
+
+    def test_xor_cut(self):
+        log = [
+             ('a', 'b'),
+             ('a', 'c'),
+        ]
+        #?????????
+        miner = InductiveMiner(log)
+        dfg, start_activities, end_activities = miner._get_dfg(log)
+        sequence_cut = miner._xor_cut(dfg, start_activities, end_activities)
+        print("DFG:", dfg)
+        print("Start Activities:", start_activities)
+        print("End Activities:", end_activities)
+        print("xor Cut Result:", sequence_cut)
+
     def test_loop_cut(self):
         log = [('b', 'c'),
                ('c', 'b'),

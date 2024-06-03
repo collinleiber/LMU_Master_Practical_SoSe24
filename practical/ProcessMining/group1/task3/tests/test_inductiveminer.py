@@ -72,5 +72,5 @@ class TestInductiveMiner:
         log = [('a', 'b', 'c', 'd', 'e', 'f', 'g')]
         miner = InductiveMiner(log)
         miner.run()
-        assert miner.process_tree_str == f'({CutType.LOOP.value}, {InductiveMiner.TAU}, a, b, c, d, e, f, g)'
+        assert miner.process_tree_str == f'{CutType.LOOP.value}({InductiveMiner.TAU}, a, b, c, d, e, f, g)'
 

@@ -46,7 +46,6 @@ class InductiveMiner:
             parallel_cut = self._parallel_cut(dfg, start_activities, end_activities)
             loop_cut = self._loop_cut(dfg, start_activities, end_activities)
 
-            new_sublogs = None
             if self._is_nontrivial(sequence_cut):
                 new_sublogs = self._split_log(log, sequence_cut)
                 self._build_process_tree(sequence_cut, CutType.SEQUENCE)
@@ -85,7 +84,7 @@ class InductiveMiner:
         if tree == '()':
             tree = new_cut_str
         else:
-            match = self._find_subsequence_in_arbitrary_order(tree, group_str.replace(f', {self.TAU}', ''))
+            match = self._find_subsequence_in_arbitrary_order(tree, group_str.replace(f'{self.TAU}, ', ''))
             tree = tree.replace(match, f'{new_cut_str}')
         self.process_tree_str = tree
         return self.process_tree_str
@@ -132,8 +131,7 @@ class InductiveMiner:
         return groups, operator
 
     def _handle_fall_through(self, log: List[Tuple[str]]) -> List[Set[str]]:
-        flower_groups = [set(activity) for activity in sorted(list(self._get_alphabet(log)))]
-        flower_groups.append(set(self.TAU))
+        flower_groups = [set(self.TAU), [set(activity) for activity in sorted(list(self._get_alphabet(log)))]]
         return flower_groups
 
     def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],

@@ -270,32 +270,53 @@ class InductiveMiner:
 
     def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[
         Set[str]]:
+        """
+        Applies the sequence cut to the directly-follows graph (dfg).
+
+        Parameters:
+            dfg: Directly-follows graph
+            start: Start activities in the log
+            end: End activities in the log
+
+        Returns:
+            List of groups of activities that form the sequence cut.
+        """
         alphabet = self._get_alphabet_from_dfg(dfg)
         if not alphabet:
             return []
 
-        start_activities = set(start.keys())
-        end_activities = set(end.keys())
+        # Initialize partitions with the start activities as the first group
+        partitions = [set(start.keys())]
+        remaining_activities = alphabet - partitions[0]
 
-        partitions = []
+        # Function to check if we can add an activity to a partition
+        def can_add_to_partition(activity, partition):
+            for p in partition:
+                if (activity, p) in dfg or (p, activity) not in dfg:
+                    return False
+            return True
 
-        all_activities = set()
-        for (a, b) in dfg:
-            all_activities.add(a)
-            all_activities.add(b)
+        # Build partitions iteratively
+        while remaining_activities:
+            next_partition = set()
+            for activity in sorted(remaining_activities):
+                if can_add_to_partition(activity, partitions[-1]):
+                    partitions[-1].add(activity)
+                else:
+                    next_partition.add(activity)
+            if next_partition:
+                partitions.append(next_partition)
+            remaining_activities -= partitions[-1]
 
-        first_partition = start_activities
-        partitions.append(first_partition)
+        # Validate the sequence cut against the given conditions
+        for i in range(len(partitions) - 1):
+            for j in range(i + 1, len(partitions)):
+                for ai in partitions[i]:
+                    for aj in partitions[j]:
+                        if (aj, ai) in dfg or (ai, aj) not in dfg:
+                            return []
 
-        remaining_activities = all_activities - start_activities - end_activities
-        middle_partition = remaining_activities
-        final_partition = end_activities
-
-        if middle_partition:
-            partitions.append(middle_partition)
-
-        partitions.append(final_partition)
-        return partitions
+        return partitions if len(partitions) > 1 else []
 
     def _xor_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
         partitions = []

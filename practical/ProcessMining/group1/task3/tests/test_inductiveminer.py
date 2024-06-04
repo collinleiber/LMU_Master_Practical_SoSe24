@@ -4,6 +4,26 @@ from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, 
 
 
 class TestInductiveMiner:
+    def test_get_dfg(self):
+        # log = [('b', 'e'),
+        #        ('b', 'e', 'c', 'd', 'b'),
+        #        ('b', 'c', 'e', 'd', 'b'),
+        #        ('b', 'c', 'd', 'e', 'b'),
+        #        ('e', 'b', 'c', 'd', 'b')]
+        log = [
+            ('a', 'b', 'c', 'd'),
+            ('a', 'c', 'b', 'd'),
+            ('a', 'b', 'c', 'e', 'f', 'b', 'c', 'd'),
+            ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'd'),
+            ('a', 'b', 'c', 'e', 'f', 'c', 'b', 'd'),
+            ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b', 'd')
+        ]
+        inductive_miner = InductiveMiner(log)
+        dfg, start_activities, end_activities = inductive_miner._get_dfg(log)
+        print("DFG:", dfg)
+        print("Start Activities:", start_activities)
+        print("End Activities:", end_activities)
+
     def test_parallel_cut(self):
         log = [('b', 'c'),
                ('c', 'b')]

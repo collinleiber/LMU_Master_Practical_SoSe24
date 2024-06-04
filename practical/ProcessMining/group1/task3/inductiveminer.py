@@ -191,9 +191,31 @@ class InductiveMiner:
         Returns:
             Tuple containing the dfg, start activities, and end activities.
         """
-        # TODO: Own implementation of dfg
-        return pm4py.discover_dfg(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
-                                                         activity_key='activity', timestamp_key='timestamp'))
+        dfg = {}
+        start_activities = {}
+        end_activities = {}
+
+        for trace in log:
+            if trace[0] in start_activities:
+                start_activities[trace[0]] += 1
+            else:
+                start_activities[trace[0]] = 1
+
+            if trace[-1] in end_activities:
+                end_activities[trace[-1]] += 1
+            else:
+                end_activities[trace[-1]] = 1
+
+            for i in range(len(trace) - 1):
+                pair = (trace[i], trace[i + 1])
+                if pair in dfg:
+                    dfg[pair] += 1
+                else:
+                    dfg[pair] = 1
+
+        return dfg, start_activities, end_activities
+        # return pm4py.discover_dfg(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
+        #                                                  activity_key='activity', timestamp_key='timestamp'))
 
     def _handle_base_cases(self, log: List[Tuple[str]]) -> Tuple[List[Set[str]], CutType]:
         """

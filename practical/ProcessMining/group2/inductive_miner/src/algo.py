@@ -1,6 +1,10 @@
+import os
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
 class EventLog:
-    def __init__(self, file_path):
-        self.file_path = file_path
+    def __init__(self, relative_file_path):
+        self.file_path = os.path.join(script_dir, relative_file_path)
         self.traces = {}
 
     def load_from_file(self): # TODO - what is the format of the log file?
@@ -17,17 +21,32 @@ class EventLog:
 class DirectlyFollowsGraph:
     def __init__(self, event_log: EventLog):
         self.event_log = event_log
-        self.nodes = {} # Format: "node_id" : [children]
+        self.graph = {} # Adjacency list, format: "node_id" : [children]
+        self.start_nodes = set()
+        self.end_nodes = set()
 
     def construct_dfg(self):
         for trace in self.event_log.traces.keys():
-            for i in range(len(trace) - 1):
-                current_activity = trace[i]
-                next_activity = trace[i + 1]
-                if current_activity not in self.nodes:
-                    self.nodes[current_activity] = []
-                if next_activity not in self.nodes[current_activity]:
-                    self.nodes[current_activity].append(next_activity)
+            if trace:
+                self.start_nodes.add(trace[0])
+                self.end_nodes.add(trace[-1])
+
+                for i in range(len(trace) - 1):
+                    current_activity = trace[i]
+                    next_activity = trace[i + 1]
+
+                    if current_activity not in self.graph:
+                        self.graph[current_activity] = []
+                    if next_activity not in self.graph[current_activity]:
+                        self.graph[current_activity].append(next_activity)
+                    if next_activity not in self.graph:
+                        self.graph[next_activity] = []
+
+    # Debugging helper
+    def print_graph(self):
+        print("Graph: ", self.graph)
+        print("Start nodes: ", self.start_nodes)
+        print("End nodes: ", self.end_nodes)
 
 class ProcessTree:
     def __init__(self):
@@ -67,8 +86,9 @@ class InductiveMiner():
 
 if __name__ == "__main__":
     event_log = EventLog("../data/log_from_paper.txt")
-    event_log.load_from_file()
+    # event_log.load_from_file()
+    event_log.traces = {'abcd': 3, 'acbd': 2, 'aed': 1}
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)
 
-    print(process_tree)
+    # print(process_tree)

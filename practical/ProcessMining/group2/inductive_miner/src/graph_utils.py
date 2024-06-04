@@ -91,7 +91,7 @@ class Graph:
         return sccs
     
     def build_scc_graph(self, sccs):
-        scc_graph = defaultdict(set)
+        scc_graph = {k: set() for k in range(len(sccs))}
         scc_map = {}
 
         for i, scc in enumerate(sccs):
@@ -103,7 +103,7 @@ class Graph:
                 if scc_map[node] != scc_map[neighbor]:
                     scc_graph[scc_map[node]].add(scc_map[neighbor])
 
-        return dict(scc_graph)
+        return scc_graph
     
 
     def dfs_in_dag(self, start, visited):
@@ -138,7 +138,7 @@ class Graph:
                 v = nodes[j]
                 if v not in reach[u] and u not in reach[v]:
                     non_reachable_pairs.add((u, v))
-        
+
         return list(non_reachable_pairs)
 
 

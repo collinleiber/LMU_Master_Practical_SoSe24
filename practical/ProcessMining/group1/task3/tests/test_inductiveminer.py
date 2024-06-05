@@ -1,28 +1,22 @@
 from typing import List, Set
-
+from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe, check_lists_of_sets_equal
 from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
+import pm4py
 
 
 class TestInductiveMiner:
     def test_get_dfg(self):
-        # log = [('b', 'e'),
-        #        ('b', 'e', 'c', 'd', 'b'),
-        #        ('b', 'c', 'e', 'd', 'b'),
-        #        ('b', 'c', 'd', 'e', 'b'),
-        #        ('e', 'b', 'c', 'd', 'b')]
-        log = [
-            ('a', 'b', 'c', 'd'),
-            ('a', 'c', 'b', 'd'),
-            ('a', 'b', 'c', 'e', 'f', 'b', 'c', 'd'),
-            ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'd'),
-            ('a', 'b', 'c', 'e', 'f', 'c', 'b', 'd'),
-            ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b', 'd')
-        ]
+        log = [('a', 'b', 'c', 'd'),
+               ('a', 'c', 'b', 'd'),
+               ('a', 'b', 'c', 'e', 'f', 'b', 'c', 'd'),
+               ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'd'),
+               ('a', 'b', 'c', 'e', 'f', 'c', 'b', 'd'),
+               ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b', 'd')]
         inductive_miner = InductiveMiner(log)
-        dfg, start_activities, end_activities = inductive_miner._get_dfg(log)
-        print("DFG:", dfg)
-        print("Start Activities:", start_activities)
-        print("End Activities:", end_activities)
+        im_result = inductive_miner._get_dfg(log)
+        pm4py_result = pm4py.discover_dfg(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
+                                                                 activity_key='activity', timestamp_key='timestamp'))
+        assert im_result == pm4py_result
 
     def test_parallel_cut(self):
         log = [('b', 'c'),
@@ -49,35 +43,42 @@ class TestInductiveMiner:
         assert all(sorted(sl) in sublogs for sl in parallel_split)
 
     def test_sequence_cut(self):
-        log = [
-            ('a', 'b', 'c', 'd'),
-            ('a', 'c', 'b', 'd'),
-            ('a', 'b', 'c', 'e', 'f', 'b', 'c', 'd'),
-            ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'd'),
-            ('a', 'b', 'c', 'e', 'f', 'c', 'b', 'd'),
-            ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b', 'd')
-        ]
+        log = [('a', 'b', 'c', 'd'),
+               ('a', 'c', 'b', 'd'),
+               ('a', 'b', 'c', 'e', 'f', 'b', 'c', 'd'),
+               ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'd'),
+               ('a', 'b', 'c', 'e', 'f', 'c', 'b', 'd'),
+               ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b', 'd')]
         miner = InductiveMiner(log)
-        dfg, start_activities, end_activities = miner._get_dfg(log)
-        sequence_cut = miner._sequence_cut(dfg, start_activities, end_activities)
-        print("DFG:", dfg)
-        print("Start Activities:", start_activities)
-        print("End Activities:", end_activities)
-        print("Sequence Cut Result:", sequence_cut)
+        sequence_cut = miner._sequence_cut(miner.dfg, miner.start_activities, miner.end_activities)
+        assert sequence_cut == [set('a'), set('bcef'), set('d')]  # order does matter
+        sequence_split = miner._split_log(miner.event_log, sequence_cut)
+        sublogs = [sorted([('a',), ('a',), ('a',), ('a',), ('a',), ('a',)]),
+                   sorted([('b', 'c'),
+                           ('c', 'b'),
+                           ('b', 'c', 'e', 'f', 'b', 'c'),
+                           ('c', 'b', 'e', 'f', 'b', 'c'),
+                           ('b', 'c', 'e', 'f', 'c', 'b'),
+                           ('c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b')]),
+                   sorted([('d',), ('d',), ('d',), ('d',), ('d',), ('d',)])]
+        assert all(sorted(sl) in sublogs for sl in sequence_split)
 
     def test_xor_cut(self):
-        log = [
-             ('a', 'b'),
-             ('a', 'c'),
-        ]
-        #?????????
+        log = [('a', 'c', 'e'), ('b', 'd', 'f'), ('a', 'c', 'e'), ('b', 'd', 'f')]
         miner = InductiveMiner(log)
-        dfg, start_activities, end_activities = miner._get_dfg(log)
-        sequence_cut = miner._xor_cut(dfg, start_activities, end_activities)
-        print("DFG:", dfg)
-        print("Start Activities:", start_activities)
-        print("End Activities:", end_activities)
-        print("xor Cut Result:", sequence_cut)
+        xor_cut = miner._xor_cut(miner.dfg, miner.start_activities, miner.end_activities)
+        assert check_lists_of_sets_equal(xor_cut, [set('ace'), set('bdf')])  # order does not matter
+        xor_split = miner._split_log(miner.event_log, xor_cut)
+        sublogs = [sorted([('a', 'c', 'e'), ('a', 'c', 'e')]), sorted([('b', 'd', 'f'), ('b', 'd', 'f')])]
+        assert all(sorted(sl) in sublogs for sl in xor_split)
+
+        log = [('b', 'c'), ('c', 'b'), ('e',)]
+        miner = InductiveMiner(log)
+        xor_cut = miner._xor_cut(miner.dfg, miner.start_activities, miner.end_activities)
+        assert check_lists_of_sets_equal(xor_cut, [set('bc'), set('e')])  # order does not matter
+        xor_split = miner._split_log(miner.event_log, xor_cut)
+        sublogs = [sorted([('b', 'c'), ('c', 'b')]), sorted([('e',)])]
+        assert all(sorted(sl) in sublogs for sl in xor_split)
 
     def test_loop_cut(self):
         log = [('b', 'c'),
@@ -127,9 +128,3 @@ class TestInductiveMiner:
         miner.run()
         assert miner.process_tree_str == f'{CutType.LOOP.value}({InductiveMiner.TAU}, a, b, c, d, e, f, g)'
 
-
-def check_lists_of_sets_equal(list1: List[Set[str]], list2: List[Set[str]]) -> bool:
-    sorted_list1 = sorted([tuple(sorted(s)) for s in list1])
-    sorted_list2 = sorted([tuple(sorted(s)) for s in list2])
-
-    return sorted_list1 == sorted_list2

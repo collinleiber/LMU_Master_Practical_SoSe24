@@ -61,3 +61,10 @@ def event_log_to_dataframe(event_log):
             timestamp = datetime.now().isoformat()
             data.append([i, activity, timestamp])
     return pd.DataFrame(data, columns=["case_id", "activity", "timestamp"])
+
+
+def check_lists_of_sets_equal(list1, list2):
+    sorted_list1 = sorted([tuple(sorted(s)) for s in list1])
+    sorted_list2 = sorted([tuple(sorted(s)) for s in list2])
+
+    return sorted_list1 == sorted_list2

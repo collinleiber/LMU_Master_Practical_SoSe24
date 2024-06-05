@@ -40,8 +40,35 @@ class Graph:
             return False
         
         return dfs(node1, node2, visited = set())
+    
+    def convert_to_undirected(self) -> 'Graph':
+        undirected = self.graph.copy()
+        for node in self.graph.keys():
+            for neighbor in self.graph[node]:
+                if node not in self.graph[neighbor]:
+                    undirected[neighbor].append(node)
+        return Graph(undirected)
 
     def find_components(self) -> List[List]:
+        def dfs(node, component):
+            visited.add(node)
+            component.append(node)
+            for neighbor in self.graph[node]:
+                if neighbor not in visited:
+                    dfs(neighbor, component)
+
+        visited = set()
+        components = []
+
+        for node in self.graph.keys():
+            if node not in visited:
+                component = []
+                dfs(node, component)
+                components.append(component)
+
+        return components
+
+    def find_strongly_con_components(self) -> List[List]:
         # Kosaraju's Algorithm
 
         def fill_stack(node):
@@ -90,20 +117,20 @@ class Graph:
 
         return sccs
     
-    def build_scc_graph(self, sccs):
-        scc_graph = {k: set() for k in range(len(sccs))}
-        scc_map = {}
+    def build_cuts_graph(self, cuts) -> 'Graph':
+        cut_graph = {k: set() for k in range(len(cuts))}
+        cut_map = {}
 
-        for i, scc in enumerate(sccs):
+        for i, scc in enumerate(cuts):
             for node in scc:
-                scc_map[node] = i
+                cut_map[node] = i
 
         for node in self.graph:
             for neighbor in self.get_neighbors(node):
-                if scc_map[node] != scc_map[neighbor]:
-                    scc_graph[scc_map[node]].add(scc_map[neighbor])
+                if cut_map[node] != cut_map[neighbor]:
+                    cut_graph[cut_map[node]].add(cut_map[neighbor])
 
-        return scc_graph
+        return Graph(cut_graph), cut_map
     
 
     def dfs_in_dag(self, start, visited):
@@ -127,7 +154,7 @@ class Graph:
         
         return reach
 
-    def find_non_reachable_pairs(self): # TODO: refactor
+    def find_unreachable_pairs(self): # TODO: refactor
         reach = self.all_pairs_reachability_dag()
         nodes = list(self.graph.keys())
         non_reachable_pairs = set()
@@ -140,6 +167,15 @@ class Graph:
                     non_reachable_pairs.add((u, v))
 
         return list(non_reachable_pairs)
+    
+    def traverse_path(self, start_node):
+        traversal_order = []
+        current_node = start_node
+        while current_node is not None and current_node not in traversal_order:
+            traversal_order.append(current_node)
+            next_nodes = list(self.graph[current_node])
+            current_node = next_nodes[0] if next_nodes else None
+        return traversal_order
 
 
 # graph = {'a': ['b', 'c'], 'b': ['c', 'd', 'e'], 'c': ['d', 'b', 'e'], 'd': [], 'e': ['f'], 'f': ['c', 'b']}

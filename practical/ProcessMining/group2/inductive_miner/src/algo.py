@@ -54,39 +54,56 @@ class ProcessTree:
         self.edges = [] # Format: (node1, node2)
 
     def find_exclusive_choice_split(self, dfg: DirectlyFollowsGraph):
+        # Convert the graph to undirected
+        undirected = dfg.convert_to_undirected()
+        # Find connected components
+        cuts = undirected.find_components()
+
+        return None if len(cuts) == 1 else cuts
+    
+    def find_sequence_split(self, dfg: DirectlyFollowsGraph):
+        remaining_nodes = set(dfg.get_all_nodes())
+        cuts = []
+
         # Find strongly connected components
-        components = dfg.find_components()
+        components = dfg.find_strongly_con_components()
+        for component in components:
+            if len(component) > 1:
+                cuts.append(component)
+                for node in component:
+                    remaining_nodes.discard(node)
 
-        # Collapse the graph
-        scc_graph = dfg.build_scc_graph(components)
-        collapsed_graph = Graph(scc_graph)
+        # Find pairwise unreachable nodes and merge them to one node
+        unreachable_pairs = dfg.find_unreachable_pairs()
+        merged_nodes = list({node for pair in unreachable_pairs for node in pair if node in remaining_nodes})
+        cuts.append(merged_nodes)
+        
+        # Remove merged nodes from remaining nodes to be processed
+        for node in merged_nodes:
+            remaining_nodes.discard(node)
 
-        # Find all pairs of nodes that are not reachable from each other
-        unreachable_pairs = collapsed_graph.find_non_reachable_pairs()
+        for node in remaining_nodes:
+            cuts.append([node])
 
-        # Convert collpsed nodes back to components
-        exclusive_choice_cut_ids = set()
-        for pair in unreachable_pairs:
-            exclusive_choice_cut_ids.update(pair)
+        # Build cuts graph
+        cuts_graph, cut_map = dfg.build_cuts_graph(cuts)
 
-        exclusive_choice_cuts = [components[id] for id in exclusive_choice_cut_ids]
+        # Sort cuts by traversing the cut graph (always a path graph)
+        start_node = cut_map[list(dfg.start_nodes)[0]]
+        sorted_cut_indices = cuts_graph.traverse_path(start_node)
+        sorted_cuts = [cuts[i] for i in sorted_cut_indices]
 
-        print("Exclusive choice cuts: ", exclusive_choice_cuts)
-        return exclusive_choice_cuts
+        return sorted_cuts
 
-
-    def find_sequence_split(self, directly_follows_graph: DirectlyFollowsGraph):
+    def find_parallel_split(self, dfg: DirectlyFollowsGraph):
         pass
 
-    def find_parallel_split(self, directly_follows_graph: DirectlyFollowsGraph):
+    def find_loop_split(self, dfg: DirectlyFollowsGraph):
         pass
 
-    def find_loop_split(self, directly_follows_graph: DirectlyFollowsGraph):
-        pass
-
-    def construct_process_tree(self, directly_follows_graph: DirectlyFollowsGraph):
-        self.find_exclusive_choice_split(directly_follows_graph)
-
+    def construct_process_tree(self, dfg: DirectlyFollowsGraph):
+        # self.find_exclusive_choice_split(dfg)
+        self.find_sequence_split(dfg)
 class InductiveMiner():
     def __init__(self):
         pass
@@ -106,7 +123,13 @@ class InductiveMiner():
 if __name__ == "__main__":
     event_log = EventLog("../data/log_from_paper.txt")
     # event_log.load_from_file()
-    event_log.traces = {'abcd': 3, 'acbd': 2, 'aed': 1}
+    # event_log.traces = {'abcd': 3, 'acbd': 2, 'aefd':1}
+    event_log.traces = {'abegj': 1, 
+                        'acegj': 1, 
+                        'adfehj': 1, 
+                        'adfij': 1,
+                        'adfihj': 1,
+                        }
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)
 

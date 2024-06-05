@@ -1,4 +1,4 @@
-from practical.ProcessMining.group2.inductive_miner.src.algo import *
+from algo import *
 
 def test_file_loading():
     # TODO - think about different test cases, like empty file, file with only one trace, file with multiple traces

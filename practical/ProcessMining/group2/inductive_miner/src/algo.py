@@ -1,5 +1,5 @@
 import os
-from practical.ProcessMining.group2.inductive_miner.src.graph_utils import *
+from graph_utils import *
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -31,6 +31,7 @@ class DirectlyFollowsGraph(Graph):
             if trace: # Check if trace is not empty
                 self.start_nodes.add(trace[0]) # First activity in trace is a start
                 self.end_nodes.add(trace[-1]) # Last activity in trace is an end
+                print(trace)
 
                 for i in range(len(trace) - 1):
                     current_activity = trace[i]
@@ -60,6 +61,7 @@ class ProcessTree:
         # Collapse the graph
         scc_graph = dfg.build_scc_graph(components)
         collapsed_graph = Graph(scc_graph)
+        print('s',scc_graph)
 
         # Find all pairs of nodes that are not reachable from each other
         unreachable_pairs = collapsed_graph.find_non_reachable_pairs()
@@ -104,8 +106,8 @@ class InductiveMiner():
         return process_tree
 
 if __name__ == "__main__":
-    event_log = EventLog("../data/log_from_paper.txt")
-    # event_log.load_from_file()
+    event_log = EventLog("../data/log_from_paper. txt")
+    #event_log.load_from_file()
     event_log.traces = {'abcd': 3, 'acbd': 2, 'aed': 1}
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)

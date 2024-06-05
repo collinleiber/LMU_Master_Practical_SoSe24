@@ -1,13 +1,17 @@
 from typing import List, Optional
 from collections import defaultdict
 
+
 class Graph:
     # TODO: Add type hints and clean up
     def __init__(self, initial_graph: Optional[dict] = None):
         if initial_graph is not None:
+
             self.graph = initial_graph
         else:
-            self.graph = defaultdict(list)  # Adjacency list, format: "node_id" : [children]
+            self.graph = defaultdict(
+                list
+            )  # Adjacency list, format: "node_id" : [children]
 
     def add_edge(self, u, v) -> None:
         self.graph[u].append(v)
@@ -38,8 +42,18 @@ class Graph:
                     if dfs(neighbor, target, visited):
                         return True
             return False
-        
-        return dfs(node1, node2, visited = set())
+
+        return dfs(node1, node2, visited=set())
+
+    def reverse_graph(self) -> dict:
+        # Reverse all edges
+        reversed_graph = defaultdict(list)
+        for node in self.graph.keys():
+            if not reversed_graph[node]:
+                reversed_graph[node] = []
+            for child in self.graph[node]:
+                reversed_graph[child].append(node)
+        return reversed_graph
 
     def find_components(self) -> List[List]:
         # Kosaraju's Algorithm
@@ -50,15 +64,7 @@ class Graph:
             for child in self.graph[node]:
                 if child not in visited:
                     fill_stack(child)
-            stack.append(node) 
-
-        def reverse_graph(self) -> dict:
-            # Reverse all edges
-            reversed_graph = defaultdict(list)
-            for node in self.graph.keys():
-                for child in self.graph[node]:
-                    reversed_graph[child].append(node)
-            return reversed_graph
+            stack.append(node)
 
         def dfs(graph, node, scc):
             scc.append(node)
@@ -69,15 +75,15 @@ class Graph:
 
         visited = set()
         stack = []
-        sccs = [] # Strongly connected components
+        sccs = []  # Strongly connected components
 
         # 1. Apply DFS on original graph and find order of nodes
         for node in self.graph.keys():
             if node not in visited:
-                fill_stack(node) 
+                fill_stack(node)
 
         # 2. Reverse the graph
-        reversed_graph = reverse_graph(self)
+        reversed_graph = self.reverse_graph()
 
         # 3. Apply DFS on reversed graph in order of nodes from stack
         visited = set()
@@ -89,7 +95,7 @@ class Graph:
                 sccs.append(scc)
 
         return sccs
-    
+
     def build_scc_graph(self, sccs):
         scc_graph = {k: set() for k in range(len(sccs))}
         scc_map = {}
@@ -104,7 +110,6 @@ class Graph:
                     scc_graph[scc_map[node]].add(scc_map[neighbor])
 
         return scc_graph
-    
 
     def dfs_in_dag(self, start, visited):
         stack = [start]
@@ -114,24 +119,26 @@ class Graph:
             if node not in visited:
                 visited.add(node)
                 reachable.add(node)
-                stack.extend(self.graph.get(node, [])) # TODO: maybe refactor a little bit
+                stack.extend(
+                    self.graph.get(node, [])
+                )  # TODO: maybe refactor a little bit
         return reachable
 
     def all_pairs_reachability_dag(self):
         nodes = list(self.graph.keys())
         reach = {node: set() for node in nodes}
-        
+
         for node in nodes:
             visited = set()
             reach[node] = self.dfs_in_dag(node, visited)
-        
+
         return reach
 
-    def find_non_reachable_pairs(self): # TODO: refactor
+    def find_non_reachable_pairs(self):  # TODO: refactor
         reach = self.all_pairs_reachability_dag()
         nodes = list(self.graph.keys())
         non_reachable_pairs = set()
-        
+
         for i in range(len(nodes)):
             for j in range(i + 1, len(nodes)):
                 u = nodes[i]

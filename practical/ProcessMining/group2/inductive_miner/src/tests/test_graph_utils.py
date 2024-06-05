@@ -59,3 +59,8 @@ def test_reverse_graph():
 def test_dfs():
     # Test if DFS is implemented correctly
     pass
+
+
+def test_find_non_reachable_pairs():
+    # Test if there are non reachable pairs
+    pass

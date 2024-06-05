@@ -50,54 +50,64 @@ class InductiveMiner:
         """
         # Initialize the list of sublogs with the original event log
         sublogs = [self.event_log]
-        i = 0
 
-        # Iterate over the sublogs
-        while i < len(sublogs):
-            log = sublogs[i]
+        # Iterate over the sublogs until the list is empty
+        while len(sublogs) > 0:
+            log = sublogs[0]
 
             # Update the directly-follows graph (dfg), start_activities, and end_activities for the current sublog
             dfg, start_activities, end_activities = self._get_dfg(log)
 
             # Check for base cases and build the corresponding part of the process tree
             base_cut, operator = self._handle_base_cases(log)
-            if base_cut:
+            if base_cut:  # If not a base case, apply different types of cuts
                 self._build_process_tree(base_cut, operator)
-                sublogs.pop(i)
-                continue
+            else:  # try to split log based on operator and build corresponding part of the process tree
+                groups, operator = self._apply_cut(log, dfg, start_activities, end_activities)
+                # Add the new sublogs to the list if not fall through case
+                if operator != CutType.NONE:
+                    new_sublogs = self._split_log(log, groups)
+                    sublogs.extend(new_sublogs)
+                    # Build the corresponding part of the process tree
+                    self._build_process_tree(groups, operator)
+                else:  # If fall through case, build the flower model
+                    self._build_process_tree(groups, CutType.LOOP)
 
-            # Try to apply different types of cuts to the current sublog
-            sequence_cut = self._sequence_cut(dfg, start_activities, end_activities)
-            xor_cut = self._xor_cut(dfg, start_activities, end_activities)
-            parallel_cut = self._parallel_cut(dfg, start_activities, end_activities)
-            loop_cut = self._loop_cut(dfg, start_activities, end_activities)
+            # Remove the old sublog from the list
+            sublogs.remove(log)
 
-            # If a nontrivial cut (>1) is found, split the log accordingly and build the corresponding
-            # part of the process tree
-            if self._is_nontrivial(sequence_cut):
-                new_sublogs = self._split_log(log, sequence_cut)
-                self._build_process_tree(sequence_cut, CutType.SEQUENCE)
-            elif self._is_nontrivial(xor_cut):
-                new_sublogs = self._split_log(log, xor_cut)
-                self._build_process_tree(xor_cut, CutType.XOR)
-            elif self._is_nontrivial(parallel_cut):
-                new_sublogs = self._split_log(log, parallel_cut)
-                self._build_process_tree(parallel_cut, CutType.PARALLEL)
-            elif self._is_nontrivial(loop_cut):
-                new_sublogs = self._split_log(log, loop_cut)
-                self._build_process_tree(loop_cut, CutType.LOOP)
-            else:  # If no nontrivial cut is found, apply the fall-through case (flower model)
-                flower_groups = self._handle_fall_through(log)
-                new_sublogs = self._split_log(log, flower_groups)
-                self._build_process_tree(flower_groups, CutType.LOOP)
-                break  # The flower model is the last resort, so we can break the loop here
+    def _apply_cut(self, log: List[Tuple[str]], dfg: Dict[Tuple[str, str], int], start_activities: Dict[str, int],
+                   end_activities: Dict[str, int]) -> Tuple[List[Set[str]], CutType]:
+        """
+        Applies different types of cuts to the current sublog and builds the corresponding part of the process tree.
 
-            # If the log was split, remove the original sublog and add the new sublogs to the list
-            if new_sublogs:
-                sublogs.pop(i)
-                sublogs.extend(new_sublogs)
-            else: # If no split was performed, continue with the next sublog
-                i += 1
+        Parameters:
+            log: List of traces
+            dfg: Directly-follows graph
+            start_activities: Start activities in the log
+            end_activities: End activities in the log
+
+        Returns:
+            List of new sublogs resulting from the split. Empty list if no operator could be applied.
+        """
+        # Try to apply different types of cuts to the current sublog
+        sequence_cut = self._sequence_cut(dfg, start_activities, end_activities)
+        xor_cut = self._xor_cut(dfg, start_activities, end_activities)
+        parallel_cut = self._parallel_cut(dfg, start_activities, end_activities)
+        loop_cut = self._loop_cut(dfg, start_activities, end_activities)
+
+        # If a nontrivial cut (>1) is found, return the partition and the corresponding operator
+        if self._is_nontrivial(sequence_cut):
+            return sequence_cut, CutType.SEQUENCE
+        elif self._is_nontrivial(xor_cut):
+            return xor_cut, CutType.XOR
+        elif self._is_nontrivial(parallel_cut):
+            return parallel_cut, CutType.PARALLEL
+        elif self._is_nontrivial(loop_cut):
+            return loop_cut, CutType.LOOP
+        else:  # If no nontrivial cut is found, apply the fall-through case (flower model)
+            flower_groups = self._handle_fall_through(log)
+            return flower_groups, CutType.NONE
 
     def print_process_tree(self) -> None:
         """

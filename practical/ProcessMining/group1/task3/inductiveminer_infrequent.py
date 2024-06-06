@@ -112,9 +112,14 @@ class InductiveMinerInfrequent(InductiveMiner):
 
         return efg
 
+    def get_frequent_eventually_follows_graph(self, dfg) -> Dict[Tuple[str, str], int]:
+        efg = self._calculate_eventually_follows_graph(dfg)
 
-    def get_frequent_eventually_follows_graph(self) -> Tuple[Dict[Tuple[str, str], int], Dict[str, int], Dict[str, int]]:
-        pass
+        threshold_value = max(efg.values()) * self.threshold
+        frequent_efg = {pair: frequency for pair, frequency in efg.items() if frequency >= threshold_value}
+        frequent_efg = dict(sorted(frequent_efg.items(), key=lambda item: item[1], reverse=True))
+
+        return frequent_efg
 
     def _split_log_filtered(self, log: List[Tuple[str]], groups: List[Set[str]],
                             operator: CutType) -> List[List[Tuple[str]]]:

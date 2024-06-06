@@ -47,12 +47,12 @@ class InductiveMinerInfrequent(InductiveMiner):
             # Remove the old sublog from the list
             sublogs.remove(log)
 
-        dfg, dfg_start, dfg_end = self.get_frequent_directly_follows_graph()
-        edfg, edfg_start, edfg_end = self.get_frequent_eventually_follows_graph()
     def _apply_cut_filtered(self, log: List[Tuple[str]], dfg: Dict[Tuple[str, str], int],
                             start_activities: Dict[str, int], end_activities: Dict[str, int]) \
             -> Tuple[List[Set[str]], CutType]:
 
+        dfg_filtered = self.get_frequent_directly_follows_graph(dfg)
+        efg_filtered = self.get_frequent_eventually_follows_graph(dfg)
 
         # TODO refactor apply_cut to make super call possible instead of duplicate code
         # super()._apply_cut(log=log, dfg=dfg, start_activities=dfg_start, end_activities=dfg_end)

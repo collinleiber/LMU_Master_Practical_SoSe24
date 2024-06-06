@@ -80,8 +80,16 @@ class InductiveMinerInfrequent(InductiveMiner):
         # TODO: Apply IMi filters on base cases
         pass
 
-    def get_frequent_directly_follows_graph(self) -> Tuple[Dict[Tuple[str, str], int], Dict[str, int], Dict[str, int]]:
-        pass
+    def get_frequent_directly_follows_graph(self, dfg):
+        # Calculate the threshold value
+        threshold_value = max(dfg.values()) * self.threshold
+
+        frequent_dfg = {pair: frequency for pair, frequency in self.dfg.items() if frequency >= threshold_value}
+
+        # Sort by frequency
+        frequent_dfg = dict(sorted(frequent_dfg.items(), key=lambda item: item[1], reverse=True))
+        return frequent_dfg
+
 
     def _calculate_eventual_follows_graph(self):
         pass

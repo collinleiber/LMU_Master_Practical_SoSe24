@@ -1,4 +1,4 @@
-from algo import *
+from practical.ProcessMining.group2.inductive_miner.src.algo import *
 
 
 def test_file_loading():

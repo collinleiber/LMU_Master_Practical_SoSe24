@@ -90,9 +90,28 @@ class InductiveMinerInfrequent(InductiveMiner):
         frequent_dfg = dict(sorted(frequent_dfg.items(), key=lambda item: item[1], reverse=True))
         return frequent_dfg
 
+    def _calculate_eventually_follows_graph(self, dfg):
+        efg = dfg
+        # Repeat until no more edges can be added
+        while True:
+            # Track whether a new edge is added in this iteration
+            new_edge_added = False
 
-    def _calculate_eventual_follows_graph(self):
-        pass
+            # Iterate over each pair of nodes in the efg
+            for (i, j), freq_ij in list(efg.items()):
+                for (k, l), freq_kl in list(efg.items()):
+                    # If there is a path from i to l through j and k, add an edge (i, l) to the efg
+                    if j == k and (i, l) not in efg:
+                        efg[(i, l)] = min(freq_ij,
+                                          freq_kl)  # The frequency is the minimum of the frequencies of the two edges
+                        new_edge_added = True
+
+            # If no new edge is added in this iteration, break the loop
+            if not new_edge_added:
+                break
+
+        return efg
+
 
     def get_frequent_eventually_follows_graph(self) -> Tuple[Dict[Tuple[str, str], int], Dict[str, int], Dict[str, int]]:
         pass

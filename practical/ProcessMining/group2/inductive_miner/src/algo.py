@@ -1,5 +1,5 @@
 import os
-from graph_utils import *
+from practical.ProcessMining.group2.inductive_miner.src.graph_utils import *
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 

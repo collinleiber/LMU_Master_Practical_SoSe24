@@ -21,12 +21,29 @@ class Graph:
 
     def get_all_nodes(self) -> list:
         return list(self.graph.keys())
+    
+    def get_all_edges(self) -> list:
+        edges = [(node,neighbor) for node in self.graph for neighbor in self.graph[node]]
+        return edges
 
     def __str__(self) -> str:
         result = ""
         for node in self.graph:
             result += f"{node} -> {self.graph[node]}\n"
         return result
+    
+    @staticmethod
+    def build_graph_from_edges(edges : set) -> 'Graph':
+        graph = {}
+
+        for u, v in edges:
+            if u not in graph:
+                graph[u] = []
+            if v not in graph:
+                graph[v] = []
+            graph[u].append(v)
+            graph[v].append(u)
+        return Graph(graph)
 
     def is_reachable(self, node1, node2) -> bool:
         def dfs(current, target, visited):

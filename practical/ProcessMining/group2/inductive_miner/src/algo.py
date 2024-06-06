@@ -115,17 +115,39 @@ class ProcessTree:
         sorted_cut_indices = cuts_graph.traverse_path(start_node)
         sorted_cuts = [cuts[i] for i in sorted_cut_indices]
 
-        return sorted_cuts
+        return None if len(cuts) == 1 else sorted_cuts
 
     def find_parallel_split(self, dfg: DirectlyFollowsGraph):
-        pass
+        # Mark edges to be removed
+        edges = set(dfg.get_all_edges())
+        removed_edges = set()
+        for edge in edges:
+            if edge[::-1] in edges:
+                removed_edges.add(edge)
+
+        # Insert edge where no edge exists between two nodes
+        updated_graph = Graph(dfg.graph.copy())
+        nodes = dfg.get_all_nodes()
+        for node1 in nodes:
+            for node2 in nodes:
+                if node1 != node2 and node2 not in updated_graph.graph[node1] and (node1, node2) not in removed_edges:
+                    updated_graph.graph[node1].append(node2)
+
+        # Remove dual edges to be removed
+        for edge in removed_edges:
+            updated_graph.graph[edge[0]].remove(edge[1])
+
+        cuts = updated_graph.find_components()
+
+        return None if len(cuts) == 1 else cuts
 
     def find_loop_split(self, dfg: DirectlyFollowsGraph):
         pass
 
     def construct_process_tree(self, dfg: DirectlyFollowsGraph):
         # self.find_exclusive_choice_split(dfg)
-        self.find_sequence_split(dfg)
+        # self.find_sequence_split(dfg)
+        self.find_parallel_split(dfg)
 class InductiveMiner():
     def __init__(self):
         pass

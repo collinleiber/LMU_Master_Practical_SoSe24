@@ -278,8 +278,8 @@ class InductiveMiner:
         flower_groups = [set(self.TAU), [set(activity) for activity in sorted(list(self._get_alphabet(log)))]]
         return flower_groups
 
-    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[
-        Set[str]]:
+    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int],
+                      start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
         """
         Applies the sequence cut to the directly-follows graph (dfg).
 

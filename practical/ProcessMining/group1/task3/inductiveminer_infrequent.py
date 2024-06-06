@@ -4,7 +4,7 @@ from inductiveminer import InductiveMiner, CutType
 
 
 class InductiveMinerInfrequent(InductiveMiner):
-    def __init__(self, threshold: float = 0.0, event_log: Optional[List[Tuple[str]]] = None):
+    def __init__(self, event_log: Optional[List[Tuple[str]]] = None, threshold: float = 0.0):
         super().__init__(event_log=event_log)
         self.threshold = threshold
 
@@ -31,12 +31,12 @@ class InductiveMinerInfrequent(InductiveMiner):
                     sublogs.extend(new_sublogs)
                     # Build the corresponding part of the process tree
                     self._build_process_tree(groups, operator)
-                else:  # If fall through case, apply infrequent logic
+                else:  # If fall through case, apply infrequent logic TODO refactor for super call
                     base_cut, operator = self._handle_base_cases_filtered(log)
                     if base_cut:  # If not a base case, apply different types of cuts
                         self._build_process_tree(base_cut, operator)
                     else:  # try to split log based on operator and build corresponding part of the process tree
-                        groups, operator = self._apply_cut_filtered(log)
+                        groups, operator = self._apply_cut_filtered(log, dfg, start_activities, end_activities)
                         if operator != CutType.NONE:  # If not fall through case
                             new_sublogs = self._split_log_filtered(log, groups, operator)  # Apply IMi filters
                             sublogs.extend(new_sublogs)
@@ -47,15 +47,21 @@ class InductiveMinerInfrequent(InductiveMiner):
             # Remove the old sublog from the list
             sublogs.remove(log)
 
-    def _apply_cut_filtered(self, log: List[Tuple[str]]) -> Tuple[List[Set[str]], CutType]:
         dfg, dfg_start, dfg_end = self.get_frequent_directly_follows_graph()
         edfg, edfg_start, edfg_end = self.get_frequent_eventually_follows_graph()
+    def _apply_cut_filtered(self, log: List[Tuple[str]], dfg: Dict[Tuple[str, str], int],
+                            start_activities: Dict[str, int], end_activities: Dict[str, int]) \
+            -> Tuple[List[Set[str]], CutType]:
+
+
+        # TODO refactor apply_cut to make super call possible instead of duplicate code
+        # super()._apply_cut(log=log, dfg=dfg, start_activities=dfg_start, end_activities=dfg_end)
 
         # Try to apply different types of cuts to the current sublog
-        sequence_cut = self._sequence_cut(edfg, edfg_start, edfg_end)  # based on the filtered eventually-follows graph
-        xor_cut = self._xor_cut(dfg, dfg_start, dfg_end)  # based on the filtered directly-follows graph
-        parallel_cut = self._parallel_cut(dfg, dfg_start, dfg_end)  # based on the filtered directly-follows graph
-        loop_cut = self._loop_cut(dfg, dfg_start, dfg_end)  # based on the filtered directly-follows graph
+        sequence_cut = self._sequence_cut(efg_filtered, start_activities, end_activities)
+        xor_cut = self._xor_cut(dfg_filtered, start_activities, end_activities)
+        parallel_cut = self._parallel_cut(dfg_filtered, start_activities, end_activities)
+        loop_cut = self._loop_cut(dfg_filtered, start_activities, end_activities)
 
         # If a nontrivial cut (>1) is found, return the partition and the corresponding operator
         if self._is_nontrivial(sequence_cut):

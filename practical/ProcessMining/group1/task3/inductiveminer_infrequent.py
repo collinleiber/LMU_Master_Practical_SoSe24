@@ -1,6 +1,6 @@
 from typing import Optional, List, Tuple, Dict, Set
-
-from inductiveminer import InductiveMiner, CutType
+from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
+from practical.ProcessMining.group1.shared.utils import deduplicate_list
 
 
 class InductiveMinerInfrequent(InductiveMiner):
@@ -77,8 +77,42 @@ class InductiveMinerInfrequent(InductiveMiner):
             return flower_groups, CutType.NONE
 
     def _handle_base_cases_filtered(self, log: List[Tuple[str]]) -> Tuple[List[Set[str]], CutType]:
-        # TODO: Apply IMi filters on base cases
-        pass
+        # filter single activities
+        log = self._single_activity_filtering(log)
+        # filter empty traces
+        log = self._empty_trace_filtering(log)
+        # Apply the base case logic on the filtered log
+        return super()._handle_base_cases(log)
+
+    def _single_activity_filtering(self, log: List[Tuple[str]]) -> List[Tuple[str]]:
+        # Get all traces in the log that contain only a single activity and are not empty
+        single_activity_traces = [trace for trace in log if len(trace) == 1 and trace[0] != '']
+
+        # If all single activity traces are the same (otherwise no base case)
+        if len(deduplicate_list(single_activity_traces)) == 1:
+            # Calculate the relative frequency of the single activity traces in the log
+            rel_freq = sum([1 for trace in log if trace == single_activity_traces[0]]) / len(log)
+            # If the relative frequency of the single activity traces is above the threshold
+            if 1 - rel_freq <= self.threshold:
+                # Filter out all traces that are not the single activity trace
+                filtered_traces = [trace for trace in log if trace == single_activity_traces[0]]
+                return filtered_traces
+
+        return log  # If no filtering was applied, return the original log
+
+    def _empty_trace_filtering(self, log: List[Tuple[str]]) -> List[Tuple[str]]:
+        # Get all traces in the log that are empty
+        empty_traces = [trace for trace in log if trace == ('',)]
+
+        # Calculate the relative frequency of the empty traces in the log
+        rel_freq = len(empty_traces) / len(log)
+        # If the relative frequency of the empty traces is below the threshold
+        if rel_freq <= self.threshold:
+            # Filter out all traces that are empty
+            filtered_traces = [trace for trace in log if trace != ('',)]
+            return filtered_traces
+
+        return log  # If no filtering was applied, return the original log
 
     def get_frequent_directly_follows_graph(self, dfg):
         # Calculate the threshold value

@@ -24,7 +24,7 @@ class TestInductiveMiner:
         miner = InductiveMiner(log)
         parallel_cut = miner._parallel_cut(miner.dfg, miner.start_activities, miner.end_activities)
         assert check_lists_of_sets_equal(parallel_cut, [set('b'), set('c')])  # order does not matter
-        parallel_split = miner._split_log(miner.event_log, parallel_cut)
+        parallel_split = miner._split_log(miner.event_log, parallel_cut, CutType.PARALLEL)
         sublogs = [sorted([('b',), ('b',)]),
                    sorted([('c',), ('c',)])]
         assert all(sorted(sl) in sublogs for sl in parallel_split)
@@ -37,9 +37,13 @@ class TestInductiveMiner:
         miner = InductiveMiner(log)
         parallel_cut = miner._parallel_cut(miner.dfg, miner.start_activities, miner.end_activities)
         assert check_lists_of_sets_equal(parallel_cut, [set('e'), set('bcd')])  # order does not matter
-        parallel_split = miner._split_log(miner.event_log, parallel_cut)
+        parallel_split = miner._split_log(miner.event_log, parallel_cut, CutType.PARALLEL)
         sublogs = [sorted([('e',), ('e',), ('e',), ('e',), ('e',)]),
-                   sorted([('c', 'd', 'b'), ('b', 'c', 'd'), ('b', 'c', 'd')])]
+                   sorted([('b',),
+                           ('b', 'c', 'd', 'b'),
+                           ('b', 'c', 'd', 'b'),
+                           ('b', 'c', 'd', 'b'),
+                           ('b', 'c', 'd', 'b')])]
         assert all(sorted(sl) in sublogs for sl in parallel_split)
 
     def test_sequence_cut(self):
@@ -52,7 +56,7 @@ class TestInductiveMiner:
         miner = InductiveMiner(log)
         sequence_cut = miner._sequence_cut(miner.dfg, miner.start_activities, miner.end_activities)
         assert sequence_cut == [set('a'), set('bcef'), set('d')]  # order does matter
-        sequence_split = miner._split_log(miner.event_log, sequence_cut)
+        sequence_split = miner._split_log(miner.event_log, sequence_cut, CutType.SEQUENCE)
         sublogs = [sorted([('a',), ('a',), ('a',), ('a',), ('a',), ('a',)]),
                    sorted([('b', 'c'),
                            ('c', 'b'),
@@ -68,7 +72,7 @@ class TestInductiveMiner:
         miner = InductiveMiner(log)
         xor_cut = miner._xor_cut(miner.dfg, miner.start_activities, miner.end_activities)
         assert check_lists_of_sets_equal(xor_cut, [set('ace'), set('bdf')])  # order does not matter
-        xor_split = miner._split_log(miner.event_log, xor_cut)
+        xor_split = miner._split_log(miner.event_log, xor_cut, CutType.XOR)
         sublogs = [sorted([('a', 'c', 'e'), ('a', 'c', 'e')]), sorted([('b', 'd', 'f'), ('b', 'd', 'f')])]
         assert all(sorted(sl) in sublogs for sl in xor_split)
 
@@ -90,7 +94,7 @@ class TestInductiveMiner:
         miner = InductiveMiner(log)
         loop_cut = miner._loop_cut(miner.dfg, miner.start_activities, miner.end_activities)
         assert loop_cut == [set('bc'), set('ef')]  # order does matter
-        loop_split = miner._split_log(miner.event_log, loop_cut)
+        loop_split = miner._split_log(miner.event_log, loop_cut, CutType.LOOP)
         sublogs = [sorted([('b', 'c'), ('c', 'b'), ('b', 'c'), ('b', 'c'), ('c', 'b'), ('b', 'c'), ('b', 'c'),
                            ('c', 'b'), ('c', 'b'), ('b', 'c'), ('c', 'b')]),
                    sorted([('e', 'f'), ('e', 'f'), ('e', 'f'), ('e', 'f'), ('e', 'f')])]
@@ -127,4 +131,3 @@ class TestInductiveMiner:
         miner = InductiveMiner(log)
         miner.run()
         assert miner.process_tree_str == f'{CutType.LOOP.value}({InductiveMiner.TAU}, a, b, c, d, e, f, g)'
-

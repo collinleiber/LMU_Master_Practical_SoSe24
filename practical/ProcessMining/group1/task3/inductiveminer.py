@@ -66,7 +66,7 @@ class InductiveMiner:
                 groups, operator = self._apply_cut(log, dfg, start_activities, end_activities)
                 # Add the new sublogs to the list if not fall through case
                 if operator != CutType.NONE:
-                    new_sublogs = self._split_log(log, groups)
+                    new_sublogs = self._split_log(log, groups, operator)
                     sublogs.extend(new_sublogs)
                     # Build the corresponding part of the process tree
                     self._build_process_tree(groups, operator)
@@ -138,7 +138,7 @@ class InductiveMiner:
         # If the group has more than one activity, wrap it in parentheses and prepend the cut type
         if len(group_str) > 1:
             new_cut_str = f'{cut_str}({group_str})'
-        else: # If the group has only one activity, prepend the cut type
+        else:  # If the group has only one activity, prepend the cut type
             new_cut_str = f'{cut_str}{group_str}'
 
         # If the current process tree is empty (no cut applied yet), replace it with the new cut string
@@ -261,7 +261,6 @@ class InductiveMiner:
             else:  # never, once or many times (0..*)
                 operator = CutType.LOOP
                 groups += [tau_activity, base_activity]
-
         return groups, operator
 
     def _handle_fall_through(self, log: List[Tuple[str]]) -> List[Set[str]]:
@@ -278,8 +277,8 @@ class InductiveMiner:
         flower_groups = [set(self.TAU), [set(activity) for activity in sorted(list(self._get_alphabet(log)))]]
         return flower_groups
 
-    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[
-        Set[str]]:
+    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
+                      end: Dict[str, int]) -> List[Set[str]]:
         """
         Applies the sequence cut to the directly-follows graph (dfg).
 
@@ -494,16 +493,60 @@ class InductiveMiner:
         groups = [group for group in groups if group != set()]
         return groups if len(groups) > 1 else []
 
-    def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
+    def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]], operator: CutType) -> List[List[Tuple[str]]]:
+        if operator == CutType.SEQUENCE:
+            return self._sequence_split(log, cut)
+        elif operator == CutType.XOR:
+            return self._xor_split(log, cut)
+        elif operator == CutType.PARALLEL:
+            return self._parallel_split(log, cut)
+        elif operator == CutType.LOOP:
+            return self._loop_split(log, cut)
+        else:
+            return []
+
+    def _sequence_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
+        # TODO: implement log splitting based on sequence cut, maybe the same as for parallel?
+        pass
+
+    def _xor_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
+        # TODO: implement log splitting based on XOR cut
+        pass
+
+    def _parallel_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
         """
-        Splits the event log based on the cut provided.
+        Splits the event log based on the groups provided.
 
         Parameters:
             log: List of traces
             cut: List of groups of activities that form the cut
 
         Returns:
-            List of sublogs resulting from the split.
+            List of sublogs resulting from the parallel split.
+        """
+        sublogs = []
+        # Iterate over the groups in the cut
+        for partition in cut:
+            sublog = []
+            # Iterate over the traces in the log
+            for trace in log:
+                # Take activtites from the trace that are in the partition
+                sub_trace = tuple(activity for activity in trace if activity in partition)
+                if sub_trace:
+                    sublog.append(sub_trace)
+            sublogs.append(sorted(sublog))
+        return sublogs
+
+    def _loop_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
+        """
+        Splits the event log based on the groups provided.
+
+        Parameters:
+            log: List of traces
+            cut: List of groups of activities that form the cut
+
+        Returns:
+            List of sublogs resulting from the loop split.
         """
         # Convert the groups in the cut and the traces in the log to strings for easier comparison
         new_traces = [''.join(map(str, group)).replace(self.TAU, '') for group in cut]

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Optional, List, Tuple, Dict, Set
 from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
 from practical.ProcessMining.group1.shared.utils import deduplicate_list
@@ -115,17 +116,20 @@ class InductiveMinerInfrequent(InductiveMiner):
         return log  # If no filtering was applied, return the original log
 
     def get_frequent_directly_follows_graph(self, dfg):
-        # Calculate the threshold value
-        threshold_value = max(dfg.values()) * self.threshold
+        max_freq = defaultdict(int)
+        for edge, frequency in dfg.items():
+            max_freq[edge[0]] = max(max_freq[edge[0]], frequency)
 
-        frequent_dfg = {pair: frequency for pair, frequency in self.dfg.items() if frequency >= threshold_value}
+        # Filter infrequent edges of compared to max edge of each node
+        frequent_dfg = {edge: frequency for edge, frequency in dfg.items()
+                        if frequency >= self.threshold * max_freq[edge[0]]}
 
         # Sort by frequency
         frequent_dfg = dict(sorted(frequent_dfg.items(), key=lambda item: item[1], reverse=True))
         return frequent_dfg
 
     def _calculate_eventually_follows_graph(self, dfg):
-        efg = dfg
+        efg = dfg.copy()
         # Repeat until no more edges can be added
         while True:
             # Track whether a new edge is added in this iteration
@@ -149,10 +153,16 @@ class InductiveMinerInfrequent(InductiveMiner):
     def get_frequent_eventually_follows_graph(self, dfg) -> Dict[Tuple[str, str], int]:
         efg = self._calculate_eventually_follows_graph(dfg)
 
-        threshold_value = max(efg.values()) * self.threshold
-        frequent_efg = {pair: frequency for pair, frequency in efg.items() if frequency >= threshold_value}
-        frequent_efg = dict(sorted(frequent_efg.items(), key=lambda item: item[1], reverse=True))
+        max_freq = defaultdict(int)
+        for edge, frequency in efg.items():
+            max_freq[edge[0]] = max(max_freq[edge[0]], frequency)
 
+        # Filter infrequent edges of compared to max edge of each node
+        frequent_efg = {edge: frequency for edge, frequency in efg.items()
+                        if frequency >= self.threshold * max_freq[edge[0]]}
+
+        # Sort by frequency
+        frequent_efg = dict(sorted(frequent_efg.items(), key=lambda item: item[1], reverse=True))
         return frequent_efg
 
     def _split_log_filtered(self, log: List[Tuple[str]], groups: List[Set[str]],

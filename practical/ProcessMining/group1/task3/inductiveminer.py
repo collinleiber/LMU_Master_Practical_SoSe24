@@ -1,3 +1,4 @@
+from collections import defaultdict
 from enum import Enum
 from typing import List, Tuple, Dict, Set, Optional
 import pm4py
@@ -201,27 +202,17 @@ class InductiveMiner:
         Returns:
             Tuple containing the dfg, start activities, and end activities.
         """
-        dfg = {}
-        start_activities = {}
-        end_activities = {}
+        dfg = defaultdict(int)
+        start_activities = defaultdict(int)
+        end_activities = defaultdict(int)
 
         for trace in log:
-            if trace[0] in start_activities:
-                start_activities[trace[0]] += 1
-            else:
-                start_activities[trace[0]] = 1
-
-            if trace[-1] in end_activities:
-                end_activities[trace[-1]] += 1
-            else:
-                end_activities[trace[-1]] = 1
+            start_activities[trace[0]] += 1
+            end_activities[trace[-1]] += 1
 
             for i in range(len(trace) - 1):
                 pair = (trace[i], trace[i + 1])
-                if pair in dfg:
-                    dfg[pair] += 1
-                else:
-                    dfg[pair] = 1
+                dfg[pair] += 1
 
         return dfg, start_activities, end_activities
         # return pm4py.discover_dfg(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',

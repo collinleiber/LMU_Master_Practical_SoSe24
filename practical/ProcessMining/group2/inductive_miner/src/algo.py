@@ -1,4 +1,5 @@
 import os
+import copy
 from practical.ProcessMining.group2.inductive_miner.src.graph_utils import *
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -126,7 +127,7 @@ class ProcessTree:
                 removed_edges.add(edge)
 
         # Insert edge where no edge exists between two nodes
-        updated_graph = Graph(dfg.graph.copy())
+        updated_graph = Graph(copy.deepcopy(dfg.graph))
         nodes = dfg.get_all_nodes()
         for node1 in nodes:
             for node2 in nodes:
@@ -142,12 +143,85 @@ class ProcessTree:
         return None if len(cuts) == 1 else cuts
 
     def find_loop_split(self, dfg: DirectlyFollowsGraph):
-        pass
+        cuts = []
+        # Create do-body, start with all start/end nodes
+        start_nodes = dfg.start_nodes
+        end_nodes = dfg.end_nodes
+        start_end_nodes = start_nodes.union(end_nodes)
+        do_body = start_end_nodes
+
+        # Temporarily remove start/end activities
+        reduced_graph = Graph(copy.deepcopy(dfg.graph))
+        for node in start_end_nodes:
+            if node in reduced_graph.graph.keys():
+                del reduced_graph.graph[node]
+            for children in reduced_graph.graph.values():
+                if node in children:
+                    children.remove(node)
+
+        # Find connected components as possible candidates for loop bodies
+        undirected = reduced_graph.convert_to_undirected()
+        components = set(tuple(c) for c in undirected.find_components())
+
+        # Find valid loop bodies
+
+        # Find components that are connected to start nodes in do-body
+        components_connected_to_start_nodes = set()
+        connected_nodes_start = set()
+        for component in components:
+            for node in component:
+                for neighbor in dfg.get_neighbors(node):
+                    if neighbor in start_nodes:
+                        components_connected_to_start_nodes.add(tuple(component))
+                        connected_nodes_start.add(node)
+
+
+        # Find components that are connected from end nodes in do-body
+        components_connected_from_end = set()
+        connected_nodes_end = set()
+        for end_node in end_nodes:
+            for component in components:
+                for node in component:
+                    if node in dfg.get_neighbors(end_node):
+                        components_connected_from_end.add(tuple(component))
+                        connected_nodes_end.add(node)
+
+        # Check connectivity completeness to start nodes
+        for node in connected_nodes_start:
+            for start_node in start_nodes:
+                if start_node not in dfg.get_neighbors(node):
+                    components_connected_to_start_nodes = {c for c in components_connected_to_start_nodes if node not in c}
+                    break
+
+        # Check reachability completeness from end nodes
+        for node in connected_nodes_end:
+            for end_node in end_nodes:
+                if not node in dfg.get_neighbors(end_node):
+                    components_connected_from_end = {c for c in components_connected_from_end if node not in c}
+                    break
+
+        # Remove components that are connected to start nodes in do-body
+        invalid_components = components - components_connected_to_start_nodes
+        invalid_components = components - components_connected_from_end
+        loop_bodies = components - invalid_components
+
+        # Merge invalid components to do-body
+        for component in (invalid_components):
+            do_body.update(component)
+
+        # Add valid do-bodies to cuts
+        cuts.append(list(do_body)) # Do-body has to be the first element
+        for loop_body in loop_bodies:
+            cuts.append(list(loop_body))
+
+        # We need at least to components for a valid loop cut
+        return None if len(cuts) < 2 else cuts
 
     def construct_process_tree(self, dfg: DirectlyFollowsGraph):
         # self.find_exclusive_choice_split(dfg)
         # self.find_sequence_split(dfg)
-        self.find_parallel_split(dfg)
+        # self.find_parallel_split(dfg)
+        self.find_loop_split(dfg)
 class InductiveMiner():
     def __init__(self):
         pass
@@ -169,7 +243,7 @@ class InductiveMiner():
 if __name__ == "__main__":
     # event_log = EventLog.from_file("../data/log_from_paper.txt")
     # event_log.load_from_file()
-    event_log = EventLog.from_traces({'abcd': 3, 'acbd': 2, 'aed': 1})
+    event_log = EventLog.from_traces({'abcdfedfghabc': 3, 'abcdfeghabc': 2, 'abcijijkabc': 1})
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)
 

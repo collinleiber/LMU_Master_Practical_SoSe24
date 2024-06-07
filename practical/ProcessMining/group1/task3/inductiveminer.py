@@ -311,7 +311,7 @@ class InductiveMiner:
         Returns:
             List of groups of activities that form the XOR cut.
         """
-        activities = self._get_alphabet_from_dfg(dfg)
+        activities = self._get_alphabet(self.event_log)  # Include all activities from the event log
         if not activities:
             return []
 
@@ -333,7 +333,7 @@ class InductiveMiner:
                     if b == activity and a not in visited:
                         dfs(a, group)
 
-        # DFS for each activity to find all connected components
+        # Perform DFS for each activity to find all connected components
         for activity in activities:
             if activity not in visited:
                 group = set()

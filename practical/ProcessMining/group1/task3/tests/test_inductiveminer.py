@@ -82,10 +82,10 @@ class TestInductiveMiner:
         log = [('b', 'c'), ('c', 'b'), ('e',)]
         miner = InductiveMiner(log)
         xor_cut = miner._xor_cut(miner.dfg, miner.start_activities, miner.end_activities)
-        print('miner.dfg ==== ', miner.dfg) # dfg does't include e, sp...
+        print('miner.dfg ==== ', miner.dfg)
         print('xor_cut2 ==== ', xor_cut)
         assert check_lists_of_sets_equal(xor_cut, [set('bc'), set('e')])  # order does not matter
-        xor_split = miner._split_log(miner.event_log, xor_cut)
+        xor_split = miner._split_log(miner.event_log, xor_cut, CutType.XOR)
         sublogs = [sorted([('b', 'c'), ('c', 'b')]), sorted([('e',)])]
         assert all(sorted(sl) in sublogs for sl in xor_split)
 

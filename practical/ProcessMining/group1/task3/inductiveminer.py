@@ -330,10 +330,13 @@ class InductiveMiner:
     def _xor_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
         partitions = []
 
+        # Collect all activities from the dfg
         all_activities = set()
         for (a, b) in dfg:
             all_activities.add(a)
             all_activities.add(b)
+        all_activities.update(start.keys())
+        all_activities.update(end.keys())
 
         components = []
         visited = set()

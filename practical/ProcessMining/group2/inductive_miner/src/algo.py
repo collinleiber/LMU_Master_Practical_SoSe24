@@ -69,14 +69,15 @@ class DirectlyFollowsGraph(Graph):
 
 
 class ProcessTree:
-    def __init__(self):
+    def __init__(self, event_log: EventLog):
+        self.event_log = event_log
         self.root = None
         self.nodes = (
             []
         )  # TODO: Think about data structure for different types of nodes, dictionary sufficient?
         self.edges = []  # Format: (node1, node2)
 
-    def find_exclusive_choice_split(self, dfg: DirectlyFollowsGraph):
+    def find_exclusive_choice_cut(self, dfg: DirectlyFollowsGraph):
         # Convert the graph to undirected
         undirected = dfg.convert_to_undirected()
         # Find connected components
@@ -84,7 +85,7 @@ class ProcessTree:
 
         return None if len(cuts) == 1 else cuts
     
-    def find_sequence_split(self, dfg: DirectlyFollowsGraph):
+    def find_sequence_cut(self, dfg: DirectlyFollowsGraph):
         remaining_nodes = set(dfg.get_all_nodes())
         cuts = []
 
@@ -118,7 +119,7 @@ class ProcessTree:
 
         return None if len(cuts) == 1 else sorted_cuts
 
-    def find_parallel_split(self, dfg: DirectlyFollowsGraph):
+    def find_parallel_cut(self, dfg: DirectlyFollowsGraph):
         # Mark edges to be removed
         edges = set(dfg.get_all_edges())
         removed_edges = set()
@@ -142,7 +143,7 @@ class ProcessTree:
 
         return None if len(cuts) == 1 else cuts
 
-    def find_loop_split(self, dfg: DirectlyFollowsGraph):
+    def find_loop_cut(self, dfg: DirectlyFollowsGraph):
         cuts = []
         # Create do-body, start with all start/end nodes
         start_nodes = dfg.start_nodes
@@ -217,11 +218,47 @@ class ProcessTree:
         # We need at least to components for a valid loop cut
         return None if len(cuts) < 2 else cuts
 
-    def construct_process_tree(self, dfg: DirectlyFollowsGraph):
-        # self.find_exclusive_choice_split(dfg)
-        # self.find_sequence_split(dfg)
-        # self.find_parallel_split(dfg)
-        self.find_loop_split(dfg)
+    def exclusive_choice_split(self, cuts):
+        # TODO
+        pass
+
+    def sequence_split(self, cuts):
+        # TODO
+        pass
+
+    def parallel_split(self, cuts):
+        # TODO
+        pass
+
+    def loop_split(self, cuts):
+        # TODO
+        pass
+
+    def construct_process_tree(self, event_log: EventLog):
+        if "" in event_log.traces:
+            return None
+        for trace in event_log.traces:
+            if len(trace) == 1:
+                return None
+            
+        dfg = DirectlyFollowsGraph(event_log)
+        dfg.construct_dfg()
+
+        cut_methods = [
+            (self.find_exclusive_choice_cut, self.exclusive_choice_split),
+            (self.find_sequence_cut, self.sequence_split),
+            (self.find_parallel_cut, self.parallel_split),
+            (self.find_loop_cut, self.loop_split)
+        ]
+
+        for find_cut, process_split in cut_methods:
+            cuts = find_cut(dfg)
+            if cuts is not None:
+                splits = process_split(cuts)
+                return splits
+            
+        return None
+    
 class InductiveMiner():
     def __init__(self):
         pass
@@ -231,7 +268,7 @@ class InductiveMiner():
         dfg = DirectlyFollowsGraph(event_log)
 
         dfg.construct_dfg()
-        dfg.print_graph()
+        # dfg.print_graph()
 
         # Step 2: Construct Process Tree from DFG
         process_tree = ProcessTree()

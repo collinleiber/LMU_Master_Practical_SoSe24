@@ -132,7 +132,7 @@ class TestInductiveMiner:
         assert operator == CutType.LOOP
 
     def test_fall_through_flower_model(self):
-        log = [('a',), ('b',), ('c',), ('d',), ('e',), ('f',), ('g',)]
+        log = [('a', 'b', 'c', 'd'), ('d', 'a', 'b'), ('a', 'd', 'c'), ('b', 'c', 'd',)]
         miner = InductiveMiner(log)
         miner.run()
-        assert miner.process_tree_str == f'{CutType.LOOP.value}({InductiveMiner.TAU}, a, b, c, d, e, f, g)'
+        assert miner.process_tree_str == f'{CutType.LOOP.value}({InductiveMiner.TAU}, a, b, c, d)'

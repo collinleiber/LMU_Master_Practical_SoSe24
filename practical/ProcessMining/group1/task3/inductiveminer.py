@@ -66,7 +66,7 @@ class InductiveMiner:
                 groups, operator = self._apply_cut(log, dfg, start_activities, end_activities)
                 # Add the new sublogs to the list if not fall through case
                 if operator != CutType.NONE:
-                    new_sublogs = self._split_log(log, groups)
+                    new_sublogs = self._split_log(log, groups, operator)
                     sublogs.extend(new_sublogs)
                     # Build the corresponding part of the process tree
                     self._build_process_tree(groups, operator)
@@ -138,7 +138,7 @@ class InductiveMiner:
         # If the group has more than one activity, wrap it in parentheses and prepend the cut type
         if len(group_str) > 1:
             new_cut_str = f'{cut_str}({group_str})'
-        else: # If the group has only one activity, prepend the cut type
+        else:  # If the group has only one activity, prepend the cut type
             new_cut_str = f'{cut_str}{group_str}'
 
         # If the current process tree is empty (no cut applied yet), replace it with the new cut string
@@ -261,7 +261,6 @@ class InductiveMiner:
             else:  # never, once or many times (0..*)
                 operator = CutType.LOOP
                 groups += [tau_activity, base_activity]
-
         return groups, operator
 
     def _handle_fall_through(self, log: List[Tuple[str]]) -> List[Set[str]]:
@@ -291,76 +290,67 @@ class InductiveMiner:
         Returns:
             List of groups of activities that form the sequence cut.
         """
-        alphabet = self._get_alphabet_from_dfg(dfg)
-        if not alphabet:
+        activities = self._get_alphabet_from_dfg(dfg)
+        if not activities:
             return []
 
-        # Initialize partitions with the start activities as the first group
-        partitions = [set(start.keys())]
-        remaining_activities = alphabet - partitions[0]
+        start_activities = set(start.keys())
+        end_activities = set(end.keys())
+        middle_activities = activities - start_activities - end_activities
 
-        # Function to check if we can add an activity to a partition
-        def can_add_to_partition(activity, partition):
-            for p in partition:
-                if (activity, p) in dfg or (p, activity) not in dfg:
-                    return False
-            return True
+        sequence_groups = [start_activities]
 
-        # Build partitions iteratively
-        while remaining_activities:
-            next_partition = set()
-            for activity in sorted(remaining_activities):
-                if can_add_to_partition(activity, partitions[-1]):
-                    partitions[-1].add(activity)
-                else:
-                    next_partition.add(activity)
-            if next_partition:
-                partitions.append(next_partition)
-            remaining_activities -= partitions[-1]
+        if middle_activities:
+            sequence_groups.append(middle_activities)
 
-        # Validate the sequence cut against the given conditions
-        for i in range(len(partitions) - 1):
-            for j in range(i + 1, len(partitions)):
-                for ai in partitions[i]:
-                    for aj in partitions[j]:
-                        if (aj, ai) in dfg or (ai, aj) not in dfg:
-                            return []
+        if end_activities:
+            sequence_groups.append(end_activities)
 
-        return partitions if len(partitions) > 1 else []
+        return sequence_groups
 
     def _xor_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
-        partitions = []
+        """
+        Applies the XOR cut to the directly-follows graph (dfg).
 
-        all_activities = set()
-        for (a, b) in dfg:
-            all_activities.add(a)
-            all_activities.add(b)
+        Parameters:
+            dfg: Directly-follows graph
+            start: Start activities in the log
+            end: End activities in the log
 
-        components = []
+        Returns:
+            List of groups of activities that form the XOR cut.
+        """
+        activities = self._get_alphabet_from_dfg(dfg)
+        if not activities:
+            return []
+
+        # Initialize groups
+        xor_groups = []
+
+        # Initialize visited set to keep track of visited nodes
         visited = set()
 
-        def dfs(activity, component):
-            stack = [activity]
-            while stack:
-                node = stack.pop()
-                if node not in visited:
-                    visited.add(node)
-                    component.add(node)
-                    for successor in [b for (a, b) in dfg if a == node]:
-                        stack.append(successor)
-                    for predecessor in [a for (a, b) in dfg if b == node]:
-                        stack.append(predecessor)
-
-        for activity in all_activities:
+        # Function to perform DFS and find connected components
+        def dfs(activity, group):
             if activity not in visited:
-                component = set()
-                dfs(activity, component)
-                components.append(component)
+                visited.add(activity)
+                group.add(activity)
+                # Visit all directly-follows activities
+                for a, b in dfg.keys():
+                    if a == activity and b not in visited:
+                        dfs(b, group)
+                    if b == activity and a not in visited:
+                        dfs(a, group)
 
-        for component in components:
-            partitions.append(component)
+        # DFS for each activity to find all connected components
+        for activity in activities:
+            if activity not in visited:
+                group = set()
+                dfs(activity, group)
+                if group:
+                    xor_groups.append(group)
 
-        return partitions
+        return xor_groups
 
     def _parallel_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
                       end: Dict[str, int]) -> List[Set[str]]:
@@ -494,16 +484,99 @@ class InductiveMiner:
         groups = [group for group in groups if group != set()]
         return groups if len(groups) > 1 else []
 
-    def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
+    def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]], operator: CutType) -> List[List[Tuple[str]]]:
+        if operator == CutType.SEQUENCE:
+            return self._sequence_split(log, cut)
+        elif operator == CutType.XOR:
+            return self._xor_split(log, cut)
+        elif operator == CutType.PARALLEL:
+            return self._parallel_split(log, cut)
+        elif operator == CutType.LOOP:
+            return self._loop_split(log, cut)
+        else:
+            return []
+
+    def _sequence_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
         """
-        Splits the event log based on the cut provided.
+        Splits the event log based on the sequence cut.
+
+        Parameters:
+            log: List of traces
+            cut: List of groups of activities that form the sequence cut
+
+        Returns:
+            List of sublogs resulting from the sequence split.
+        """
+        sublogs = [[] for _ in range(len(cut))]
+
+        for trace in log:
+            trace_list = list(trace)
+            for i, group in enumerate(cut):
+                sub_trace = tuple(activity for activity in trace_list if activity in group)
+                if sub_trace:
+                    sublogs[i].append(sub_trace)
+                # Remove the matched activities from the trace_list to avoid duplicate matching
+                trace_list = [activity for activity in trace_list if activity not in group]
+
+        return sublogs
+
+    def _xor_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
+        """
+        Splits the event log based on the XOR cut.
+
+        Parameters:
+            log: List of traces
+            cut: List of groups of activities that form the XOR cut
+
+        Returns:
+            List of sublogs resulting from the XOR split.
+        """
+        sublogs = [[] for _ in range(len(cut))]
+
+        for trace in log:
+            for i, group in enumerate(cut):
+                sub_trace = tuple(activity for activity in trace if activity in group)
+                if sub_trace:
+                    sublogs[i].append(sub_trace)
+                    # Assuming XOR means only one of the groups can be present in the trace
+                    break
+
+        return sublogs
+
+    def _parallel_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
+        """
+        Splits the event log based on the groups provided.
 
         Parameters:
             log: List of traces
             cut: List of groups of activities that form the cut
 
         Returns:
-            List of sublogs resulting from the split.
+            List of sublogs resulting from the parallel split.
+        """
+        sublogs = []
+        # Iterate over the groups in the cut
+        for partition in cut:
+            sublog = []
+            # Iterate over the traces in the log
+            for trace in log:
+                # Take activtites from the trace that are in the partition
+                sub_trace = tuple(activity for activity in trace if activity in partition)
+                if sub_trace:
+                    sublog.append(sub_trace)
+            sublogs.append(sorted(sublog))
+        return sublogs
+
+    def _loop_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
+        """
+        Splits the event log based on the groups provided.
+
+        Parameters:
+            log: List of traces
+            cut: List of groups of activities that form the cut
+
+        Returns:
+            List of sublogs resulting from the loop split.
         """
         # Convert the groups in the cut and the traces in the log to strings for easier comparison
         new_traces = [''.join(map(str, group)).replace(self.TAU, '') for group in cut]

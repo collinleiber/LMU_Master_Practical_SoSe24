@@ -1,10 +1,13 @@
+from collections import defaultdict
 from enum import Enum
 from typing import List, Tuple, Dict, Set, Optional
 import pm4py
+import pandas as pd
 from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe
-from pm4py.algo.discovery.inductive import algorithm as inductive_miner
-from collections import defaultdict, deque
-from itertools import combinations
+from pm4py.objects.process_tree.obj import ProcessTree
+from pm4py.visualization.process_tree import visualizer as pt_visualizer
+from pm4py.objects.conversion.log import converter as log_converter
+
 
 class CutType(Enum):
     """
@@ -195,7 +198,7 @@ class InductiveMiner:
         Returns:
             Set of unique activities in the event log.
         """
-        return set([activity for trace in log for activity in trace])
+        return {activity for trace in log for activity in trace}
 
     def _get_alphabet_from_dfg(self, dfg: Dict[Tuple[str, str], int]) -> Set[str]:
         """
@@ -207,7 +210,7 @@ class InductiveMiner:
         Returns:
             Set of unique activities in the dfg.
         """
-        return set([activity for edge in dfg.keys() for activity in edge])
+        return {activity for edge in dfg.keys() for activity in edge}
 
     def _get_dfg(self, log: List[Tuple]) -> Tuple[Dict[Tuple[str, str], int], Dict[str, int], Dict[str, int]]:
         """
@@ -219,31 +222,19 @@ class InductiveMiner:
         Returns:
             Tuple containing the dfg, start activities, and end activities.
         """
-        dfg = {}
-        start_activities = {}
-        end_activities = {}
+        dfg = defaultdict(int)
+        start_activities = defaultdict(int)
+        end_activities = defaultdict(int)
 
         for trace in log:
-            if trace[0] in start_activities:
-                start_activities[trace[0]] += 1
-            else:
-                start_activities[trace[0]] = 1
-
-            if trace[-1] in end_activities:
-                end_activities[trace[-1]] += 1
-            else:
-                end_activities[trace[-1]] = 1
+            start_activities[trace[0]] += 1
+            end_activities[trace[-1]] += 1
 
             for i in range(len(trace) - 1):
                 pair = (trace[i], trace[i + 1])
-                if pair in dfg:
-                    dfg[pair] += 1
-                else:
-                    dfg[pair] = 1
+                dfg[pair] += 1
 
         return dfg, start_activities, end_activities
-        # return pm4py.discover_dfg(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
-        #                                                  activity_key='activity', timestamp_key='timestamp'))
 
     def _handle_base_cases(self, log: List[Tuple[str]]) -> Tuple[List[Set[str]], CutType]:
         """
@@ -294,45 +285,6 @@ class InductiveMiner:
         # Tau in the do part of the loop cut (= 0..* execution of any activity)
         flower_groups = [set(self.TAU), [set(activity) for activity in sorted(list(self._get_alphabet(log)))]]
         return flower_groups
-
-    def _strongly_connected_components(graph: Dict[str, Set[str]]) -> List[Set[str]]:
-        index = 0
-        stack = []
-        indices = {}
-        lowlinks = {}
-        on_stack = defaultdict(bool)
-        sccs = []
-
-        def strongconnect(node):
-            nonlocal index
-            indices[node] = index
-            lowlinks[node] = index
-            index += 1
-            stack.append(node)
-            on_stack[node] = True
-
-            for neighbor in graph[node]:
-                if neighbor not in indices:
-                    strongconnect(neighbor)
-                    lowlinks[node] = min(lowlinks[node], lowlinks[neighbor])
-                elif on_stack[neighbor]:
-                    lowlinks[node] = min(lowlinks[node], indices[neighbor])
-
-            if lowlinks[node] == indices[node]:
-                scc = set()
-                while True:
-                    w = stack.pop()
-                    on_stack[w] = False
-                    scc.add(w)
-                    if w == node:
-                        break
-                sccs.append(scc)
-
-        for node in graph:
-            if node not in indices:
-                strongconnect(node)
-
-        return sccs
 
     def _invert_graph(graph: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
         inverted = defaultdict(set)
@@ -394,6 +346,7 @@ class InductiveMiner:
         return [first_part, second_part]
 
     def _xor_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
+        # Convert DFG to undirected graph
         undirected_dfg = defaultdict(set)
         for (a, b) in dfg:
             undirected_dfg[a].add(b)
@@ -405,6 +358,7 @@ class InductiveMiner:
         for activity in end.keys():
             undirected_dfg[activity]
 
+        # Detect connected components in the undirected graph
         def dfs(activity, component):
             stack = [activity]
             while stack:
@@ -499,18 +453,21 @@ class InductiveMiner:
         groups.append(set([activity for edge in inner_edges for activity in edge]))
 
         # Exclude sets that are non-reachable from start/end activities from the loop groups
+        def exclude_non_reachable(groups):
+            group_a, group_b = set(), set()
+            for group in groups:
+                group_a = group if a in group else group_a
+                group_b = group if b in group else group_b
+            groups = [group for group in groups if group != group_a and group != group_b]
+            groups.insert(0, group_a.union(group_b))
+
         pure_start_activities = start_activities.difference(end_activities)  # only start, not end activity
         # Put all activities in the do-group that follow a start activity which is not an end activity
         # (a loop activity can only follow a start activity if it is also an end activity)
         for a in pure_start_activities:
             for (x, b) in edges:
                 if x == a:
-                    group_a, group_b = set(), set()
-                    for group in groups:
-                        group_a = group if a in group else group_a
-                        group_b = group if b in group else group_b
-                    groups = [group for group in groups if group != group_a and group != group_b]
-                    groups.insert(0, group_a.union(group_b))
+                    exclude_non_reachable(groups)
 
         pure_end_activities = end_activities.difference(start_activities)  # only end, not start activity
         # Put all activities in the do-group that precede an end activity which is not a start activity
@@ -814,16 +771,79 @@ class InductiveMiner:
         # If no matching subsequence is found, return an empty string
         return ''
 
-if __name__ == '__main__':
-    # Example usage of the Inductive Miner
-    log = [('b', 'e'),
-           ('b', 'e', 'c', 'd', 'b'),
-           ('b', 'c', 'e', 'd', 'b'),
-           ('b', 'c', 'd', 'e', 'b'),
-           ('e', 'b', 'c', 'd', 'b')]
-    miner = InductiveMiner(log)
-    miner.run()
-    miner.print_process_tree()
-    process_tree = inductive_miner.apply(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
-                                                             activity_key='activity', timestamp_key='timestamp'))
-    print('expected process_tree ====', process_tree)
+    def visualize_process_tree(self):
+        """
+        Visualizes the process tree using the specified symbols for SEQUENCE, XOR, PARALLEL, and LOOP cuts.
+
+        Converts the event log to a dataframe, discovers the process tree using the inductive miner algorithm,
+        replaces the operator labels with the corresponding symbols, and visualizes the process tree.
+
+        The process tree is displayed using the specified format.
+        """
+        # Convert the event log to a dataframe for pm4py
+        event_log_df = self._event_log_to_dataframe(self.event_log)
+        log = log_converter.apply(event_log_df)
+        tree = pm4py.discover_process_tree_inductive(log)
+
+        def replace_labels(node):
+            """
+            Recursively replaces operator labels in the process tree nodes with the specified symbols.
+
+            Parameters:
+                node: The current node in the process tree.
+            """
+            if node.operator is not None:
+                if node.operator == 'sequence':
+                    node.operator = '→'
+                elif node.operator == 'xor':
+                    node.operator = '×'
+                elif node.operator == 'parallel':
+                    node.operator = '∧'
+                elif node.operator == 'loop':
+                    node.operator = '↺'
+
+            # Recursively replace labels in child nodes
+            for child in node.children:
+                if child.children:
+                    replace_labels(child)
+
+        # Replace labels in the process tree
+        replace_labels(tree)
+
+        # Visualization settings
+        parameters = {'format': 'png'}  # Can change later to other formats
+        gviz = pt_visualizer.apply(tree, parameters=parameters)
+        pt_visualizer.view(gviz)
+        # optionally save the image if needed
+        # pt_visualizer.save(gviz, "process_tree.png")
+
+    def _event_log_to_dataframe(self, log):
+        """
+        Converts the event log to a pandas DataFrame formatted for pm4py.
+
+        Parameters:
+            log: List of traces
+
+        Returns:
+            A pandas DataFrame with the event log formatted for pm4py.
+        """
+        data = []
+        for i, trace in enumerate(log):
+            for event in trace:
+                data.append({"case_id": i, "activity": event, "timestamp": i})
+        return pm4py.format_dataframe(pd.DataFrame(data), case_id='case_id', activity_key='activity',
+                                      timestamp_key='timestamp')
+    
+    # if __name__ == '__main__':
+    # # Example usage of the Inductive Miner
+    # log = [('b', 'e'),
+    #        ('b', 'e', 'c', 'd', 'b'),
+    #        ('b', 'c', 'e', 'd', 'b'),
+    #        ('b', 'c', 'd', 'e', 'b'),
+    #        ('e', 'b', 'c', 'd', 'b')]
+    # miner = InductiveMiner(log)
+    # miner.run()
+    # miner.print_process_tree()
+    # process_tree = inductive_miner.apply(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
+    #                                                          activity_key='activity', timestamp_key='timestamp'))
+    # print('expected process_tree ====', process_tree)

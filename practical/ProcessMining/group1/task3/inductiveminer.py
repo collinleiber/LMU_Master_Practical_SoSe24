@@ -181,7 +181,7 @@ class InductiveMiner:
         Returns:
             Set of unique activities in the event log.
         """
-        return set([activity for trace in log for activity in trace])
+        return {activity for trace in log for activity in trace}
 
     def _get_alphabet_from_dfg(self, dfg: Dict[Tuple[str, str], int]) -> Set[str]:
         """
@@ -193,7 +193,7 @@ class InductiveMiner:
         Returns:
             Set of unique activities in the dfg.
         """
-        return set([activity for edge in dfg.keys() for activity in edge])
+        return {activity for edge in dfg.keys() for activity in edge}
 
     def _get_dfg(self, log: List[Tuple]) -> Tuple[Dict[Tuple[str, str], int], Dict[str, int], Dict[str, int]]:
         """
@@ -658,7 +658,8 @@ class InductiveMiner:
 
             # Recursively replace labels in child nodes
             for child in node.children:
-                replace_labels(child)
+                if child.children:
+                    replace_labels(child)
 
         # Replace labels in the process tree
         replace_labels(tree)
@@ -669,7 +670,6 @@ class InductiveMiner:
         pt_visualizer.view(gviz)
         # optionally save the image if needed
         # pt_visualizer.save(gviz, "process_tree.png")
-        print("Process tree visualization complete")
 
     def _event_log_to_dataframe(self, log):
         """
@@ -687,11 +687,3 @@ class InductiveMiner:
                 data.append({"case_id": i, "activity": event, "timestamp": i})
         return pm4py.format_dataframe(pd.DataFrame(data), case_id='case_id', activity_key='activity',
                                       timestamp_key='timestamp')
-
-
-# Example usage
-event_log = [('a', 'c', 'e', 'g'),('a', 'e', 'c', 'g'),('b', 'd', 'f', 'g'),('b', 'f', 'd', 'g')]
-miner = InductiveMiner(event_log)
-miner.run()
-miner.print_process_tree()
-miner.visualize_process_tree()

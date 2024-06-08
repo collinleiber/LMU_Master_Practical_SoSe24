@@ -2,7 +2,9 @@ from enum import Enum
 from typing import List, Tuple, Dict, Set, Optional
 import pm4py
 from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe
-
+from pm4py.algo.discovery.inductive import algorithm as inductive_miner
+from collections import defaultdict, deque
+from itertools import combinations
 
 class CutType(Enum):
     """
@@ -45,7 +47,7 @@ class InductiveMiner:
     def run(self) -> None:
         """
         Main method to run the Inductive Miner algorithm. It iteratively applies different types of cuts
-        (sequence, XOR, parallel, loop) to the dfg, splits the event log into sublogs, and builds up the
+        (sequence_cutnce, XOR, parallel, loop) to the dfg, splits the event log into sublogs, and builds up the
         process tree accordingly.
         """
         # Initialize the list of sublogs with the original event log
@@ -67,6 +69,8 @@ class InductiveMiner:
                 # Add the new sublogs to the list if not fall through case
                 if operator != CutType.NONE:
                     new_sublogs = self._split_log(log, groups, operator)
+                    print(f"Splitting log: {log} with groups: {groups} and operator: {operator}")
+                    print(f"New sublogs: {new_sublogs}")
                     sublogs.extend(new_sublogs)
                     # Build the corresponding part of the process tree
                     self._build_process_tree(groups, operator)
@@ -75,6 +79,9 @@ class InductiveMiner:
 
             # Remove the old sublog from the list
             sublogs.remove(log)
+
+            # Debug print to check the current state of sublogs
+            print(f"Current sublogs: {sublogs}")
 
     def _apply_cut(self, log: List[Tuple[str]], dfg: Dict[Tuple[str, str], int], start_activities: Dict[str, int],
                    end_activities: Dict[str, int]) -> Tuple[List[Set[str]], CutType]:
@@ -96,16 +103,27 @@ class InductiveMiner:
         parallel_cut = self._parallel_cut(dfg, start_activities, end_activities)
         loop_cut = self._loop_cut(dfg, start_activities, end_activities)
 
+        # Debug prints to check the cuts
+        print(f"Sequence Cut: {sequence_cut}")
+        print(f"XOR Cut: {xor_cut}")
+        print(f"Parallel Cut: {parallel_cut}")
+        print(f"Loop Cut: {loop_cut}")
+
         # If a nontrivial cut (>1) is found, return the partition and the corresponding operator
         if self._is_nontrivial(sequence_cut):
+            print("Applying Sequence Cut")
             return sequence_cut, CutType.SEQUENCE
         elif self._is_nontrivial(xor_cut):
+            print("Applying XOR Cut")
             return xor_cut, CutType.XOR
         elif self._is_nontrivial(parallel_cut):
+            print("Applying Parallel Cut")
             return parallel_cut, CutType.PARALLEL
         elif self._is_nontrivial(loop_cut):
+            print("Applying Loop Cut")
             return loop_cut, CutType.LOOP
         else:  # If no nontrivial cut is found, apply the fall-through case (flower model)
+            print("Applying Fall-Through Case")
             flower_groups = self._handle_fall_through(log)
             return flower_groups, CutType.NONE
 
@@ -277,69 +295,115 @@ class InductiveMiner:
         flower_groups = [set(self.TAU), [set(activity) for activity in sorted(list(self._get_alphabet(log)))]]
         return flower_groups
 
-    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
-                      end: Dict[str, int]) -> List[Set[str]]:
-        """
-        Applies the sequence cut to the directly-follows graph (dfg).
+    def _strongly_connected_components(graph: Dict[str, Set[str]]) -> List[Set[str]]:
+        index = 0
+        stack = []
+        indices = {}
+        lowlinks = {}
+        on_stack = defaultdict(bool)
+        sccs = []
 
-        Parameters:
-            dfg: Directly-follows graph
-            start: Start activities in the log
-            end: End activities in the log
+        def strongconnect(node):
+            nonlocal index
+            indices[node] = index
+            lowlinks[node] = index
+            index += 1
+            stack.append(node)
+            on_stack[node] = True
 
-        Returns:
-            List of groups of activities that form the sequence cut.
-        """
-        alphabet = self._get_alphabet_from_dfg(dfg)
-        if not alphabet:
-            return []
+            for neighbor in graph[node]:
+                if neighbor not in indices:
+                    strongconnect(neighbor)
+                    lowlinks[node] = min(lowlinks[node], lowlinks[neighbor])
+                elif on_stack[neighbor]:
+                    lowlinks[node] = min(lowlinks[node], indices[neighbor])
 
-        # Initialize partitions with the start activities as the first group
-        partitions = [set(start.keys())]
-        remaining_activities = alphabet - partitions[0]
+            if lowlinks[node] == indices[node]:
+                scc = set()
+                while True:
+                    w = stack.pop()
+                    on_stack[w] = False
+                    scc.add(w)
+                    if w == node:
+                        break
+                sccs.append(scc)
 
-        # Function to check if we can add an activity to a partition
-        def can_add_to_partition(activity, partition):
-            for p in partition:
-                if (activity, p) in dfg or (p, activity) not in dfg:
-                    return False
-            return True
+        for node in graph:
+            if node not in indices:
+                strongconnect(node)
 
-        # Build partitions iteratively
-        while remaining_activities:
-            next_partition = set()
-            for activity in sorted(remaining_activities):
-                if can_add_to_partition(activity, partitions[-1]):
-                    partitions[-1].add(activity)
-                else:
-                    next_partition.add(activity)
-            if next_partition:
-                partitions.append(next_partition)
-            remaining_activities -= partitions[-1]
+        return sccs
 
-        # Validate the sequence cut against the given conditions
-        for i in range(len(partitions) - 1):
-            for j in range(i + 1, len(partitions)):
-                for ai in partitions[i]:
-                    for aj in partitions[j]:
-                        if (aj, ai) in dfg or (ai, aj) not in dfg:
-                            return []
+    def _invert_graph(graph: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
+        inverted = defaultdict(set)
+        all_nodes = set(graph.keys())
+        for src in graph:
+            for dest in graph[src]:
+                inverted[dest].add(src)
+            all_nodes.update(graph[src])
 
-        return partitions if len(partitions) > 1 else []
+        for node in all_nodes:
+            if node not in inverted:
+                inverted[node] = set()
+
+        return inverted
+
+    def _sequence_cut(dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
+        adj_list = defaultdict(set)
+        for (a, b) in dfg:
+            adj_list[a].add(b)
+
+        sccs = _strongly_connected_components(adj_list)
+
+        scc_map = {}
+        for scc in sccs:
+            for node in scc:
+                scc_map[node] = scc
+
+        scc_graph = defaultdict(set)
+        for (a, b) in dfg:
+            if scc_map[a] != scc_map[b]:
+                scc_graph[frozenset(scc_map[a])].add(frozenset(scc_map[b]))
+
+        in_degree = defaultdict(int)
+        for src in scc_graph:
+            for dest in scc_graph[src]:
+                in_degree[dest] += 1
+
+        zero_in_degree = [node for node in scc_graph if in_degree[node] == 0]
+        topo_sorted_sccs = []
+        while zero_in_degree:
+            node = zero_in_degree.pop()
+            topo_sorted_sccs.append(node)
+            for neighbor in scc_graph[node]:
+                in_degree[neighbor] -= 1
+                if in_degree[neighbor] == 0:
+                    zero_in_degree.append(neighbor)
+
+        first_part = set()
+        second_part = set()
+        in_first_part = True
+        for scc in topo_sorted_sccs:
+            if in_first_part:
+                first_part.update(scc)
+                if any(node in end for node in scc):
+                    in_first_part = False
+            else:
+                second_part.update(scc)
+
+        return [first_part, second_part]
 
     def _xor_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
-        partitions = []
-
-        # Collect all activities from the dfg
-        all_activities = set()
+        undirected_dfg = defaultdict(set)
         for (a, b) in dfg:
-            all_activities.add(a)
-            all_activities.add(b)
-        all_activities.update(start.keys())
-        all_activities.update(end.keys())
+            undirected_dfg[a].add(b)
+            undirected_dfg[b].add(a)
 
-        components = []
-        visited = set()
+        for activity in start.keys():
+            undirected_dfg[activity]
+
+        for activity in end.keys():
+            undirected_dfg[activity]
 
         def dfs(activity, component):
             stack = [activity]
@@ -348,21 +412,20 @@ class InductiveMiner:
                 if node not in visited:
                     visited.add(node)
                     component.add(node)
-                    for successor in [b for (a, b) in dfg if a == node]:
-                        stack.append(successor)
-                    for predecessor in [a for (a, b) in dfg if b == node]:
-                        stack.append(predecessor)
+                    for neighbor in undirected_dfg[node]:
+                        if neighbor not in visited:
+                            stack.append(neighbor)
 
-        for activity in all_activities:
+        visited = set()
+        components = []
+
+        for activity in undirected_dfg:
             if activity not in visited:
                 component = set()
                 dfs(activity, component)
                 components.append(component)
 
-        for component in components:
-            partitions.append(component)
-
-        return partitions
+        return components if len(components) > 1 else []
 
     def _parallel_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
                       end: Dict[str, int]) -> List[Set[str]]:
@@ -426,11 +489,13 @@ class InductiveMiner:
         start_activities = set(start.keys())
         end_activities = set(end.keys())
 
-        # Merge start and end activities into do group
+        # Merge start and end activities into the first group (do-group)
         groups = [start_activities.union(end_activities)]
 
-        # Remove start and end activities from the dfg and add as loop group
+        # Extract inner edges (excluding start and end activities)
         inner_edges = [edge for edge in edges if edge[0] not in groups[0] and edge[1] not in groups[0]]
+
+        # Create a group for the inner edges (loop group)
         groups.append(set([activity for edge in inner_edges for activity in edge]))
 
         # Exclude sets that are non-reachable from start/end activities from the loop groups
@@ -461,8 +526,9 @@ class InductiveMiner:
                             group_b = group
                     groups = [group for group in groups if group not in [group_a, group_b]]
                     groups.insert(0, group_a.union(group_b))
+
         # Check start completeness
-        # all loop activities must be able to reach the start activities
+        # All loop activities must be able to reach the start activities
         i = 1
         while i < len(groups):
             merge = False
@@ -476,8 +542,9 @@ class InductiveMiner:
                 groups.pop(i)
             else:
                 i += 1
+
         # Check end completeness
-        # all loop activities must be able to be reached from the end activities
+        # All loop activities must be able to be reached from the end activities
         i = 1
         while i < len(groups):
             merge = False
@@ -492,7 +559,7 @@ class InductiveMiner:
             else:
                 i += 1
 
-        # return cut if more than one group (i.e. do- and loop-group found)
+        # Return the cut if more than one group (i.e., do- and loop-group found)
         groups = [group for group in groups if group != set()]
         return groups if len(groups) > 1 else []
 
@@ -508,18 +575,144 @@ class InductiveMiner:
         else:
             return []
 
-    def _sequence_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
-        sublogs = [[] for _ in range(len(cut))]
+    def _strongly_connected_components(self, graph: Dict[str, Set[str]]) -> List[Set[str]]:
+        index = 0
+        stack = []
+        indices = {}
+        lowlinks = {}
+        on_stack = defaultdict(bool)
+        sccs = []
 
-        for trace in log:
-            trace_list = list(trace)
-            for i, group in enumerate(cut):
-                sub_trace = tuple(activity for activity in trace_list if activity in group)
+        def strongconnect(node):
+            nonlocal index
+            indices[node] = index
+            lowlinks[node] = index
+            index += 1
+            stack.append(node)
+            on_stack[node] = True
+
+            for neighbor in graph[node]:
+                if neighbor not in indices:
+                    strongconnect(neighbor)
+                    lowlinks[node] = min(lowlinks[node], lowlinks[neighbor])
+                elif on_stack[neighbor]:
+                    lowlinks[node] = min(lowlinks[node], indices[neighbor])
+
+            if lowlinks[node] == indices[node]:
+                scc = set()
+                while True:
+                    w = stack.pop()
+                    on_stack[w] = False
+                    scc.add(w)
+                    if w == node:
+                        break
+                sccs.append(scc)
+
+        for node in graph:
+            if node not in indices:
+                strongconnect(node)
+
+        return sccs
+
+    def _get_transitive_relations(self, dfg):
+        transitive_predecessors = defaultdict(set)
+        transitive_successors = defaultdict(set)
+
+        for (a, b) in dfg:
+            transitive_successors[a].add(b)
+            transitive_predecessors[b].add(a)
+
+        def dfs(node, graph):
+            visited = set()
+            stack = [node]
+            while stack:
+                current = stack.pop()
+                for neighbor in graph[current]:
+                    if neighbor not in visited:
+                        visited.add(neighbor)
+                        stack.append(neighbor)
+            return visited
+
+        nodes = list(transitive_successors.keys())
+        for node in nodes:
+            transitive_successors[node] = dfs(node, transitive_successors)
+
+        nodes = list(transitive_predecessors.keys())
+        for node in nodes:
+            transitive_predecessors[node] = dfs(node, transitive_predecessors)
+
+        return transitive_predecessors, transitive_successors
+
+    def _merge_groups(self, groups, trans_succ):
+        i = 0
+        while i < len(groups):
+            j = i + 1
+            while j < len(groups):
+                if self._check_merge_condition(groups[i], groups[j], trans_succ):
+                    groups[i] = groups[i].union(groups[j])
+                    del groups[j]
+                    continue
+                j = j + 1
+            i = i + 1
+        return groups
+
+    def _check_merge_condition(self, g1, g2, trans_succ):
+        for a1 in g1:
+            for a2 in g2:
+                if (a2 in trans_succ[a1] and a1 in trans_succ[a2]) or (
+                        a2 not in trans_succ[a1] and a1 not in trans_succ[a2]):
+                    return True
+        return False
+
+    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[
+        Set[str]]:
+        # Step 1: Create a group per activity
+        alphabet = set(a for (a, b) in dfg).union(set(b for (a, b) in dfg))
+        transitive_predecessors, transitive_successors = self._get_transitive_relations(dfg)
+        groups = [{a} for a in alphabet]
+        if len(groups) == 0:
+            return []
+
+        # Step 2: Merge pairwise reachable nodes (based on transitive relations)
+        old_size = None
+        while old_size != len(groups):
+            old_size = len(groups)
+            groups = self._merge_groups(groups, transitive_successors)
+
+        # Step 3: Merge pairwise unreachable nodes (based on transitive relations)
+        old_size = None
+        while old_size != len(groups):
+            old_size = len(groups)
+            groups = self._merge_groups(groups, transitive_predecessors)
+
+        # Step 4: Sort the groups based on their reachability
+        groups = list(sorted(groups, key=lambda g: len(
+            transitive_predecessors[next(iter(g))]) + (len(alphabet) - len(transitive_successors[next(iter(g))]))))
+
+        return groups if len(groups) > 1 else []
+
+    def _sequence_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
+        """
+        Splits the event log based on the groups provided.
+
+        Parameters:
+            log: List of traces
+            cut: List of groups of activities that form the cut
+
+        Returns:
+            List of sublogs resulting from the parallel split.
+        """
+        sublogs = []
+        # Iterate over the groups in the cut
+        for partition in cut:
+            sublog = []
+            # Iterate over the traces in the log
+            for trace in log:
+                # Take activtites from the trace that are in the partition
+                sub_trace = tuple(activity for activity in trace if activity in partition)
                 if sub_trace:
-                    sublogs[i].append(sub_trace)
-                trace_list = [activity for activity in trace_list if activity not in group]
-
-        sublogs = [sublog for sublog in sublogs if sublog]
+                    sublog.append(sub_trace)
+            sublogs.append(sorted(sublog))
         return sublogs
 
     def _xor_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
@@ -621,13 +814,16 @@ class InductiveMiner:
         # If no matching subsequence is found, return an empty string
         return ''
 
-# if __name__ == '__main__':
-#     # Example usage of the Inductive Miner
-#     log = [('b', 'e'),
-#            ('b', 'e', 'c', 'd', 'b'),
-#            ('b', 'c', 'e', 'd', 'b'),
-#            ('b', 'c', 'd', 'e', 'b'),
-#            ('e', 'b', 'c', 'd', 'b')]
-#     miner = InductiveMiner(log)
-#     miner.run()
-#     miner.print_process_tree()
+if __name__ == '__main__':
+    # Example usage of the Inductive Miner
+    log = [('b', 'e'),
+           ('b', 'e', 'c', 'd', 'b'),
+           ('b', 'c', 'e', 'd', 'b'),
+           ('b', 'c', 'd', 'e', 'b'),
+           ('e', 'b', 'c', 'd', 'b')]
+    miner = InductiveMiner(log)
+    miner.run()
+    miner.print_process_tree()
+    process_tree = inductive_miner.apply(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
+                                                             activity_key='activity', timestamp_key='timestamp'))
+    print('expected process_tree ====', process_tree)

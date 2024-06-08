@@ -2,6 +2,9 @@ from typing import List, Set
 from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe, check_lists_of_sets_equal
 from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
 import pm4py
+from pm4py.objects.log.obj import EventLog, Trace, Event
+from pm4py.algo.discovery.inductive import algorithm as inductive_miner
+from pm4py.visualization.process_tree import visualizer as pt_vis
 
 
 class TestInductiveMiner:
@@ -48,6 +51,40 @@ class TestInductiveMiner:
         assert all(sorted(sl) in sublogs for sl in parallel_split)
 
     def test_sequence_cut(self):
+        log = [
+            ('a', 'b', 'c', 'd'),
+            ('a', 'c', 'b', 'd'),
+            ('a', 'b', 'd'),
+            ('a', 'c', 'd')
+        ]
+        # log = [('a', 'b', 'c', 'd'),
+        #        ('a', 'c', 'b', 'd'),
+        #        ('a', 'b', 'c', 'e', 'f', 'b', 'c', 'd'),
+        #        ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'd'),
+        #        ('a', 'b', 'c', 'e', 'f', 'c', 'b', 'd'),
+        #        ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b', 'd')]
+        miner = InductiveMiner(log)
+        sequence_cut = miner._sequence_cut(miner.dfg, miner.start_activities, miner.end_activities)
+        print('sequence_cut1', sequence_cut)
+        log = [('a', 'b', 'c'),
+               ('a', 'c', 'b'),
+               ('a', 'b', 'c', 'e', 'f', 'b', 'c'),
+               ('a', 'c', 'b', 'e', 'f', 'b', 'c'),
+               ('a', 'b', 'c', 'e', 'f', 'c', 'b'),
+               ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b')]
+        miner = InductiveMiner(log)
+        sequence_cut = miner._sequence_cut(miner.dfg, miner.start_activities, miner.end_activities)
+        print('sequence_cut2', sequence_cut)
+        log = [('b', 'c', 'd'),
+               ('c', 'b', 'd'),
+               ('b', 'c', 'e', 'f', 'b', 'c', 'd'),
+               ('c', 'b', 'e', 'f', 'b', 'c', 'd'),
+               ('b', 'c', 'e', 'f', 'c', 'b', 'd'),
+               ('c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b', 'd')]
+        miner = InductiveMiner(log)
+        sequence_cut = miner._sequence_cut(miner.dfg, miner.start_activities, miner.end_activities)
+        print('sequence_cut3', sequence_cut)
+        assert sequence_cut == [set('bcef'), set('d')]  # order does matter
         log = [('a', 'b', 'c', 'd'),
                ('a', 'c', 'b', 'd'),
                ('a', 'b', 'c', 'e', 'f', 'b', 'c', 'd'),
@@ -56,6 +93,7 @@ class TestInductiveMiner:
                ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b', 'd')]
         miner = InductiveMiner(log)
         sequence_cut = miner._sequence_cut(miner.dfg, miner.start_activities, miner.end_activities)
+        print('sequence_cut4', sequence_cut)
         assert sequence_cut == [set('a'), set('bcef'), set('d')]  # order does matter
         sequence_split = miner._split_log(miner.event_log, sequence_cut, CutType.SEQUENCE)
         print('dasdfa =====', sequence_split)
@@ -134,5 +172,8 @@ class TestInductiveMiner:
     def test_fall_through_flower_model(self):
         log = [('a', 'b', 'c', 'd'), ('d', 'a', 'b'), ('a', 'd', 'c'), ('b', 'c', 'd',)]
         miner = InductiveMiner(log)
+        # process_tree = inductive_miner.apply(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
+        #                                                          activity_key='activity', timestamp_key='timestamp'))
+        # print('process_tree', process_tree)
         miner.run()
         assert miner.process_tree_str == f'{CutType.LOOP.value}({InductiveMiner.TAU}, a, b, c, d)'

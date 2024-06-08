@@ -427,18 +427,21 @@ class InductiveMiner:
         groups.append(set([activity for edge in inner_edges for activity in edge]))
 
         # Exclude sets that are non-reachable from start/end activities from the loop groups
+        def exclude_non_reachable(groups):
+            group_a, group_b = set(), set()
+            for group in groups:
+                group_a = group if a in group else group_a
+                group_b = group if b in group else group_b
+            groups = [group for group in groups if group != group_a and group != group_b]
+            groups.insert(0, group_a.union(group_b))
+
         pure_start_activities = start_activities.difference(end_activities)  # only start, not end activity
         # Put all activities in the do-group that follow a start activity which is not an end activity
         # (a loop activity can only follow a start activity if it is also an end activity)
         for a in pure_start_activities:
             for (x, b) in edges:
                 if x == a:
-                    group_a, group_b = set(), set()
-                    for group in groups:
-                        group_a = group if a in group else group_a
-                        group_b = group if b in group else group_b
-                    groups = [group for group in groups if group != group_a and group != group_b]
-                    groups.insert(0, group_a.union(group_b))
+                    exclude_non_reachable(groups)
 
         pure_end_activities = end_activities.difference(start_activities)  # only end, not start activity
         # Put all activities in the do-group that precede an end activity which is not a start activity
@@ -446,14 +449,7 @@ class InductiveMiner:
         for b in pure_end_activities:
             for (a, x) in edges:
                 if x == b:
-                    group_a, group_b = set(), set()
-                    for group in groups:
-                        if a in group:
-                            group_a = group
-                        if b in group:
-                            group_b = group
-                    groups = [group for group in groups if group not in [group_a, group_b]]
-                    groups.insert(0, group_a.union(group_b))
+                    exclude_non_reachable(groups)
         # Check start completeness
         # all loop activities must be able to reach the start activities
         i = 1

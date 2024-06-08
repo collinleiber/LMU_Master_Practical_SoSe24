@@ -1,7 +1,11 @@
 from enum import Enum
 from typing import List, Tuple, Dict, Set, Optional
 import pm4py
+import pandas as pd
 from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe
+from pm4py.objects.process_tree.obj import ProcessTree
+from pm4py.visualization.process_tree import visualizer as pt_visualizer
+from pm4py.objects.conversion.log import converter as log_converter
 
 
 class CutType(Enum):
@@ -621,13 +625,72 @@ class InductiveMiner:
         # If no matching subsequence is found, return an empty string
         return ''
 
-# if __name__ == '__main__':
-#     # Example usage of the Inductive Miner
-#     log = [('b', 'e'),
-#            ('b', 'e', 'c', 'd', 'b'),
-#            ('b', 'c', 'e', 'd', 'b'),
-#            ('b', 'c', 'd', 'e', 'b'),
-#            ('e', 'b', 'c', 'd', 'b')]
-#     miner = InductiveMiner(log)
-#     miner.run()
-#     miner.print_process_tree()
+    def visualize_process_tree(self):
+        """
+        Visualizes the process tree using the specified symbols for SEQUENCE, XOR, PARALLEL, and LOOP cuts.
+
+        Converts the event log to a dataframe, discovers the process tree using the inductive miner algorithm,
+        replaces the operator labels with the corresponding symbols, and visualizes the process tree as an image.
+
+        The process tree is saved as 'process_tree.png'.
+        """
+        # Convert the event log to a dataframe for pm4py
+        event_log_df = self._event_log_to_dataframe(self.event_log)
+        log = log_converter.apply(event_log_df)
+        tree = pm4py.discover_process_tree_inductive(log)
+
+        def replace_labels(node):
+            """
+            Recursively replaces operator labels in the process tree nodes with the specified symbols.
+
+            Parameters:
+                node: The current node in the process tree.
+            """
+            if node.operator is not None:
+                if node.operator == 'sequence':
+                    node.operator = '→'
+                elif node.operator == 'xor':
+                    node.operator = '×'
+                elif node.operator == 'parallel':
+                    node.operator = '∧'
+                elif node.operator == 'loop':
+                    node.operator = '↺'
+
+            # Recursively replace labels in child nodes
+            for child in node.children:
+                replace_labels(child)
+
+        # Replace labels in the process tree
+        replace_labels(tree)
+
+        # TODO: Still has to change the format and the symbol in the process tree visualization
+
+        # Visualize the process tree with updated labels
+        gviz = pt_visualizer.apply(tree)
+        pt_visualizer.save(gviz, "process_tree.png")
+        print("Process tree saved as process_tree.png")
+
+    def _event_log_to_dataframe(self, log):
+        """
+        Converts the event log to a pandas DataFrame formatted for pm4py.
+
+        Parameters:
+            log: List of traces
+
+        Returns:
+            A pandas DataFrame with the event log formatted for pm4py.
+        """
+        data = []
+        for i, trace in enumerate(log):
+            for event in trace:
+                data.append({"case_id": i, "activity": event, "timestamp": i})
+        return pm4py.format_dataframe(pd.DataFrame(data), case_id='case_id', activity_key='activity',
+                                      timestamp_key='timestamp')
+
+
+# Example usage
+#event_log =    [('a', 'c', 'e', 'g'),('a', 'e', 'c', 'g'),('b', 'd', 'f', 'g'),('b', 'f', 'd', 'g')]
+#miner = InductiveMiner(event_log)
+#miner.run()
+#miner.print_process_tree()
+#miner.visualize_process_tree()

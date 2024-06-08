@@ -170,6 +170,20 @@ class InductiveMinerInfrequent(InductiveMiner):
         return []
 
     def xor_split_frequent(self, log: List[Tuple[str]], groups: List[Set[str]]):
+        sublogs = [[] for _ in range(len(groups))]
+
+        for trace in log:
+            min_freq = len(trace) * self.threshold
+
+            for i, group in enumerate(groups):
+
+                sub_trace = tuple(activity for activity in trace if activity in group)
+                if sub_trace:
+                    sublogs[i].append(sub_trace)
+                    break
+
+        sublogs = [sublog for sublog in sublogs if sublog]
+        return sublogs
 
     def sequence_split_frequent(self, log: List[Tuple[str]], groups: List[Set[str]]):
         pass

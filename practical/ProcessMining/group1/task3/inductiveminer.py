@@ -7,7 +7,7 @@ from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe
 from pm4py.objects.process_tree.obj import ProcessTree
 from pm4py.visualization.process_tree import visualizer as pt_visualizer
 from pm4py.objects.conversion.log import converter as log_converter
-
+from pm4py.algo.discovery.inductive import algorithm as inductive_miner
 
 class CutType(Enum):
     """
@@ -834,16 +834,16 @@ class InductiveMiner:
         return pm4py.format_dataframe(pd.DataFrame(data), case_id='case_id', activity_key='activity',
                                       timestamp_key='timestamp')
     
-    # if __name__ == '__main__':
-    # # Example usage of the Inductive Miner
-    # log = [('b', 'e'),
-    #        ('b', 'e', 'c', 'd', 'b'),
-    #        ('b', 'c', 'e', 'd', 'b'),
-    #        ('b', 'c', 'd', 'e', 'b'),
-    #        ('e', 'b', 'c', 'd', 'b')]
-    # miner = InductiveMiner(log)
-    # miner.run()
-    # miner.print_process_tree()
-    # process_tree = inductive_miner.apply(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
-    #                                                          activity_key='activity', timestamp_key='timestamp'))
-    # print('expected process_tree ====', process_tree)
+# if __name__ == '__main__':
+#     # Example usage of the Inductive Miner
+#     log = [('b', 'e'),
+#            ('b', 'e', 'c', 'd', 'b'),
+#            ('b', 'c', 'e', 'd', 'b'),
+#            ('b', 'c', 'd', 'e', 'b'),
+#            ('e', 'b', 'c', 'd', 'b')]
+#     miner = InductiveMiner(log)
+#     miner.run()
+#     miner.print_process_tree()
+#     process_tree = inductive_miner.apply(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
+#                                                              activity_key='activity', timestamp_key='timestamp'))
+#     print('expected process_tree ====', process_tree)

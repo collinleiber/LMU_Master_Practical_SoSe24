@@ -97,7 +97,7 @@ class InductiveMiner:
         """
         # Try to apply different types of cuts to the current sublog
         sequence_cut = self._sequence_cut(dfg, start_activities, end_activities)
-        xor_cut = self._xor_cut(dfg, start_activities, end_activities)
+        xor_cut = self._xor_cut(dfg)
         parallel_cut = self._parallel_cut(dfg, start_activities, end_activities)
         loop_cut = self._loop_cut(dfg, start_activities, end_activities)
 
@@ -320,21 +320,10 @@ class InductiveMiner:
 
         return partitions if len(partitions) > 1 else []
 
-    def _xor_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
-        partitions = []
+    def _xor_cut(self, dfg: Dict[Tuple[str, str], int]) -> List[Set[str]]:
+        alphabet = self._get_alphabet_from_dfg(dfg)
 
-        # Collect all activities from the dfg
-        all_activities = set()
-        for (a, b) in dfg:
-            all_activities.add(a)
-            all_activities.add(b)
-        all_activities.update(start.keys())
-        all_activities.update(end.keys())
-
-        components = []
-        visited = set()
-
-        def dfs(activity, component):
+        def depth_first_search(activity, component):
             stack = [activity]
             while stack:
                 node = stack.pop()
@@ -346,14 +335,16 @@ class InductiveMiner:
                     for predecessor in [a for (a, b) in dfg if b == node]:
                         stack.append(predecessor)
 
-        for activity in all_activities:
+        components = []
+        visited = set()
+
+        for activity in alphabet:
             if activity not in visited:
                 component = set()
-                dfs(activity, component)
+                depth_first_search(activity, component)
                 components.append(component)
 
-        for component in components:
-            partitions.append(component)
+        partitions = [component for component in components]
 
         return partitions
 

@@ -630,9 +630,9 @@ class InductiveMiner:
         Visualizes the process tree using the specified symbols for SEQUENCE, XOR, PARALLEL, and LOOP cuts.
 
         Converts the event log to a dataframe, discovers the process tree using the inductive miner algorithm,
-        replaces the operator labels with the corresponding symbols, and visualizes the process tree as an image.
+        replaces the operator labels with the corresponding symbols, and visualizes the process tree.
 
-        The process tree is saved as 'process_tree.png'.
+        The process tree is displayed using the specified format.
         """
         # Convert the event log to a dataframe for pm4py
         event_log_df = self._event_log_to_dataframe(self.event_log)
@@ -663,12 +663,13 @@ class InductiveMiner:
         # Replace labels in the process tree
         replace_labels(tree)
 
-        # TODO: Still has to change the format and the symbol in the process tree visualization
-
-        # Visualize the process tree with updated labels
-        gviz = pt_visualizer.apply(tree)
-        pt_visualizer.save(gviz, "process_tree.png")
-        print("Process tree saved as process_tree.png")
+        # Visualization settings
+        parameters = {'format': 'png'}  # Can change later to other formats
+        gviz = pt_visualizer.apply(tree, parameters=parameters)
+        pt_visualizer.view(gviz)
+        # optionally save the image if needed
+        # pt_visualizer.save(gviz, "process_tree.png")
+        print("Process tree visualization complete")
 
     def _event_log_to_dataframe(self, log):
         """
@@ -689,8 +690,8 @@ class InductiveMiner:
 
 
 # Example usage
-#event_log =    [('a', 'c', 'e', 'g'),('a', 'e', 'c', 'g'),('b', 'd', 'f', 'g'),('b', 'f', 'd', 'g')]
-#miner = InductiveMiner(event_log)
-#miner.run()
-#miner.print_process_tree()
-#miner.visualize_process_tree()
+event_log = [('a', 'c', 'e', 'g'),('a', 'e', 'c', 'g'),('b', 'd', 'f', 'g'),('b', 'f', 'd', 'g')]
+miner = InductiveMiner(event_log)
+miner.run()
+miner.print_process_tree()
+miner.visualize_process_tree()

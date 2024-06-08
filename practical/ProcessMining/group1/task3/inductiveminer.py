@@ -291,24 +291,24 @@ class InductiveMiner:
         partitions = [set(start.keys())]
         remaining_activities = alphabet - partitions[0]
 
-        # Function to check if we can add an activity to a partition
-        def can_add_to_partition(activity, partition):
-            for p in partition:
-                if (activity, p) in dfg or (p, activity) not in dfg:
-                    return False
-            return True
-
         # Build partitions iteratively
         while remaining_activities:
             next_partition = set()
             for activity in sorted(remaining_activities):
-                if can_add_to_partition(activity, partitions[-1]):
-                    partitions[-1].add(activity)
-                else:
+                # Check if the activity can be added to the next partition
+                can_add = True
+                for p in partitions[-1]:
+                    if (activity, p) in dfg and (p, activity) in dfg:
+                        can_add = False
+                        break
+                if can_add:
                     next_partition.add(activity)
             if next_partition:
                 partitions.append(next_partition)
-            remaining_activities -= partitions[-1]
+            else:
+                # If no valid partition can be formed, break the loop
+                break
+            remaining_activities -= next_partition
 
         # Validate the sequence cut against the given conditions
         for i in range(len(partitions) - 1):

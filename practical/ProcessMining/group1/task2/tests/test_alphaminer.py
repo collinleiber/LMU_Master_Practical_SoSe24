@@ -10,8 +10,8 @@ from unittest.mock import patch,MagicMock
 from practical.ProcessMining.group1.shared import utils
 from practical.ProcessMining.group1.task2.alphaminer import AlphaMiner
 
-FILE_PATH_CSV = '../example_files/common-example.csv'  # event log from the paper
-TEST_LOGS = utils.read_txt_test_logs('../example_files/simple_event_logs.txt')
+FILE_PATH_CSV = '../../shared/example_files/common-example.csv'  # event log from the paper
+TEST_LOGS = utils.read_txt_test_logs('../../shared/example_files/simple_event_logs.txt')
 
 
 def get_test_case(case: str):
@@ -116,7 +116,7 @@ def test_footprint_matrix(alpha_miner: AlphaMiner) -> None:
     ]
 )
 def test_import_event_log(file: str) -> None:
-    log_path = str(Path("../example_files") / file)
+    log_path = str(Path("../../shared/example_files") / file)
     if Path(log_path).exists():
         # Test valid file formats
         if file.endswith(".xes") or file.endswith('.csv'):

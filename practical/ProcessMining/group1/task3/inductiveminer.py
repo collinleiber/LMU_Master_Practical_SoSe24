@@ -3,11 +3,9 @@ from enum import Enum
 from typing import List, Tuple, Dict, Set, Optional
 import pm4py
 import pandas as pd
-from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe
-from pm4py.objects.process_tree.obj import ProcessTree
 from pm4py.visualization.process_tree import visualizer as pt_visualizer
 from pm4py.objects.conversion.log import converter as log_converter
-from pm4py.algo.discovery.inductive import algorithm as inductive_miner
+
 
 class CutType(Enum):
     """
@@ -475,15 +473,7 @@ class InductiveMiner:
         for b in pure_end_activities:
             for (a, x) in edges:
                 if x == b:
-                    group_a, group_b = set(), set()
-                    for group in groups:
-                        if a in group:
-                            group_a = group
-                        if b in group:
-                            group_b = group
-                    groups = [group for group in groups if group not in [group_a, group_b]]
-                    groups.insert(0, group_a.union(group_b))
-
+                    exclude_non_reachable(groups)
         # Check start completeness
         # All loop activities must be able to reach the start activities
         i = 1
@@ -833,17 +823,3 @@ class InductiveMiner:
                 data.append({"case_id": i, "activity": event, "timestamp": i})
         return pm4py.format_dataframe(pd.DataFrame(data), case_id='case_id', activity_key='activity',
                                       timestamp_key='timestamp')
-    
-# if __name__ == '__main__':
-#     # Example usage of the Inductive Miner
-#     log = [('b', 'e'),
-#            ('b', 'e', 'c', 'd', 'b'),
-#            ('b', 'c', 'e', 'd', 'b'),
-#            ('b', 'c', 'd', 'e', 'b'),
-#            ('e', 'b', 'c', 'd', 'b')]
-#     miner = InductiveMiner(log)
-#     miner.run()
-#     miner.print_process_tree()
-#     process_tree = inductive_miner.apply(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
-#                                                              activity_key='activity', timestamp_key='timestamp'))
-#     print('expected process_tree ====', process_tree)

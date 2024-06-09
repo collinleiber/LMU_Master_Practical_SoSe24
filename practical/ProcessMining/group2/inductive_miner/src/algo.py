@@ -56,10 +56,12 @@ class DirectlyFollowsGraph(Graph):
 
                     if next_activity not in self.graph[current_activity]:
                         self.graph[current_activity].append(next_activity)
-                    if (
-                        next_activity not in self.graph
-                    ):  # Add next activity to graph if not already present, i.e. if it is an end node
+                    if (next_activity not in self.graph):  # Add next activity to graph if not already present, i.e. if it is an end node
                         self.graph[next_activity] = []
+                
+                for node in self.start_nodes:
+                    if node not in self.graph: # Isolated nodes
+                        self.graph[node] = []
 
     # Debugging helper
     def print_graph(self):
@@ -254,24 +256,22 @@ class ProcessTree:
 
     def exclusive_choice_split(self, cuts):
         cuts = [set(cut) for cut in cuts]
-        splits = [set() for _ in range(len(cuts))]
+        splits = [[] for _ in range(len(self.event_log.traces))]
 
-        for trace in self.event_log.traces:
+        for i,trace in enumerate(self.event_log.traces):
             for cut in cuts:
                 if all(activity in cut for activity in trace):
-                    splits[cuts.index(cut)].add(trace)
+                    splits[i].append(trace)
                     break
 
-        splits = [list(split) for split in splits]
-            
-        print("Exclusive choice plits: ", splits)
+        print("Exclusive choice splits: ", splits)
         return splits
 
     def sequence_split(self, cuts):
         cuts = [set(cut) for cut in cuts]
-        splits = [set() for _ in range(len(cuts))]
+        splits = [[] for _ in range(len(self.event_log.traces))]
 
-        for trace in self.event_log.traces:
+        for i, trace in enumerate(self.event_log.traces):
             trace_split = []
             cut_index = 0
             sub_trace = ""
@@ -283,36 +283,33 @@ class ProcessTree:
                     sub_trace = ""
                 sub_trace = sub_trace.join(activity)
             
-            trace_split.append(sub_trace)
+            if sub_trace:
+                trace_split.append(sub_trace)
             
-            for i, sub_trace in enumerate(trace_split):
-                splits[i].add(sub_trace)
+            for sub_trace in trace_split:
+                splits[i].append(sub_trace)
 
-        splits = [list(split) for split in splits]
-            
         print("Sequence splits: ", splits)
         return splits
 
     def parallel_split(self, cuts):
         cuts = [set(cut) for cut in cuts]
-        splits = [set() for _ in range(len(cuts))]
+        splits = [[] for _ in range(len(self.event_log.traces))]
 
-        for trace in self.event_log.traces:
+        for i, trace in enumerate(self.event_log.traces):
             for cut in cuts:
                 sub_trace = ''.join([activity for activity in trace if activity in cut])
-                if sub_trace:
-                    splits[cuts.index(cut)].add(sub_trace)
-
-        splits = [list(split) for split in splits]
+                print("Sub trace: ", sub_trace)
+                splits[i].append(sub_trace)
 
         print("Parallel splits: ", splits)
         return splits
 
     def loop_split(self, cuts):
         cuts = [set(cut) for cut in cuts]
-        splits = [set() for _ in range(len(cuts))]
+        splits = [[] for _ in range(len(self.event_log.traces))]
 
-        for trace in event_log.traces:
+        for i, trace in enumerate(event_log.traces):
             current_sub_trace = ""
             current_cut_index = -1
             
@@ -321,16 +318,14 @@ class ProcessTree:
                     if activity in cut:
                         if current_cut_index != cut_index:
                             if current_sub_trace:
-                                splits[current_cut_index].add(current_sub_trace)
+                                splits[i].append(current_sub_trace)
                                 current_sub_trace = ""
                             current_cut_index = cut_index
                         current_sub_trace += activity
                         break
             
             if current_sub_trace:
-                splits[current_cut_index].add(current_sub_trace)
-
-        splits = [list(split) for split in splits]
+                splits[i].append(current_sub_trace)
 
         print("Loop splits: ", splits)
         return splits
@@ -378,7 +373,7 @@ class InductiveMiner():
 
         # Construct Process Tree from DFG
         process_tree = ProcessTree(event_log).construct_process_tree()
-        print(process_tree)
+        print("Process tree: ", process_tree)
 
         return process_tree
 
@@ -386,10 +381,10 @@ class InductiveMiner():
 if __name__ == "__main__":
     # event_log = EventLog.from_file("../data/log_from_paper.txt")
     # event_log.load_from_file()
-    # event_log = EventLog.from_traces({'abcdfedfghabc': 3, 
-    #                                   'abcdfeghabc': 2, 
-    #                                   'abcijijkabc': 1, # Use for loop testing
-    #                                   'abcijijijkabc': 1}) # Use for loop testing
+    event_log = EventLog.from_traces({'abcdfedfghabc': 3, 
+                                      'abcdfeghabcijijkabc': 2, 
+                                      'abcijijkabc': 1, # Use for loop testing
+                                      'abcijijijkabc': 1}) # Use for loop testing
     # event_log = EventLog.from_traces({'abcd': 1, 'acbd':2}) # Use for sequence testing
     # event_log = EventLog.from_traces({'a':1,
     #                                     'bc': 1, 
@@ -399,8 +394,8 @@ if __name__ == "__main__":
     # event_log = EventLog.from_traces({'abc': 1, 
     #                                   'acb': 1,
     #                                   'cab': 1}) # Use for parallel testing
-    event_log = EventLog.from_traces({'abcd': 1,
-                                        'ad': 1})
+    # event_log = EventLog.from_traces({'abcd': 1,
+    #                                     'ad': 1})
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)
 

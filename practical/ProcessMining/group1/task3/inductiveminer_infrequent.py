@@ -150,8 +150,23 @@ class InductiveMinerInfrequent(InductiveMiner):
         return self.get_frequent_directly_follows_graph(efg)
 
     def _split_log_filtered(self, log: List[Tuple[str]], groups: List[Set[str]],
-                            operator: CutType) -> List[List[Tuple[str]]]:
-        # TODO: Apply IMi filters on log splitting based on operator
+                            operator: CutType) -> List[List[Tuple[str]]] | None:
+        """
+        Selects the correct splitting method based on the given operator.
+
+        Parameters:
+            log: current (sub)log as subset of the event log
+            groups: list of languages as result of the applied cut
+            operator: enum containing the type of cut
+        """
+        if operator == CutType.SEQUENCE:
+            return self.sequence_split_frequent(log, groups)
+        elif operator == CutType.XOR:
+            return self.xor_split_frequent(log, groups)
+        elif operator == CutType.LOOP:
+            return self.loop_split_frequent(log, groups)
+        elif operator == CutType.PARALLEL:
+            return self._parallel_split(log, groups)
         return []
 
     def xor_split_infrequent(self):

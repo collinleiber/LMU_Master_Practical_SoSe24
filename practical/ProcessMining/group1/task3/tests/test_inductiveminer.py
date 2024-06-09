@@ -1,7 +1,8 @@
 import pm4py
 import pytest
+import graphviz as gviz
 from typing import List, Set, Tuple
-
+from unittest.mock import patch
 from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe, check_lists_of_sets_equal
 from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
 import pm4py
@@ -195,3 +196,24 @@ class TestInductiveMiner:
         # print('process_tree', process_tree)
         miner.run()
         assert miner.process_tree_str == expected_string
+
+    @pytest.mark.parametrize(
+        "log",
+        [
+            ([('a', 'b', 'c', 'd', 'e', 'f', 'b', 'd', 'c', 'e', 'g'), ('a', 'b', 'd', 'c', 'e', 'g'), ('a', 'b', 'c', 'd', 'e', 'f', 'b', 'c', 'd', 'e', 'f', 'b', 'd', 'c', 'e', 'g')]),
+            ([('a', 'c', 'd'), ('b', 'c', 'd'), ('a', 'c', 'e'),('b', 'c', 'e')])
+        ]
+    )
+    @patch('practical.ProcessMining.group1.task3.inductiveminer.pt_vis.view')
+    @patch('practical.ProcessMining.group1.task3.inductiveminer.pt_vis.save')
+    def test_visualize_process_tree(self, mock_save, mock_view, log: List[Tuple[str]]):
+        miner = InductiveMiner(log)
+        miner.run()
+
+        miner.visualize_process_tree()
+
+        # Check if the view method was called
+        mock_view.assert_called_once()
+
+        # Optionally check if the save method was called when actually saving the image
+        # mock_save.assert_called_once_with(gviz, "process_tree.png")

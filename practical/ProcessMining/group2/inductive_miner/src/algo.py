@@ -244,24 +244,31 @@ class ProcessTree:
         pass
 
     def sequence_split(self, cuts):
-        splits = set()
-        start_index = 0
-        cut_index = 0
+        cuts = [set(cut) for cut in cuts]
+        splits = []
+
         for trace in self.event_log.traces:
-            print("Trace: ", trace)
+            trace_split = []
+            cut_index = 0
+            split = []
+
             for activity in trace:
-                print("Activity: ", activity)
-                if activity not in cuts[cut_index]:
-                    if cut_index == len(cuts):
-                        split = trace[start_index:]
-                    else:
-                        split = trace[start_index:trace.index(activity)]
-                    start_index = trace.index(activity)
-                    cut_index += 1
-                splits.add(split)
+                if activity in cuts[cut_index]:
+                    split.append(activity)
+                else:
+                    if split:
+                        trace_split.append(''.join(split))
+                        split = []
+                    cut_index = (cut_index + 1) % len(cuts)
+                    split.append(activity)
+            
+            if split:
+                trace_split.append(''.join(split))
+            
+            splits.append(trace_split)
 
         print("Sequence splits: ", splits)
-            
+        return split
 
     def parallel_split(self, cuts):
         # TODO

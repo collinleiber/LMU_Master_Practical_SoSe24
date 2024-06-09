@@ -77,6 +77,9 @@ class ProcessTree:
         )  # TODO: Think about data structure for different types of nodes, dictionary sufficient?
         self.edges = []  # Format: (node1, node2)
 
+    def find_base_case(self, event_log):
+        pass
+
     def find_exclusive_choice_cut(self, dfg: DirectlyFollowsGraph):
         # Convert the graph to undirected
         undirected = dfg.convert_to_undirected()
@@ -101,8 +104,9 @@ class ProcessTree:
         # Find pairwise unreachable nodes and merge them to one node
         unreachable_pairs = dfg.find_unreachable_pairs()
         merged_nodes = list({node for pair in unreachable_pairs for node in pair if node in remaining_nodes})
-        cuts.append(merged_nodes)
-        
+        if merged_nodes:
+            cuts.append(merged_nodes)
+
         # Remove merged nodes from remaining nodes to be processed
         for node in merged_nodes:
             remaining_nodes.discard(node)
@@ -112,6 +116,8 @@ class ProcessTree:
 
         # Build cuts graph
         cuts_graph, cut_map = dfg.build_cuts_graph(cuts)
+        print("Cut map: ", cut_map)
+        print("Cuts graph: ", cuts_graph.graph)
 
         # Sort cuts by traversing the cut graph (always a path graph)
         start_node = cut_map[list(dfg.start_nodes)[0]]
@@ -271,17 +277,13 @@ class ProcessTree:
             sub_trace = ""
 
             for activity in trace:
-                if activity in cuts[cut_index]:
-                    sub_trace = sub_trace.join(activity)
-                else:
-                    if sub_trace:
-                        trace_split.append(sub_trace)
-                        sub_trace = ""
+                while activity not in cuts[cut_index]:
                     cut_index = (cut_index + 1) % len(cuts)
-                    sub_trace = sub_trace.join(activity)
+                    trace_split.append(sub_trace)
+                    sub_trace = ""
+                sub_trace = sub_trace.join(activity)
             
-            if sub_trace:
-                trace_split.append(sub_trace)
+            trace_split.append(sub_trace)
             
             for i, sub_trace in enumerate(trace_split):
                 splits[i].add(sub_trace)
@@ -334,9 +336,13 @@ class ProcessTree:
         return splits
 
     def construct_process_tree(self):
+        base_case = self.find_base_case(event_log) # TODO
+        if base_case is not None:
+            return base_case
+        
         if "" in self.event_log.traces:
             return None
-        if len(self.event_log.traces) == 1 and len(self.event_log.traces.keys()[0]) == 1:
+        if len(self.event_log.traces) == 1 and len(list(self.event_log.traces.keys())[0]) == 1:
             return None
             
         dfg = DirectlyFollowsGraph(self.event_log)
@@ -352,7 +358,9 @@ class ProcessTree:
         for find_cut, process_split, operator in cut_methods:
             cuts = find_cut(dfg)
             if cuts is not None:
+                print("Found cut: ", operator, cuts)
                 splits = process_split(cuts)
+                print("Splits: ", splits)
                 return (operator, splits)
             
         return None
@@ -362,16 +370,15 @@ class InductiveMiner():
         pass
 
     def mine_process_model(self, event_log):
-        # Step 1: Construct Directly-Follows Graph (DFG)
+        # Construct Directly-Follows Graph (DFG)
         dfg = DirectlyFollowsGraph(event_log)
 
         dfg.construct_dfg()
         dfg.print_graph()
 
-        # Step 2: Construct Process Tree from DFG
-        process_tree = ProcessTree(event_log)
-        process_tree.construct_process_tree()
-
+        # Construct Process Tree from DFG
+        process_tree = ProcessTree(event_log).construct_process_tree()
+        print(process_tree)
 
         return process_tree
 
@@ -379,10 +386,10 @@ class InductiveMiner():
 if __name__ == "__main__":
     # event_log = EventLog.from_file("../data/log_from_paper.txt")
     # event_log.load_from_file()
-    event_log = EventLog.from_traces({'abcdfedfghabc': 3, 
-                                      'abcdfeghabc': 2, 
-                                      'abcijijkabc': 1, # Use for loop testing
-                                      'abcijijijkabc': 1}) # Use for loop testing
+    # event_log = EventLog.from_traces({'abcdfedfghabc': 3, 
+    #                                   'abcdfeghabc': 2, 
+    #                                   'abcijijkabc': 1, # Use for loop testing
+    #                                   'abcijijijkabc': 1}) # Use for loop testing
     # event_log = EventLog.from_traces({'abcd': 1, 'acbd':2}) # Use for sequence testing
     # event_log = EventLog.from_traces({'a':1,
     #                                     'bc': 1, 
@@ -392,6 +399,8 @@ if __name__ == "__main__":
     # event_log = EventLog.from_traces({'abc': 1, 
     #                                   'acb': 1,
     #                                   'cab': 1}) # Use for parallel testing
+    event_log = EventLog.from_traces({'abcd': 1,
+                                        'ad': 1})
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)
 

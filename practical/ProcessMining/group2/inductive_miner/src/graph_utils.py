@@ -144,7 +144,14 @@ class Graph:
                 cut_map[node] = i
 
         for node in self.graph:
-            for neighbor in self.get_neighbors(node):
+            neighbors = self.get_neighbors(node)
+            if len(neighbors) > 1:
+                for neighbor1 in neighbors:
+                    for neighbor2 in neighbors:
+                        if neighbor1 != neighbor2 and self.is_reachable(neighbor1, neighbor2):
+                            cut_graph[cut_map[node]].add(cut_map[neighbor1])
+            elif neighbors:
+                neighbor = neighbors[0]
                 if cut_map[node] != cut_map[neighbor]:
                     cut_graph[cut_map[node]].add(cut_map[neighbor])
 

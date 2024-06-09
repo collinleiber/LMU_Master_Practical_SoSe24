@@ -300,64 +300,82 @@ class InductiveMiner:
 
         return self.process_tree_str
 
-    def _invert_graph(graph: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
-        inverted = defaultdict(set)
-        all_nodes = set(graph.keys())
-        for src in graph:
-            for dest in graph[src]:
-                inverted[dest].add(src)
-            all_nodes.update(graph[src])
+    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
+                      end: Dict[str, int]) -> List[Set[str]]:
+        # Step 1: Create a group per activity
+        alphabet = set(a for (a, b) in dfg).union(set(b for (a, b) in dfg))
+        transitive_predecessors, transitive_successors = self._get_transitive_relations(dfg)
+        groups = [{a} for a in alphabet]
+        if len(groups) == 0:
+            return []
 
-        for node in all_nodes:
-            if node not in inverted:
-                inverted[node] = set()
+        # Step 2: Merge pairwise reachable nodes (based on transitive relations)
+        old_size = None
+        while old_size != len(groups):
+            old_size = len(groups)
+            groups = self._merge_groups(groups, transitive_successors)
 
-        return inverted
+        # Step 3: Merge pairwise unreachable nodes (based on transitive relations)
+        old_size = None
+        while old_size != len(groups):
+            old_size = len(groups)
+            groups = self._merge_groups(groups, transitive_predecessors)
 
-    def _sequence_cut(dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
-        adj_list = defaultdict(set)
+        # Step 4: Sort the groups based on their reachability
+        groups = list(sorted(groups, key=lambda g: len(
+            transitive_predecessors[next(iter(g))]) + (len(alphabet) - len(transitive_successors[next(iter(g))]))))
+
+        return groups if len(groups) > 1 else []
+
+    def _get_transitive_relations(self, dfg):
+        transitive_predecessors = defaultdict(set)
+        transitive_successors = defaultdict(set)
+
         for (a, b) in dfg:
-            adj_list[a].add(b)
+            transitive_successors[a].add(b)
+            transitive_predecessors[b].add(a)
 
-        sccs = _strongly_connected_components(adj_list)
+        def dfs(node, graph):
+            visited = set()
+            stack = [node]
+            while stack:
+                current = stack.pop()
+                for neighbor in graph[current]:
+                    if neighbor not in visited:
+                        visited.add(neighbor)
+                        stack.append(neighbor)
+            return visited
 
-        scc_map = {}
-        for scc in sccs:
-            for node in scc:
-                scc_map[node] = scc
+        nodes = list(transitive_successors.keys())
+        for node in nodes:
+            transitive_successors[node] = dfs(node, transitive_successors)
 
-        scc_graph = defaultdict(set)
-        for (a, b) in dfg:
-            if scc_map[a] != scc_map[b]:
-                scc_graph[frozenset(scc_map[a])].add(frozenset(scc_map[b]))
+        nodes = list(transitive_predecessors.keys())
+        for node in nodes:
+            transitive_predecessors[node] = dfs(node, transitive_predecessors)
 
-        in_degree = defaultdict(int)
-        for src in scc_graph:
-            for dest in scc_graph[src]:
-                in_degree[dest] += 1
+        return transitive_predecessors, transitive_successors
 
-        zero_in_degree = [node for node in scc_graph if in_degree[node] == 0]
-        topo_sorted_sccs = []
-        while zero_in_degree:
-            node = zero_in_degree.pop()
-            topo_sorted_sccs.append(node)
-            for neighbor in scc_graph[node]:
-                in_degree[neighbor] -= 1
-                if in_degree[neighbor] == 0:
-                    zero_in_degree.append(neighbor)
+    def _merge_groups(self, groups, trans_succ):
+        i = 0
+        while i < len(groups):
+            j = i + 1
+            while j < len(groups):
+                if self._check_merge_condition(groups[i], groups[j], trans_succ):
+                    groups[i] = groups[i].union(groups[j])
+                    del groups[j]
+                    continue
+                j = j + 1
+            i = i + 1
+        return groups
 
-        first_part = set()
-        second_part = set()
-        in_first_part = True
-        for scc in topo_sorted_sccs:
-            if in_first_part:
-                first_part.update(scc)
-                if any(node in end for node in scc):
-                    in_first_part = False
-            else:
-                second_part.update(scc)
-
-        return [first_part, second_part]
+    def _check_merge_condition(self, g1, g2, trans_succ):
+        for a1 in g1:
+            for a2 in g2:
+                if (a2 in trans_succ[a1] and a1 in trans_succ[a2]) or (
+                        a2 not in trans_succ[a1] and a1 not in trans_succ[a2]):
+                    return True
+        return False
 
     def _xor_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
         # Convert DFG to undirected graph
@@ -538,122 +556,6 @@ class InductiveMiner:
         else:
             return []
 
-    def _strongly_connected_components(self, graph: Dict[str, Set[str]]) -> List[Set[str]]:
-        index = 0
-        stack = []
-        indices = {}
-        lowlinks = {}
-        on_stack = defaultdict(bool)
-        sccs = []
-
-        def strongconnect(node):
-            nonlocal index
-            indices[node] = index
-            lowlinks[node] = index
-            index += 1
-            stack.append(node)
-            on_stack[node] = True
-
-            for neighbor in graph[node]:
-                if neighbor not in indices:
-                    strongconnect(neighbor)
-                    lowlinks[node] = min(lowlinks[node], lowlinks[neighbor])
-                elif on_stack[neighbor]:
-                    lowlinks[node] = min(lowlinks[node], indices[neighbor])
-
-            if lowlinks[node] == indices[node]:
-                scc = set()
-                while True:
-                    w = stack.pop()
-                    on_stack[w] = False
-                    scc.add(w)
-                    if w == node:
-                        break
-                sccs.append(scc)
-
-        for node in graph:
-            if node not in indices:
-                strongconnect(node)
-
-        return sccs
-
-    def _get_transitive_relations(self, dfg):
-        transitive_predecessors = defaultdict(set)
-        transitive_successors = defaultdict(set)
-
-        for (a, b) in dfg:
-            transitive_successors[a].add(b)
-            transitive_predecessors[b].add(a)
-
-        def dfs(node, graph):
-            visited = set()
-            stack = [node]
-            while stack:
-                current = stack.pop()
-                for neighbor in graph[current]:
-                    if neighbor not in visited:
-                        visited.add(neighbor)
-                        stack.append(neighbor)
-            return visited
-
-        nodes = list(transitive_successors.keys())
-        for node in nodes:
-            transitive_successors[node] = dfs(node, transitive_successors)
-
-        nodes = list(transitive_predecessors.keys())
-        for node in nodes:
-            transitive_predecessors[node] = dfs(node, transitive_predecessors)
-
-        return transitive_predecessors, transitive_successors
-
-    def _merge_groups(self, groups, trans_succ):
-        i = 0
-        while i < len(groups):
-            j = i + 1
-            while j < len(groups):
-                if self._check_merge_condition(groups[i], groups[j], trans_succ):
-                    groups[i] = groups[i].union(groups[j])
-                    del groups[j]
-                    continue
-                j = j + 1
-            i = i + 1
-        return groups
-
-    def _check_merge_condition(self, g1, g2, trans_succ):
-        for a1 in g1:
-            for a2 in g2:
-                if (a2 in trans_succ[a1] and a1 in trans_succ[a2]) or (
-                        a2 not in trans_succ[a1] and a1 not in trans_succ[a2]):
-                    return True
-        return False
-
-    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
-                      end: Dict[str, int]) -> List[Set[str]]:
-        # Step 1: Create a group per activity
-        alphabet = set(a for (a, b) in dfg).union(set(b for (a, b) in dfg))
-        transitive_predecessors, transitive_successors = self._get_transitive_relations(dfg)
-        groups = [{a} for a in alphabet]
-        if len(groups) == 0:
-            return []
-
-        # Step 2: Merge pairwise reachable nodes (based on transitive relations)
-        old_size = None
-        while old_size != len(groups):
-            old_size = len(groups)
-            groups = self._merge_groups(groups, transitive_successors)
-
-        # Step 3: Merge pairwise unreachable nodes (based on transitive relations)
-        old_size = None
-        while old_size != len(groups):
-            old_size = len(groups)
-            groups = self._merge_groups(groups, transitive_predecessors)
-
-        # Step 4: Sort the groups based on their reachability
-        groups = list(sorted(groups, key=lambda g: len(
-            transitive_predecessors[next(iter(g))]) + (len(alphabet) - len(transitive_successors[next(iter(g))]))))
-
-        return groups if len(groups) > 1 else []
-
     def _sequence_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
         """
         Splits the event log based on the groups provided.
@@ -822,3 +724,106 @@ class InductiveMiner:
         pt_visualizer.view(gviz)
         # optionally save the image if needed
         # pt_visualizer.save(gviz, "process_tree.png")
+
+
+    """
+    UNUSED CODE @Dilemmaqwer
+    
+    
+    def _invert_graph(graph: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
+        inverted = defaultdict(set)
+        all_nodes = set(graph.keys())
+        for src in graph:
+            for dest in graph[src]:
+                inverted[dest].add(src)
+            all_nodes.update(graph[src])
+
+        for node in all_nodes:
+            if node not in inverted:
+                inverted[node] = set()
+
+        return inverted
+    
+    def _sequence_cut(dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
+        adj_list = defaultdict(set)
+        for (a, b) in dfg:
+            adj_list[a].add(b)
+
+        sccs = _strongly_connected_components(adj_list)
+
+        scc_map = {}
+        for scc in sccs:
+            for node in scc:
+                scc_map[node] = scc
+
+        scc_graph = defaultdict(set)
+        for (a, b) in dfg:
+            if scc_map[a] != scc_map[b]:
+                scc_graph[frozenset(scc_map[a])].add(frozenset(scc_map[b]))
+
+        in_degree = defaultdict(int)
+        for src in scc_graph:
+            for dest in scc_graph[src]:
+                in_degree[dest] += 1
+
+        zero_in_degree = [node for node in scc_graph if in_degree[node] == 0]
+        topo_sorted_sccs = []
+        while zero_in_degree:
+            node = zero_in_degree.pop()
+            topo_sorted_sccs.append(node)
+            for neighbor in scc_graph[node]:
+                in_degree[neighbor] -= 1
+                if in_degree[neighbor] == 0:
+                    zero_in_degree.append(neighbor)
+
+        first_part = set()
+        second_part = set()
+        in_first_part = True
+        for scc in topo_sorted_sccs:
+            if in_first_part:
+                first_part.update(scc)
+                if any(node in end for node in scc):
+                    in_first_part = False
+            else:
+                second_part.update(scc)
+
+        return [first_part, second_part]
+
+    def _strongly_connected_components(self, graph: Dict[str, Set[str]]) -> List[Set[str]]:
+        index = 0
+        stack = []
+        indices = {}
+        lowlinks = {}
+        on_stack = defaultdict(bool)
+        sccs = []
+
+        def strongconnect(node):
+            nonlocal index
+            indices[node] = index
+            lowlinks[node] = index
+            index += 1
+            stack.append(node)
+            on_stack[node] = True
+
+            for neighbor in graph[node]:
+                if neighbor not in indices:
+                    strongconnect(neighbor)
+                    lowlinks[node] = min(lowlinks[node], lowlinks[neighbor])
+                elif on_stack[neighbor]:
+                    lowlinks[node] = min(lowlinks[node], indices[neighbor])
+
+            if lowlinks[node] == indices[node]:
+                scc = set()
+                while True:
+                    w = stack.pop()
+                    on_stack[w] = False
+                    scc.add(w)
+                    if w == node:
+                        break
+                sccs.append(scc)
+
+        for node in graph:
+            if node not in indices:
+                strongconnect(node)
+
+        return sccs"""

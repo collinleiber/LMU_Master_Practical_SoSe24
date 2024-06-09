@@ -4,6 +4,10 @@ from typing import List, Set, Tuple
 
 from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe, check_lists_of_sets_equal
 from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
+import pm4py
+from pm4py.objects.log.obj import EventLog, Trace, Event
+from pm4py.algo.discovery.inductive import algorithm as inductive_miner
+from pm4py.visualization.process_tree import visualizer as pt_vis
 
 
 class TestInductiveMiner:
@@ -56,9 +60,32 @@ class TestInductiveMiner:
         parallel_split = miner._split_log(miner.event_log, parallel_cut, CutType.PARALLEL)
         assert all(sorted(sl) in split_result for sl in parallel_split)
 
+
     @pytest.mark.parametrize(
         "log,expected_cut,expected_split",
         [
+            ([('a', 'b', 'c', 'd'),
+              ('a', 'c', 'b', 'd'),
+              ('a', 'b', 'd'),
+              ('a', 'c', 'd')],
+             None, None),
+
+            ([('a', 'b', 'c'),
+              ('a', 'c', 'b'),
+              ('a', 'b', 'c', 'e', 'f', 'b', 'c'),
+              ('a', 'c', 'b', 'e', 'f', 'b', 'c'),
+              ('a', 'b', 'c', 'e', 'f', 'c', 'b'),
+              ('a', 'c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b')],
+             None, None),
+
+            ([('b', 'c', 'd'),
+              ('c', 'b', 'd'),
+              ('b', 'c', 'e', 'f', 'b', 'c', 'd'),
+              ('c', 'b', 'e', 'f', 'b', 'c', 'd'),
+              ('b', 'c', 'e', 'f', 'c', 'b', 'd'),
+              ('c', 'b', 'e', 'f', 'b', 'c', 'e', 'f', 'c', 'b', 'd')],
+             [set('bcef'), set('d')], None),
+
             ([('a', 'b', 'c', 'd'),
               ('a', 'c', 'b', 'd'),
               ('a', 'b', 'c', 'e', 'f', 'b', 'c', 'd'),
@@ -80,11 +107,13 @@ class TestInductiveMiner:
         miner = InductiveMiner(log)
 
         sequence_cut = miner._sequence_cut(miner.dfg, miner.start_activities, miner.end_activities)
-        assert sequence_cut == expected_cut  # order does matter
+        if expected_cut:
+            assert sequence_cut == expected_cut  # order does matter
+        print('sequence_cut', sequence_cut)
 
-        sequence_split = miner._split_log(miner.event_log, sequence_cut, CutType.SEQUENCE)
-        assert all(sorted(sl) in expected_split for sl in sequence_split)
-
+        if expected_split:
+            sequence_split = miner._split_log(miner.event_log, sequence_cut, CutType.SEQUENCE)
+            assert all(sorted(sl) in expected_split for sl in sequence_split)
 
     @pytest.mark.parametrize(
         "log,expected_cut,expected_split",
@@ -161,5 +190,8 @@ class TestInductiveMiner:
     )
     def test_fall_through_flower_model(self, log: List[Tuple[str]], expected_string: str):
         miner = InductiveMiner(log)
+        # process_tree = inductive_miner.apply(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
+        #                                                          activity_key='activity', timestamp_key='timestamp'))
+        # print('process_tree', process_tree)
         miner.run()
         assert miner.process_tree_str == expected_string

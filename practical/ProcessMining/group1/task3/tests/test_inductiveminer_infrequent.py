@@ -57,13 +57,46 @@ class TestInductiveMinerInfrequent:
         result_dfg = dummy_miner.get_frequent_directly_follows_graph(base_dfg)
         assert result_dfg == frequent_dfg
 
+    @pytest.mark.parametrize(
+        "log,expected_efg,expected_fefg",
+        [
+            ([('a', 'c', 'd', 'e', 'b'),
+              ('a', 'b', 'a', 'e', 'd', 'c'),
+              ('a', 'e', 'c', 'b', 'd'),
+              ('a', 'd', 'b', 'c', 'e')],
+             {('a', 'c'): 5, ('a', 'd'): 5, ('a', 'e'): 5, ('a', 'b'): 4, ('c', 'd'): 2, ('c', 'e'): 2, ('c', 'b'): 2,
+              ('d', 'e'): 2, ('d', 'b'): 2, ('e', 'b'): 2, ('a', 'a'): 1, ('b', 'a'): 1, ('b', 'e'): 2, ('b', 'd'): 2,
+              ('b', 'c'): 2, ('e', 'd'): 2, ('e', 'c'): 2, ('d', 'c'): 2},
+             {('a', 'b'): 4, ('a', 'c'): 5, ('a', 'd'): 5, ('a', 'e'): 5, ('b', 'a'): 1, ('b', 'c'): 2, ('b', 'd'): 2,
+              ('b', 'e'): 2, ('c', 'b'): 2, ('c', 'd'): 2, ('c', 'e'): 2, ('d', 'b'): 2, ('d', 'c'): 2, ('d', 'e'): 2,
+              ('e', 'b'): 2, ('e', 'c'): 2, ('e', 'd'): 2}),
 
-    def test_get_frequent_directly_follows_graph(self):
+            ([('a', 'b', 'c', 'a', 'b', 'd', 'a', 'b', 'c', 'a', 'b', 'd'),
+              ('c', 'a', 'b', 'a', 'b', 'c', 'a', 'b'),
+              ('a', 'd', 'a', 'b', 'a', 'g')],
+             {('a', 'b'): 18, ('a', 'c'): 6, ('a', 'a'): 12, ('a', 'd'): 7, ('b', 'c'): 6, ('b', 'a'): 10,
+              ('b', 'b'): 9, ('b', 'd'): 6, ('c', 'a'): 8, ('c', 'b'): 8, ('c', 'd'): 3, ('c', 'c'): 2, ('d', 'a'): 4,
+              ('d', 'b'): 3, ('d', 'c'): 1, ('d', 'd'): 1, ('a', 'g'): 3, ('d', 'g'): 1, ('b', 'g'): 1},
+             {('a', 'a'): 12, ('a', 'b'): 18, ('a', 'c'): 6, ('a', 'd'): 7, ('b', 'a'): 10, ('b', 'b'): 9,
+              ('b', 'c'): 6, ('b', 'd'): 6, ('c', 'a'): 8, ('c', 'b'): 8, ('c', 'd'): 3, ('d', 'a'): 4, ('d', 'b'): 3})
+        ]
+    )
+    def test_get_frequent_eventually_follows_graph(self, log: List[Tuple[str]], expected_efg: Dict[Tuple[str, str], int],
+                                                   expected_fefg: Dict[Tuple[str, str], int]):
+        miner = InductiveMinerInfrequent(log, 0.3)
+
+        result_efg = miner._calculate_eventually_follows_graph(log)
+        assert result_efg == expected_efg
+
+        freq_efg = miner.get_frequent_eventually_follows_graph(log)
+        assert freq_efg == expected_fefg
+
+    def test_xor_split_frequent(self):
         pass
 
-    def test_calculate_eventually_follows_graph(self):
+    def test_sequence_split_frequent(self):
         pass
 
-    def test_get_frequent_eventually_follows_graph(self):
+    def test_loop_split_frequent(self):
         pass
 

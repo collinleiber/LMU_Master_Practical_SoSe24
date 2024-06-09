@@ -90,6 +90,116 @@ class InductiveMiner:
             # Debug print to check the current state of sublogs
             logging.debug(f"Current sublogs: {sublogs}")
 
+    def _get_dfg(self, log: List[Tuple]) -> Tuple[Dict[Tuple[str, str], int], Dict[str, int], Dict[str, int]]:
+        """
+        Builds the directly-follows graph (dfg) from the event log and extracts the start and end activities.
+
+        Parameters:
+            log: List of traces
+
+        Returns:
+            Tuple containing the dfg, start activities, and end activities.
+        """
+        dfg = defaultdict(int)
+        start_activities = defaultdict(int)
+        end_activities = defaultdict(int)
+
+        for trace in log:
+            start_activities[trace[0]] += 1
+            end_activities[trace[-1]] += 1
+
+            for i in range(len(trace) - 1):
+                pair = (trace[i], trace[i + 1])
+                dfg[pair] += 1
+
+        return dfg, start_activities, end_activities
+
+    def _get_alphabet(self, log: List[Tuple[str]]) -> Set[str]:
+        """
+        Extracts the unique activities from the event log.
+
+        Parameters:
+            log: List of traces
+
+        Returns:
+            Set of unique activities in the event log.
+        """
+        return {activity for trace in log for activity in trace}
+
+    def _get_alphabet_from_dfg(self, dfg: Dict[Tuple[str, str], int]) -> Set[str]:
+        """
+        Extracts the unique activities from the directly-follows graph.
+
+        Parameters:
+            dfg: Directly-follows graph
+
+        Returns:
+            Set of unique activities in the dfg.
+        """
+        return {activity for edge in dfg.keys() for activity in edge}
+
+    def _is_nontrivial(self, max_groups: Optional[List[Set[str]]]) -> bool:
+        """
+        Checks if the number of groups is greater than 1 (i.e. the cut would separate the dfg further).
+
+        Parameters:
+            max_groups: List of groups of activities that form the cut.
+
+        Returns:
+            True if the cut is nontrivial, False otherwise.
+        """
+        return len(max_groups) > 1 if max_groups else False
+
+    def _handle_base_cases(self, log: List[Tuple[str]]) -> Tuple[List[Set[str]], CutType]:
+        """
+        Handles the base cases (i.e. only one type of activity in the log) for the Inductive Miner algorithm.
+
+        Parameters:
+            log: List of traces
+
+        Returns:
+            Tuple containing the groups of activities that form the base case and the corresponding cut type.
+        """
+        # Convert traces to strings for easier comparison
+        traces = [''.join(map(str, trace)) for trace in log]
+        # Extract unique activities from the log, excluding the empty traces
+        alphabet = [a for a in self._get_alphabet(log) if a != '']
+        # Initialize base activity
+        base_activity = set(alphabet[0]) if alphabet else set()
+        tau_activity = set(self.TAU)
+        operator = CutType.NONE
+        groups = []
+
+        # If there is only one unique activity in the log
+        if len(alphabet) == 1:
+            if all(len(trace) == 1 for trace in traces):  # exactly once (1)
+                operator = CutType.NONE
+                groups = [base_activity]
+            elif all(len(trace) <= 1 for trace in traces):  # never or once (0,1)
+                operator = CutType.XOR
+                groups += [base_activity, tau_activity]
+            elif all(len(trace) > 0 for trace in traces):  # once or many times (1..*)
+                operator = CutType.LOOP
+                groups += [base_activity, tau_activity]
+            else:  # never, once or many times (0..*)
+                operator = CutType.LOOP
+                groups += [tau_activity, base_activity]
+        return groups, operator
+
+    def _handle_fall_through(self, log: List[Tuple[str]]) -> List[Set[str]]:
+        """
+        Handles the fall-through case (flower model) for the Inductive Miner algorithm.
+
+        Parameters:
+            log: List of traces
+
+        Returns:
+            List of groups of activities that form the flower model.
+        """
+        # Tau in the do part of the loop cut (= 0..* execution of any activity)
+        flower_groups = [set(self.TAU), [set(activity) for activity in sorted(list(self._get_alphabet(log)))]]
+        return flower_groups
+
     def _apply_cut(self, log: List[Tuple[str]], dfg: Dict[Tuple[str, str], int], start_activities: Dict[str, int],
                    end_activities: Dict[str, int]) -> Tuple[List[Set[str]], CutType]:
         """
@@ -173,116 +283,6 @@ class InductiveMiner:
         self.process_tree_str = tree
 
         return self.process_tree_str
-
-    def _is_nontrivial(self, max_groups: Optional[List[Set[str]]]) -> bool:
-        """
-        Checks if the number of groups is greater than 1 (i.e. the cut would separate the dfg further).
-
-        Parameters:
-            max_groups: List of groups of activities that form the cut.
-
-        Returns:
-            True if the cut is nontrivial, False otherwise.
-        """
-        return len(max_groups) > 1 if max_groups else False
-
-    def _get_alphabet(self, log: List[Tuple[str]]) -> Set[str]:
-        """
-        Extracts the unique activities from the event log.
-
-        Parameters:
-            log: List of traces
-
-        Returns:
-            Set of unique activities in the event log.
-        """
-        return {activity for trace in log for activity in trace}
-
-    def _get_alphabet_from_dfg(self, dfg: Dict[Tuple[str, str], int]) -> Set[str]:
-        """
-        Extracts the unique activities from the directly-follows graph.
-
-        Parameters:
-            dfg: Directly-follows graph
-
-        Returns:
-            Set of unique activities in the dfg.
-        """
-        return {activity for edge in dfg.keys() for activity in edge}
-
-    def _get_dfg(self, log: List[Tuple]) -> Tuple[Dict[Tuple[str, str], int], Dict[str, int], Dict[str, int]]:
-        """
-        Builds the directly-follows graph (dfg) from the event log and extracts the start and end activities.
-
-        Parameters:
-            log: List of traces
-
-        Returns:
-            Tuple containing the dfg, start activities, and end activities.
-        """
-        dfg = defaultdict(int)
-        start_activities = defaultdict(int)
-        end_activities = defaultdict(int)
-
-        for trace in log:
-            start_activities[trace[0]] += 1
-            end_activities[trace[-1]] += 1
-
-            for i in range(len(trace) - 1):
-                pair = (trace[i], trace[i + 1])
-                dfg[pair] += 1
-
-        return dfg, start_activities, end_activities
-
-    def _handle_base_cases(self, log: List[Tuple[str]]) -> Tuple[List[Set[str]], CutType]:
-        """
-        Handles the base cases (i.e. only one type of activity in the log) for the Inductive Miner algorithm.
-
-        Parameters:
-            log: List of traces
-
-        Returns:
-            Tuple containing the groups of activities that form the base case and the corresponding cut type.
-        """
-        # Convert traces to strings for easier comparison
-        traces = [''.join(map(str, trace)) for trace in log]
-        # Extract unique activities from the log, excluding the empty traces
-        alphabet = [a for a in self._get_alphabet(log) if a != '']
-        # Initialize base activity
-        base_activity = set(alphabet[0]) if alphabet else set()
-        tau_activity = set(self.TAU)
-        operator = CutType.NONE
-        groups = []
-
-        # If there is only one unique activity in the log
-        if len(alphabet) == 1:
-            if all(len(trace) == 1 for trace in traces):  # exactly once (1)
-                operator = CutType.NONE
-                groups = [base_activity]
-            elif all(len(trace) <= 1 for trace in traces):  # never or once (0,1)
-                operator = CutType.XOR
-                groups += [base_activity, tau_activity]
-            elif all(len(trace) > 0 for trace in traces):  # once or many times (1..*)
-                operator = CutType.LOOP
-                groups += [base_activity, tau_activity]
-            else:  # never, once or many times (0..*)
-                operator = CutType.LOOP
-                groups += [tau_activity, base_activity]
-        return groups, operator
-
-    def _handle_fall_through(self, log: List[Tuple[str]]) -> List[Set[str]]:
-        """
-        Handles the fall-through case (flower model) for the Inductive Miner algorithm.
-
-        Parameters:
-            log: List of traces
-
-        Returns:
-            List of groups of activities that form the flower model.
-        """
-        # Tau in the do part of the loop cut (= 0..* execution of any activity)
-        flower_groups = [set(self.TAU), [set(activity) for activity in sorted(list(self._get_alphabet(log)))]]
-        return flower_groups
 
     def _invert_graph(graph: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
         inverted = defaultdict(set)
@@ -611,8 +611,8 @@ class InductiveMiner:
                     return True
         return False
 
-    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[
-        Set[str]]:
+    def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
+                      end: Dict[str, int]) -> List[Set[str]]:
         # Step 1: Create a group per activity
         alphabet = set(a for (a, b) in dfg).union(set(b for (a, b) in dfg))
         transitive_predecessors, transitive_successors = self._get_transitive_relations(dfg)

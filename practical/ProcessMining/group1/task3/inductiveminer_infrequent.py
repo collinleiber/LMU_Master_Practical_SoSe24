@@ -81,7 +81,7 @@ class InductiveMinerInfrequent(InductiveMiner):
             Tuple of groups and operator
         """
         dfg_filtered = self.get_frequent_directly_follows_graph(dfg)
-        efg_filtered = self.get_frequent_eventually_follows_graph(dfg)
+        efg_filtered = self.get_frequent_eventually_follows_graph(log)
 
         # TODO refactor apply_cut to make super call possible instead of duplicate code
         # super()._apply_cut(log=log, dfg=dfg, start_activities=dfg_start, end_activities=dfg_end)
@@ -232,36 +232,77 @@ class InductiveMinerInfrequent(InductiveMiner):
             operator: enum containing type of cut
         """
         if operator == CutType.SEQUENCE:
-            return super()._sequence_split(log, groups)
-            # return self.sequence_split_frequent(log, groups)
+            return self.sequence_split_filtered(log, groups)
         elif operator == CutType.XOR:
-            return super()._xor_split(log, groups)
-            # return self.xor_split_frequent(log, groups)
+            return self.xor_split_filtered(log, groups)
         elif operator == CutType.LOOP:
-            return super()._loop_split(log, groups)
-            # return self.loop_split_frequent(log, groups)
+            return self.loop_split_filtered(log, groups)
         elif operator == CutType.PARALLEL:
-            return self._parallel_split(log, groups)
+            return super()._parallel_split(log, groups)
         return []
 
-    def xor_split_frequent(self, log: List[Tuple[str]], groups: List[Set[str]]):
-        sublogs = [[] for _ in range(len(groups))]
+    def xor_split_filtered(self, log: List[Tuple[str]], groups: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
+        """
+        Filters the sublog before splitting logs based on xor operator. Figures out which activities should be
+        handled as infrequent behavior based on affiliation to xor cut groups.
 
-        for trace in log:
-            min_freq = len(trace) * self.threshold
+        Parameters:
+            log: sublog as subset of event log
+            groups: result groups of operator cuts to alphabet of corresponding log
+        """
+        for i, trace in enumerate(log.copy()):
+            affiliation, removals = [], []
 
-            for i, group in enumerate(groups):
+            for group in groups:
+                trace_set = set(trace)
+                group = set(group)
 
-                sub_trace = tuple(activity for activity in trace if activity in group)
-                if sub_trace:
-                    sublogs[i].append(sub_trace)
+                # Continue with next trace, when group activities and trace activities are equal -> no filtering
+                if trace_set == group:
                     break
+                # Continue with next group, when group and trace don't share any elements
+                elif trace_set.isdisjoint(group):
+                    continue
+                # When no distinct group was found, probably infrequent behaviour, therefore find all candidates
+                else:
+                    if group.issubset(trace_set):
+                        affiliation.append(group)
 
-        sublogs = [sublog for sublog in sublogs if sublog]
-        return sublogs
+            # Proceed based on amounts of found affiliates
+            if not affiliation:
+                continue
+            # No real case, when activity in trace that is not in split, put unknown to removals
+            elif len(affiliation) == 1:
+                removals = set(trace).difference(affiliation[0])
+            # When multiple affiliates were found, discover actual affiliation by amount of
+            elif len(affiliation) > 1:
+                # get activity frequency in trace
+                counts = defaultdict(int)
+                for activity in trace:
+                    counts[activity] += 1
 
-    def sequence_split_frequent(self, log: List[Tuple[str]], groups: List[Set[str]]):
-        pass
+                # sum up frequencies of all activities of an affiliate
+                sums = defaultdict(int)
+                for index, affiliate in enumerate(affiliation):
+                    for activity in affiliate:
+                        for k, freq in counts.items():
+                            if activity == k:
+                                sums[index] += freq
 
-    def loop_split_frequent(self, log: List[Tuple[str]], groups: List[Set[str]]):
-        pass
+                # get affiliate with the highest frequency sum put all others to removals
+                actual_affiliation = affiliation[max(sums, key=sums.get)]
+                affiliation.remove(actual_affiliation)
+                removals = set().union(*affiliation)
+
+            # replace the old trace with a filtered trace
+            new_trace = tuple([element for element in trace if element not in removals])
+            log[i] = new_trace
+
+        # Actual xor split call
+        return super()._xor_split(log=log, cut=groups)
+
+    def sequence_split_filtered(self, log: List[Tuple[str]], groups: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
+        return super()._sequence_split(log=log, cut=groups)
+
+    def loop_split_filtered(self, log: List[Tuple[str]], groups: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
+        return super()._loop_split(log=log, cut=groups)

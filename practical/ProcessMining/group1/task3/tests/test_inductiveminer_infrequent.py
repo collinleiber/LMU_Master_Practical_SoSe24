@@ -92,14 +92,33 @@ class TestInductiveMinerInfrequent:
         freq_efg = miner.get_frequent_eventually_follows_graph(log)
         assert freq_efg == expected_fefg
 
-    def test_xor_split_frequent(self):
-        pass
 
-    def test_sequence_split_frequent(self):
-        pass
+    @pytest.mark.parametrize(
+        "log,given_cut,expected_filter",
+        [
+            ([("A", "A"), ("A", "A", "A", "A", "B", "A", "A", "A"), ("B", "B", "B", "C")],
+             [{"A"}, {"B", "C"}],
+             [[('A', 'A'), ('A', 'A', 'A', 'A', 'A', 'A', 'A')], [('B', 'B', 'B', 'C')]]),
 
-    def test_loop_split_frequent(self):
-        pass
+            ([("A", "A"), ("A", "A", "A", "A", "B", "A", "A", "A"), ("B", "B", "B")],
+             [{"A"}, {"B"}],
+             [[('A', 'A'), ('A', 'A', 'A', 'A', 'A', 'A', 'A')], [('B', 'B', 'B')]]),
+
+            ([("A", "A")],
+             [{"A"}, {"B"}],
+             [[('A', 'A')]]),
+
+            ([("a", "b", "c"), ("d", "e", "f", "g"), ("a", "b"), ("d", "e")],
+             [{"a", "b", "c", "g"}, {"d", "e", "f"}],
+             [[("a", "b", "c"), ("a", "b")], [("d", "e", "f"), ("d", "e")]])
+        ]
+    )
+    def test_xor_split_filtered(self, log: List[Tuple[str]], given_cut: List[Set[str]],
+                                expected_filter: List[Tuple[str]]):
+        miner = InductiveMinerInfrequent(event_log=log, threshold=0.0)
+
+        result = miner.xor_split_filtered(log=log, groups=given_cut)
+        assert result == expected_filter
 
     @pytest.mark.parametrize(
         "log,threshold",

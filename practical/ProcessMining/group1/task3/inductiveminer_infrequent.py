@@ -6,11 +6,22 @@ from practical.ProcessMining.group1.shared.utils import deduplicate_list
 
 
 class InductiveMinerInfrequent(InductiveMiner):
+    """
+    Inductive Miner infrequent implementation based on the paper:
+    "Process Mining: Discovery, Conformance and Enhancement of Business Processes" by Wil M.P. van der Aalst
+
+    Attributes (which are not inherited):
+        threshold: coefficient used to define infrequency. (1 - threshold) * 100 => outliers
+    """
     def __init__(self, event_log: Optional[List[Tuple[str]]] = None, threshold: float = 0.0):
         super().__init__(event_log=event_log)
         self.threshold = threshold
 
     def run(self) -> None:
+        """
+        Main method that start recursive process tree discovery / building.
+        """
+
         # Initialize the list of sublogs with the original event log
         sublogs = [self.event_log]
 
@@ -28,7 +39,14 @@ class InductiveMinerInfrequent(InductiveMiner):
             sublogs.extend(new_sublogs) if new_sublogs else sublogs
             sublogs.remove(log)
 
-    def recursion_step(self, log):
+    def recursion_step(self, log: List[Tuple[str]]) -> List[List[Tuple[str]]]:
+        """
+        Single recursion step of Inductive Miner infrequent. Only gets called, when super method found no cut.
+
+        Parameters:
+            log: sublog as subset of the original event log
+        """
+
         # Update the directly-follows graph (dfg), start_activities, and end_activities for the current sublog
         dfg, start_activities, end_activities = self._get_dfg(log)
         new_sublogs = []
@@ -47,8 +65,8 @@ class InductiveMinerInfrequent(InductiveMiner):
         return new_sublogs
 
     def _apply_cut_filtered(self, log: List[Tuple[str]], dfg: Dict[Tuple[str, str], int],
-                            start_activities: Dict[str, int], end_activities: Dict[str, int]) \
-            -> Tuple[List[Set[str]], CutType]:
+                            start_activities: Dict[str, int],
+                            end_activities: Dict[str, int]) -> Tuple[List[Set[str]], CutType]:
 
         dfg_filtered = self.get_frequent_directly_follows_graph(dfg)
         efg_filtered = self.get_frequent_eventually_follows_graph(dfg)
@@ -113,7 +131,15 @@ class InductiveMinerInfrequent(InductiveMiner):
 
         return log  # If no filtering was applied, return the original log
 
-    def get_frequent_directly_follows_graph(self, dfg):
+    def get_frequent_directly_follows_graph(self, dfg: Dict[Tuple[str, str], int]):
+        """
+        Takes as input current directly follows graph and for each node,
+        all edges get removed as infrequent relatively compared to the most frequent outgoing edge
+        multiplied by a given threshold.
+
+        Parameters:
+            dfg: current directly follows graph
+        """
         max_freq = defaultdict(int)
         for edge, frequency in dfg.items():
             max_freq[edge[0]] = max(max_freq[edge[0]], frequency)
@@ -126,7 +152,14 @@ class InductiveMinerInfrequent(InductiveMiner):
         frequent_dfg = dict(sorted(frequent_dfg.items(), key=lambda item: item[1], reverse=True))
         return frequent_dfg
 
-    def _calculate_eventually_follows_graph(self, log):
+    def _calculate_eventually_follows_graph(self, log: List[Tuple[str]]) -> Dict[Tuple[str, str], int]:
+        """
+        From a given sublog, an eventually follows graph is created covering not only directly follows pairs
+        but all transitive related follows pairs. Used for the filtered sequence cut.
+
+        Parameters:
+            log: sublog as subset of the original event log
+        """
         efg = defaultdict(int)
 
         for trace in log:
@@ -138,26 +171,36 @@ class InductiveMinerInfrequent(InductiveMiner):
         return efg
 
     def get_frequent_eventually_follows_graph(self, log) -> Dict[Tuple[str, str], int]:
+        """
+        Calculates eventually follows graph and filters according to dfg infrequent edges.
+
+        Parameters:
+            log: sublog as subset of the original event log
+        """
         efg = self._calculate_eventually_follows_graph(log)
 
+        # Since efg and dfg have the same data structure, dfg named method reused for filtering
         return self.get_frequent_directly_follows_graph(efg)
 
     def _split_log_filtered(self, log: List[Tuple[str]], groups: List[Set[str]],
-                            operator: CutType) -> List[List[Tuple[str]]] | None:
+                            operator: CutType) -> List[List[Tuple[str, ...]]]:
         """
         Selects the correct splitting method based on the given operator.
 
         Parameters:
-            log: current (sub)log as subset of the event log
-            groups: list of languages as result of the applied cut
-            operator: enum containing the type of cut
+            log: (sub)log as subset of event log
+            groups: list of languages as result of applied cut
+            operator: enum containing type of cut
         """
         if operator == CutType.SEQUENCE:
-            return self.sequence_split_frequent(log, groups)
+            return super()._sequence_split(log, groups)
+            # return self.sequence_split_frequent(log, groups)
         elif operator == CutType.XOR:
-            return self.xor_split_frequent(log, groups)
+            return super()._xor_split(log, groups)
+            # return self.xor_split_frequent(log, groups)
         elif operator == CutType.LOOP:
-            return self.loop_split_frequent(log, groups)
+            return super()._loop_split(log, groups)
+            # return self.loop_split_frequent(log, groups)
         elif operator == CutType.PARALLEL:
             return self._parallel_split(log, groups)
         return []
@@ -183,14 +226,3 @@ class InductiveMinerInfrequent(InductiveMiner):
 
     def loop_split_frequent(self, log: List[Tuple[str]], groups: List[Set[str]]):
         pass
-
-    def visualize_process_tree(self):
-        """
-        Visualizes the process tree using the specified symbols for SEQUENCE, XOR, PARALLEL, and LOOP cuts.
-
-        Converts the event log to a dataframe, discovers the process tree using the inductive miner algorithm,
-        replaces the operator labels with the corresponding symbols, and visualizes the process tree.
-
-        The process tree is displayed using the specified format.
-        """
-        super().visualize_process_tree()

@@ -76,12 +76,18 @@ class InductiveMiner:
             # Debug print to check the current state of sublogs
             logging.debug(f"Current sublogs: {sublogs}")
 
-    def recursion_step(self, log):
+    def recursion_step(self, log: List[Tuple[str]]):
+        """
+        Single recursion step of Inductive Miner.
+
+        Parameters:
+            log: sublog as subset of the original event log
+        """
         # Update the directly-follows graph (dfg), start_activities, and end_activities for the current sublog
         dfg, start_activities, end_activities = self._get_dfg(log)
         groups, new_sublogs = [], []
-
         operation_found = True
+
         # Check for base cases and build the corresponding part of the process tree
         base_cut, operator = self._handle_base_cases(log)
         if base_cut:  # If not a base case, apply different types of cuts

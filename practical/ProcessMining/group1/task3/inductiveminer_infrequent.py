@@ -87,16 +87,16 @@ class InductiveMinerInfrequent(InductiveMiner):
         # super()._apply_cut(log=log, dfg=dfg, start_activities=dfg_start, end_activities=dfg_end)
 
         # Try to apply different types of cuts to the current sublog
-        sequence_cut = self._sequence_cut(efg_filtered, start_activities, end_activities)
         xor_cut = self._xor_cut(dfg_filtered, start_activities, end_activities)
+        sequence_cut = self._sequence_cut(efg_filtered, start_activities, end_activities)
         parallel_cut = self._parallel_cut(dfg_filtered, start_activities, end_activities)
         loop_cut = self._loop_cut(dfg_filtered, start_activities, end_activities)
 
         # If a nontrivial cut (>1) is found, return the partition and the corresponding operator
-        if self._is_nontrivial(sequence_cut):
-            return sequence_cut, CutType.SEQUENCE
-        elif self._is_nontrivial(xor_cut):
+        if self._is_nontrivial(xor_cut):
             return xor_cut, CutType.XOR
+        elif self._is_nontrivial(sequence_cut):
+            return sequence_cut, CutType.SEQUENCE
         elif self._is_nontrivial(parallel_cut):
             return parallel_cut, CutType.PARALLEL
         elif self._is_nontrivial(loop_cut):

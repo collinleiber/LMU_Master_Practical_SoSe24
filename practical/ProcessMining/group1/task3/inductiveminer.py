@@ -54,7 +54,7 @@ class InductiveMiner:
     def run(self) -> None:
         """
         Main method to run the Inductive Miner algorithm. It iteratively applies different types of cuts
-        (sequence_cutnce, XOR, parallel, loop) to the dfg, splits the event log into sublogs, and builds up the
+        (XOR, sequence, parallel, loop) to the dfg, splits the event log into sublogs, and builds up the
         process tree accordingly.
         """
         # Initialize the list of sublogs with the original event log
@@ -231,24 +231,24 @@ class InductiveMiner:
             List of new sublogs resulting from the split. Empty list if no operator could be applied.
         """
         # Try to apply different types of cuts to the current sublog
-        sequence_cut = self._sequence_cut(dfg, start_activities, end_activities)
         xor_cut = self._xor_cut(dfg, start_activities, end_activities)
+        sequence_cut = self._sequence_cut(dfg, start_activities, end_activities)
         parallel_cut = self._parallel_cut(dfg, start_activities, end_activities)
         loop_cut = self._loop_cut(dfg, start_activities, end_activities)
 
         # Debug prints to check the cuts
-        logging.debug(f"Sequence Cut: {sequence_cut}")
         logging.debug(f"XOR Cut: {xor_cut}")
+        logging.debug(f"Sequence Cut: {sequence_cut}")
         logging.debug(f"Parallel Cut: {parallel_cut}")
         logging.debug(f"Loop Cut: {loop_cut}")
 
         # If a nontrivial cut (>1) is found, return the partition and the corresponding operator
-        if self._is_nontrivial(sequence_cut):
-            logging.debug("Applying Sequence Cut")
-            return sequence_cut, CutType.SEQUENCE
-        elif self._is_nontrivial(xor_cut):
+        if self._is_nontrivial(xor_cut):
             logging.debug("Applying XOR Cut")
             return xor_cut, CutType.XOR
+        elif self._is_nontrivial(sequence_cut):
+            logging.debug("Applying Sequence Cut")
+            return sequence_cut, CutType.SEQUENCE
         elif self._is_nontrivial(parallel_cut):
             logging.debug("Applying Parallel Cut")
             return parallel_cut, CutType.PARALLEL

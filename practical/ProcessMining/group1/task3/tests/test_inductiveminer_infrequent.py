@@ -39,6 +39,24 @@ class TestInductiveMinerInfrequent:
         assert base_cut == expected_cut
         assert operator == expected_operator
 
+    @pytest.mark.parametrize(
+        "base_dfg,frequent_dfg",
+        [
+            ({('a', 'c'): 1, ('c', 'd'): 1, ('d', 'e'): 1, ('e', 'b'): 1, ('a', 'b'): 1, ('b', 'a'): 1, ('a', 'e'): 2,
+              ('e', 'd'): 1, ('d', 'c'): 1, ('e', 'c'): 1, ('c', 'b'): 1, ('b', 'd'): 1, ('a', 'd'): 1, ('d', 'b'): 1,
+              ('b', 'c'): 1, ('c', 'e'): 1},
+             {('a', 'b'): 1, ('a', 'c'): 1, ('a', 'd'): 1, ('a', 'e'): 2, ('b', 'a'): 1, ('b', 'c'): 1, ('b', 'd'): 1,
+              ('c', 'b'): 1, ('c', 'd'): 1, ('c', 'e'): 1, ('d', 'b'): 1, ('d', 'c'): 1, ('d', 'e'): 1, ('e', 'b'): 1,
+              ('e', 'c'): 1, ('e', 'd'): 1}),
+
+        ]
+    )
+    def test_get_frequent_directly_follows_graph(self, dummy_miner: InductiveMinerInfrequent,
+                                                 base_dfg: Dict[Tuple[str, str], int],
+                                                 frequent_dfg: Dict[Tuple[str, str], int]):
+        result_dfg = dummy_miner.get_frequent_directly_follows_graph(base_dfg)
+        assert result_dfg == frequent_dfg
+
 
     def test_get_frequent_directly_follows_graph(self):
         pass

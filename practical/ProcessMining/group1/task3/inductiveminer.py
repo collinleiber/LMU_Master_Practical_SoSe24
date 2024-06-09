@@ -6,6 +6,7 @@ import pm4py
 import pandas as pd
 from pm4py.visualization.process_tree import visualizer as pt_visualizer
 from pm4py.objects.conversion.log import converter as log_converter
+from ..shared import utils
 
 
 class CutType(Enum):
@@ -773,7 +774,7 @@ class InductiveMiner:
         The process tree is displayed using the specified format.
         """
         # Convert the event log to a dataframe for pm4py
-        event_log_df = self._event_log_to_dataframe(self.event_log)
+        event_log_df = utils.event_log_to_pm4py_dataframe(self.event_log)
         log = log_converter.apply(event_log_df)
         tree = pm4py.discover_process_tree_inductive(log)
 
@@ -808,20 +809,3 @@ class InductiveMiner:
         pt_visualizer.view(gviz)
         # optionally save the image if needed
         # pt_visualizer.save(gviz, "process_tree.png")
-
-    def _event_log_to_dataframe(self, log):
-        """
-        Converts the event log to a pandas DataFrame formatted for pm4py.
-
-        Parameters:
-            log: List of traces
-
-        Returns:
-            A pandas DataFrame with the event log formatted for pm4py.
-        """
-        data = []
-        for i, trace in enumerate(log):
-            for event in trace:
-                data.append({"case_id": i, "activity": event, "timestamp": i})
-        return pm4py.format_dataframe(pd.DataFrame(data), case_id='case_id', activity_key='activity',
-                                      timestamp_key='timestamp')

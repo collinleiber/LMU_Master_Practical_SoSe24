@@ -169,13 +169,12 @@ class InductiveMinerInfrequent(InductiveMiner):
             return self._parallel_split(log, groups)
         return []
 
-    def xor_split_infrequent(self):
+    def xor_split_frequent(self, log: List[Tuple[str]], groups: List[Set[str]]):
+
+    def sequence_split_frequent(self, log: List[Tuple[str]], groups: List[Set[str]]):
         pass
 
-    def sequence_split_infrequent(self):
-        pass
-
-    def loop_split_infrequent(self):
+    def loop_split_frequent(self, log: List[Tuple[str]], groups: List[Set[str]]):
         pass
 
     def visualize_process_tree(self):

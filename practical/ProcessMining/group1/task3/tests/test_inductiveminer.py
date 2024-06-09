@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import pytest
 from typing import List, Set, Tuple
@@ -5,8 +6,10 @@ from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe, 
     extract_traces_from_text
 from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
 import pm4py
-from IPython.display import Image, display
+from IPython.display import Image
 from unittest.mock import MagicMock, patch
+
+BASE_PATH = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../shared/example_files'))
 
 
 class TestInductiveMiner:
@@ -27,7 +30,7 @@ class TestInductiveMiner:
         ]
     )
     def test_import_event_log(self, file: str) -> None:
-        log_path = str(Path("../../shared/example_files") / file)
+        log_path = str(BASE_PATH / file)
         if Path(log_path).exists():
             # Test valid file formats
             if file.endswith(".xes") or file.endswith('.csv'):

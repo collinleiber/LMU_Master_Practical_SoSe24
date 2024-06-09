@@ -63,32 +63,42 @@ class InductiveMiner:
         # Iterate over the sublogs until the list is empty
         while len(sublogs) > 0:
             log = sublogs[0]
+            result, groups, new_sublogs = self.recursion_step(log)
 
-            # Update the directly-follows graph (dfg), start_activities, and end_activities for the current sublog
-            dfg, start_activities, end_activities = self._get_dfg(log)
+            # When no operator could be applied, return
+            if not result:
+                self._build_process_tree(groups, CutType.LOOP)
 
-            # Check for base cases and build the corresponding part of the process tree
-            base_cut, operator = self._handle_base_cases(log)
-            if base_cut:  # If not a base case, apply different types of cuts
-                self._build_process_tree(base_cut, operator)
-            else:  # try to split log based on operator and build corresponding part of the process tree
-                groups, operator = self._apply_cut(log, dfg, start_activities, end_activities)
-                # Add the new sublogs to the list if not fall through case
-                if operator != CutType.NONE:
-                    new_sublogs = self._split_log(log, groups, operator)
-                    logging.debug(f"Splitting log: {log} with groups: {groups} and operator: {operator}")
-                    logging.debug(f"New sublogs: {new_sublogs}")
-                    sublogs.extend(new_sublogs)
-                    # Build the corresponding part of the process tree
-                    self._build_process_tree(groups, operator)
-                else:  # If fall through case, build the flower model
-                    self._build_process_tree(groups, CutType.LOOP)
-
-            # Remove the old sublog from the list
+            # Updates sublogs
+            sublogs.extend(new_sublogs) if new_sublogs else sublogs
             sublogs.remove(log)
 
             # Debug print to check the current state of sublogs
             logging.debug(f"Current sublogs: {sublogs}")
+
+    def recursion_step(self, log):
+        # Update the directly-follows graph (dfg), start_activities, and end_activities for the current sublog
+        dfg, start_activities, end_activities = self._get_dfg(log)
+        groups, new_sublogs = [], []
+
+        operation_found = True
+        # Check for base cases and build the corresponding part of the process tree
+        base_cut, operator = self._handle_base_cases(log)
+        if base_cut:  # If not a base case, apply different types of cuts
+            self._build_process_tree(base_cut, operator)
+        else:  # try to split log based on operator and build corresponding part of the process tree
+            groups, operator = self._apply_cut(log, dfg, start_activities, end_activities)
+            # Add the new sublogs to the list if not fall through case
+            if operator != CutType.NONE:
+                new_sublogs = self._split_log(log, groups, operator)
+                logging.debug(f"Splitting log: {log} with groups: {groups} and operator: {operator}")
+                logging.debug(f"New sublogs: {new_sublogs}")
+                # Build the corresponding part of the process tree
+                self._build_process_tree(groups, operator)
+            else:  # If fall through case, build the flower model
+                operation_found = False
+
+        return operation_found, groups, new_sublogs
 
     def _get_dfg(self, log: List[Tuple]) -> Tuple[Dict[Tuple[str, str], int], Dict[str, int], Dict[str, int]]:
         """

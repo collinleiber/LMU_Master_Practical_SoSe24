@@ -1,9 +1,5 @@
-import pm4py
-import pandas as pd
 from collections import defaultdict
 from typing import Optional, List, Tuple, Dict, Set
-from pm4py.visualization.process_tree import visualizer as pt_visualizer
-from pm4py.objects.conversion.log import converter as log_converter
 
 from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
 from practical.ProcessMining.group1.shared.utils import deduplicate_list
@@ -21,37 +17,34 @@ class InductiveMinerInfrequent(InductiveMiner):
         # Iterate over the sublogs until the list is empty
         while len(sublogs) > 0:
             log = sublogs[0]
+            # Run basic inductive miner recursion step
+            result, groups, new_sublogs = super().recursion_step(log)
 
-            # Update the directly-follows graph (dfg), start_activities, and end_activities for the current sublog
-            dfg, start_activities, end_activities = self._get_dfg(log)
+            # When no result, run IMi recursion step
+            if not result:
+                new_sublogs = self.recursion_step(log)
 
-            # Check for base cases and build the corresponding part of the process tree
-            base_cut, operator = self._handle_base_cases(log)
-            if base_cut:  # If not a base case, apply different types of cuts
-                self._build_process_tree(base_cut, operator)
-            else:  # try to split log based on operator and build corresponding part of the process tree
-                groups, operator = self._apply_cut(log, dfg, start_activities, end_activities)
-                # Add the new sublogs to the list if not fall through case
-                if operator != CutType.NONE:
-                    new_sublogs = self._split_log(log=log, cut=groups, operator=operator)
-                    sublogs.extend(new_sublogs)
-                    # Build the corresponding part of the process tree
-                    self._build_process_tree(groups, operator)
-                else:  # If fall through case, apply infrequent logic TODO refactor for super call
-                    base_cut, operator = self._handle_base_cases_filtered(log)
-                    if base_cut:  # If not a base case, apply different types of cuts
-                        self._build_process_tree(base_cut, operator)
-                    else:  # try to split log based on operator and build corresponding part of the process tree
-                        groups, operator = self._apply_cut_filtered(log, dfg, start_activities, end_activities)
-                        if operator != CutType.NONE:  # If not fall through case
-                            new_sublogs = self._split_log_filtered(log, groups, operator)  # Apply IMi filters
-                            sublogs.extend(new_sublogs)
-                            self._build_process_tree(groups, operator)
-                        else:  # If fall through case, apply flower model
-                            self._build_process_tree(groups, CutType.LOOP)
-
-            # Remove the old sublog from the list
+            # Update sublogs
+            sublogs.extend(new_sublogs) if new_sublogs else sublogs
             sublogs.remove(log)
+
+    def recursion_step(self, log):
+        # Update the directly-follows graph (dfg), start_activities, and end_activities for the current sublog
+        dfg, start_activities, end_activities = self._get_dfg(log)
+        new_sublogs = []
+
+        base_cut, operator = self._handle_base_cases_filtered(log)
+        if base_cut:  # If not a base case, apply different types of cuts
+            self._build_process_tree(base_cut, operator)
+        else:  # try to split log based on operator and build corresponding part of the process tree
+            groups, operator = self._apply_cut_filtered(log, dfg, start_activities, end_activities)
+            if operator != CutType.NONE:  # If not fall through case
+                new_sublogs = self._split_log_filtered(log, groups, operator)  # Apply IMi filters
+                self._build_process_tree(groups, operator)
+            else:  # If fall through case, apply flower model
+                self._build_process_tree(groups, CutType.LOOP)
+
+        return new_sublogs
 
     def _apply_cut_filtered(self, log: List[Tuple[str]], dfg: Dict[Tuple[str, str], int],
                             start_activities: Dict[str, int], end_activities: Dict[str, int]) \

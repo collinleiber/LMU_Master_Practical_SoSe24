@@ -510,7 +510,7 @@ class InductiveMiner:
         groups = [group for group in groups if group != set()]
         return groups if len(groups) > 1 else []
 
-    def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]], operator: CutType) -> List[List[Tuple[str]]]:
+    def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]], operator: CutType) -> List[List[Tuple[str, ...]]]:
         if operator == CutType.SEQUENCE:
             return self._sequence_split(log, cut)
         elif operator == CutType.XOR:

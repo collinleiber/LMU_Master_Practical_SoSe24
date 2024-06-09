@@ -262,5 +262,8 @@ class InductiveMinerInfrequent(InductiveMiner):
         # Actual xor split call
         return super()._xor_split(log=log, cut=groups)
 
-    def loop_split_frequent(self, log: List[Tuple[str]], groups: List[Set[str]]):
-        pass
+    def sequence_split_filtered(self, log: List[Tuple[str]], groups: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
+        return super()._sequence_split(log=log, cut=groups)
+
+    def loop_split_filtered(self, log: List[Tuple[str]], groups: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
+        return super()._loop_split(log=log, cut=groups)

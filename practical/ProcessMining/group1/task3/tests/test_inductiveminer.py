@@ -132,7 +132,7 @@ class TestInductiveMiner:
     def test_xor_cut(self, log: List[Tuple[str]], expected_cut: List[Set], expected_split: List[Tuple]):
         miner = InductiveMiner(log)
 
-        xor_cut = miner._xor_cut(miner.dfg)
+        xor_cut = miner._xor_cut(miner.dfg, miner.start_activities, miner.end_activities)
         assert check_lists_of_sets_equal(xor_cut, expected_cut)  # order does not matter
 
         xor_split = miner._split_log(miner.event_log, xor_cut, CutType.XOR)

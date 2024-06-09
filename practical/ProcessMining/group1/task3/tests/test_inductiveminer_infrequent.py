@@ -1,6 +1,7 @@
 import pytest
+import graphviz as gviz
 from typing import List, Tuple, Set, Optional, Dict
-
+from unittest.mock import patch
 from practical.ProcessMining.group1.shared.utils import check_lists_of_sets_equal
 from practical.ProcessMining.group1.task3.inductiveminer import CutType
 from practical.ProcessMining.group1.task3.inductiveminer_infrequent import InductiveMinerInfrequent
@@ -99,4 +100,24 @@ class TestInductiveMinerInfrequent:
 
     def test_loop_split_frequent(self):
         pass
+
+    @pytest.mark.parametrize(
+        "log,threshold",
+        [
+            ([('a', 'c', 'e', 'g'),('a', 'e', 'c', 'g'),('b', 'd', 'f', 'g'),('b', 'f', 'd', 'g')], 0.1)
+        ]
+    )
+    @patch('practical.ProcessMining.group1.task3.inductiveminer_infrequent.pt_visualizer.view')
+    @patch('practical.ProcessMining.group1.task3.inductiveminer_infrequent.pt_visualizer.save')
+    def test_visualize_process_tree(self, mock_save, mock_view, log: List[Tuple[str]], threshold: float):
+        miner = InductiveMinerInfrequent(log, threshold)
+        miner.run()
+
+        miner.visualize_process_tree()
+
+        # Check if the view method was called
+        mock_view.assert_called_once()
+
+        # optionally check if the save method was called when actually saving the image
+        # mock_save.assert_called_once_with(gviz, "process_tree.png")
 

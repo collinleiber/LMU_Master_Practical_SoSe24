@@ -1,12 +1,12 @@
-from collections import defaultdict
-from typing import Optional, List, Tuple, Dict, Set
-from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
-from practical.ProcessMining.group1.shared.utils import deduplicate_list
 import pm4py
 import pandas as pd
+from collections import defaultdict
+from typing import Optional, List, Tuple, Dict, Set
 from pm4py.visualization.process_tree import visualizer as pt_visualizer
 from pm4py.objects.conversion.log import converter as log_converter
 
+from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
+from practical.ProcessMining.group1.shared.utils import deduplicate_list
 
 
 class InductiveMinerInfrequent(InductiveMiner):

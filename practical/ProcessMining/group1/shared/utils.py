@@ -63,6 +63,24 @@ def event_log_to_dataframe(event_log):
     return pd.DataFrame(data, columns=["case_id", "activity", "timestamp"])
 
 
+def event_log_to_pm4py_dataframe(log):
+    """
+    Converts the event log to a pandas DataFrame formatted for pm4py.
+
+    Parameters:
+        log: List of traces
+
+    Returns:
+        A pandas DataFrame with the event log formatted for pm4py.
+    """
+    data = []
+    for i, trace in enumerate(log):
+        for event in trace:
+            data.append({"case_id": i, "activity": event, "timestamp": i})
+    return pm4py.format_dataframe(pd.DataFrame(data), case_id='case_id', activity_key='activity',
+                                  timestamp_key='timestamp')
+
+
 def check_lists_of_sets_equal(list1, list2):
     sorted_list1 = sorted([tuple(sorted(s)) for s in list1])
     sorted_list2 = sorted([tuple(sorted(s)) for s in list2])

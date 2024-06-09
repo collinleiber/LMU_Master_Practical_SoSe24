@@ -239,20 +239,34 @@ class ProcessTree:
         print("Loop cuts: ", cuts)
         return None if len(cuts) < 2 else cuts
 
-    def exclusive_choice_split(self, event_log, cuts):
-        # TODO
-        pass
+    def exclusive_choice_split(self, cuts):
+        print("Cuts: ", cuts)
+        print("Traces: ", self.event_log.traces)
+        cuts = [set(cut) for cut in cuts]
+        splits = [set() for _ in range(len(cuts))]
+
+        # Find cut to which the first element of a trace belongs
+        for trace in self.event_log.traces:
+            for cut in cuts:
+                if all(activity in cut for activity in trace):
+                    splits[cuts.index(cut)].add(trace)
+                    break
+
+        splits = [list(split) for split in splits]
+            
+        print("Splits: ", splits)
+        return splits
 
     def sequence_split(self, cuts):
         cuts = [set(cut) for cut in cuts]
         splits = [set() for _ in range(len(cuts))]
 
-        for sub_trace in self.event_log.traces:
+        for trace in self.event_log.traces:
             trace_split = []
             cut_index = 0
             split = []
 
-            for activity in sub_trace:
+            for activity in trace:
                 if activity in cuts[cut_index]:
                     split.append(activity)
                 else:
@@ -284,9 +298,8 @@ class ProcessTree:
     def construct_process_tree(self):
         if "" in self.event_log.traces:
             return None
-        for trace in self.event_log.traces:
-            if len(trace) == 1:
-                return None
+        if len(self.event_log.traces) == 1 and len(self.event_log.traces.keys()[0]) == 1:
+            return None
             
         dfg = DirectlyFollowsGraph(self.event_log)
         dfg.construct_dfg()
@@ -330,8 +343,13 @@ if __name__ == "__main__":
     # event_log.load_from_file()
     # event_log = EventLog.from_traces({'abcdfedfghabc': 3, 
     #                                   'abcdfeghabc': 2, 
-    #                                   'abcijijkabc': 1})
-    event_log = EventLog.from_traces({'abcd': 1, 'acbd':2})
+    #                                   'abcijijkabc': 1}) # Use for loop testing
+    # event_log = EventLog.from_traces({'abcd': 1, 'acbd':2}) # Use for sequence testing
+    event_log = EventLog.from_traces({'a':1,
+                                        'bc': 1, 
+                                        'cb': 1, 
+                                        'de': 1,
+                                        'defde':1}) # Use for exclusive choice testing
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)
 

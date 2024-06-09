@@ -83,6 +83,7 @@ class ProcessTree:
         # Find connected components
         cuts = undirected.find_components()
 
+        print("Exclusive choice cuts: ", cuts)
         return None if len(cuts) == 1 else cuts
     
     def find_sequence_cut(self, dfg: DirectlyFollowsGraph):
@@ -117,7 +118,7 @@ class ProcessTree:
         sorted_cut_indices = cuts_graph.traverse_path(start_node)
         sorted_cuts = [cuts[i] for i in sorted_cut_indices]
 
-        return None if len(cuts) == 1 else sorted_cuts
+        return None if len(sorted_cuts) == 1 else sorted_cuts
 
     def find_parallel_cut(self, dfg: DirectlyFollowsGraph):
         # Mark edges to be removed
@@ -141,6 +142,7 @@ class ProcessTree:
 
         cuts = updated_graph.find_components()
 
+        print("Parallel cuts: ", cuts)
         return None if len(cuts) == 1 else cuts
 
     def find_loop_cut(self, dfg: DirectlyFollowsGraph):
@@ -163,6 +165,7 @@ class ProcessTree:
         # Find connected components as possible candidates for loop bodies
         undirected = reduced_graph.convert_to_undirected()
         components = set(tuple(c) for c in undirected.find_components())
+        print("Components: ", components)
 
         # Find valid loop bodies
 
@@ -176,16 +179,33 @@ class ProcessTree:
                         components_connected_to_start_nodes.add(tuple(component))
                         connected_nodes_start.add(node)
 
-
         # Find components that are connected from end nodes in do-body
-        components_connected_from_end = set()
+        components_connected_from_end_nodes = set()
         connected_nodes_end = set()
         for end_node in end_nodes:
             for component in components:
                 for node in component:
                     if node in dfg.get_neighbors(end_node):
-                        components_connected_from_end.add(tuple(component))
+                        components_connected_from_end_nodes.add(tuple(component))
                         connected_nodes_end.add(node)
+
+        # Find (invalid) components that are connected from non-end nodes in do-body
+        for node in do_body - end_nodes:
+            for component in components:
+                for neighbor in dfg.get_neighbors(node):
+                    if neighbor in component and neighbor not in do_body:
+                        # Merge with do-body
+                        do_body.update(component)
+                        components -= {component}
+
+        # Find (invalid) components that are connected to non-start nodes in do-body
+        for component in components:
+            for node in component:
+                for neighbor in dfg.get_neighbors(node):
+                    if neighbor in do_body and neighbor not in start_nodes:
+                        # Merge with do-body
+                        do_body.update(component)
+                        components -= {component}
 
         # Check connectivity completeness to start nodes
         for node in connected_nodes_start:
@@ -198,12 +218,11 @@ class ProcessTree:
         for node in connected_nodes_end:
             for end_node in end_nodes:
                 if not node in dfg.get_neighbors(end_node):
-                    components_connected_from_end = {c for c in components_connected_from_end if node not in c}
+                    components_connected_from_end_nodes = {c for c in components_connected_from_end_nodes if node not in c}
                     break
 
-        # Remove components that are connected to start nodes in do-body
-        invalid_components = components - components_connected_to_start_nodes
-        invalid_components = components - components_connected_from_end
+        # Remove components that are not connected to start nodes in do-body
+        invalid_components = components - (components_connected_to_start_nodes.union(components_connected_from_end_nodes))
         loop_bodies = components - invalid_components
 
         # Merge invalid components to do-body
@@ -216,14 +235,16 @@ class ProcessTree:
             cuts.append(list(loop_body))
 
         # We need at least to components for a valid loop cut
+        print("Loop cuts: ", cuts)
         return None if len(cuts) < 2 else cuts
 
-    def exclusive_choice_split(self, cuts):
+    def exclusive_choice_split(self, event_log, cuts):
         # TODO
         pass
 
     def sequence_split(self, cuts):
-        # TODO
+        for cut in cuts:
+            pass
         pass
 
     def parallel_split(self, cuts):
@@ -234,28 +255,28 @@ class ProcessTree:
         # TODO
         pass
 
-    def construct_process_tree(self, event_log: EventLog):
-        if "" in event_log.traces:
+    def construct_process_tree(self):
+        if "" in self.event_log.traces:
             return None
-        for trace in event_log.traces:
+        for trace in self.event_log.traces:
             if len(trace) == 1:
                 return None
             
-        dfg = DirectlyFollowsGraph(event_log)
+        dfg = DirectlyFollowsGraph(self.event_log)
         dfg.construct_dfg()
 
         cut_methods = [
-            (self.find_exclusive_choice_cut, self.exclusive_choice_split),
-            (self.find_sequence_cut, self.sequence_split),
-            (self.find_parallel_cut, self.parallel_split),
-            (self.find_loop_cut, self.loop_split)
+            (self.find_exclusive_choice_cut, self.exclusive_choice_split, 'X'),
+            (self.find_sequence_cut, self.sequence_split, '->'),
+            (self.find_parallel_cut, self.parallel_split, '||'),
+            (self.find_loop_cut, self.loop_split, 'O')
         ]
 
-        for find_cut, process_split in cut_methods:
+        for find_cut, process_split, operator in cut_methods:
             cuts = find_cut(dfg)
             if cuts is not None:
                 splits = process_split(cuts)
-                return splits
+                return (operator, splits)
             
         return None
     
@@ -268,11 +289,12 @@ class InductiveMiner():
         dfg = DirectlyFollowsGraph(event_log)
 
         dfg.construct_dfg()
-        # dfg.print_graph()
+        dfg.print_graph()
 
         # Step 2: Construct Process Tree from DFG
-        process_tree = ProcessTree()
-        process_tree.construct_process_tree(dfg)
+        process_tree = ProcessTree(event_log)
+        process_tree.construct_process_tree()
+
 
         return process_tree
 

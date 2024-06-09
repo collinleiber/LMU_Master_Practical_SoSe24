@@ -69,7 +69,7 @@ class InductiveMinerInfrequent(InductiveMiner):
                             end_activities: Dict[str, int]) -> Tuple[List[Set[str]], CutType]:
 
         dfg_filtered = self.get_frequent_directly_follows_graph(dfg)
-        efg_filtered = self.get_frequent_eventually_follows_graph(dfg)
+        efg_filtered = self.get_frequent_eventually_follows_graph(log)
 
         # TODO refactor apply_cut to make super call possible instead of duplicate code
         # super()._apply_cut(log=log, dfg=dfg, start_activities=dfg_start, end_activities=dfg_end)

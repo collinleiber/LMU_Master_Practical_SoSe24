@@ -48,6 +48,9 @@ class InductiveMiner:
         self.process_tree_str = '()'  # start with an empty process tree
         logging.basicConfig(level=logging_level)
 
+    def __str__(self):
+        return self.process_tree_str
+
     def run(self) -> None:
         """
         Main method to run the Inductive Miner algorithm. It iteratively applies different types of cuts
@@ -130,12 +133,6 @@ class InductiveMiner:
             logging.debug("Applying Fall-Through Case")
             flower_groups = self._handle_fall_through(log)
             return flower_groups, CutType.NONE
-
-    def print_process_tree(self) -> None:
-        """
-        Prints the string representation of the process tree.
-        """
-        print(self.process_tree_str)
 
     def _build_process_tree(self, groups: List[Set[str]], cut_type: Optional[CutType] = None) -> str:
         """

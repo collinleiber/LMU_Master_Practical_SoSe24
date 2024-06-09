@@ -166,9 +166,6 @@ class ProcessTree:
         # Find connected components as possible candidates for loop bodies
         undirected = reduced_graph.convert_to_undirected()
         components = set(tuple(c) for c in undirected.find_components())
-        print("Components: ", components)
-
-        # Find valid loop bodies
 
         # Find components that are connected to start nodes in do-body
         components_connected_to_start_nodes = set()
@@ -192,21 +189,31 @@ class ProcessTree:
 
         # Find (invalid) components that are connected from non-end nodes in do-body
         for node in do_body - end_nodes:
+            components_to_remove = set()
+            
             for component in components:
                 for neighbor in dfg.get_neighbors(node):
                     if neighbor in component and neighbor not in do_body:
                         # Merge with do-body
                         do_body.update(component)
-                        components -= {component}
+                        components_to_remove.add(component)
+                        break 
+
+            components -= components_to_remove
 
         # Find (invalid) components that are connected to non-start nodes in do-body
+        components_to_remove = set()
+
         for component in components:
             for node in component:
                 for neighbor in dfg.get_neighbors(node):
                     if neighbor in do_body and neighbor not in start_nodes:
                         # Merge with do-body
                         do_body.update(component)
-                        components -= {component}
+                        components_to_remove.add(component)
+                        break
+
+        components -= components_to_remove
 
         # Check connectivity completeness to start nodes
         for node in connected_nodes_start:
@@ -240,12 +247,9 @@ class ProcessTree:
         return None if len(cuts) < 2 else cuts
 
     def exclusive_choice_split(self, cuts):
-        print("Cuts: ", cuts)
-        print("Traces: ", self.event_log.traces)
         cuts = [set(cut) for cut in cuts]
         splits = [set() for _ in range(len(cuts))]
 
-        # Find cut to which the first element of a trace belongs
         for trace in self.event_log.traces:
             for cut in cuts:
                 if all(activity in cut for activity in trace):
@@ -254,7 +258,7 @@ class ProcessTree:
 
         splits = [list(split) for split in splits]
             
-        print("Splits: ", splits)
+        print("Exclusive choice plits: ", splits)
         return splits
 
     def sequence_split(self, cuts):
@@ -264,32 +268,30 @@ class ProcessTree:
         for trace in self.event_log.traces:
             trace_split = []
             cut_index = 0
-            split = []
+            sub_trace = ""
 
             for activity in trace:
                 if activity in cuts[cut_index]:
-                    split.append(activity)
+                    sub_trace = sub_trace.join(activity)
                 else:
-                    if split:
-                        trace_split.append(''.join(split))
-                        split = []
+                    if sub_trace:
+                        trace_split.append(sub_trace)
+                        sub_trace = ""
                     cut_index = (cut_index + 1) % len(cuts)
-                    split.append(activity)
+                    sub_trace = sub_trace.join(activity)
             
-            if split:
-                trace_split.append(''.join(split))
+            if sub_trace:
+                trace_split.append(sub_trace)
             
             for i, sub_trace in enumerate(trace_split):
                 splits[i].add(sub_trace)
 
         splits = [list(split) for split in splits]
             
-        print("Splits: ", splits)
+        print("Sequence splits: ", splits)
         return splits
 
     def parallel_split(self, cuts):
-        print("Cuts: ", cuts)
-        print("Traces: ", self.event_log.traces)
         cuts = [set(cut) for cut in cuts]
         splits = [set() for _ in range(len(cuts))]
 
@@ -299,12 +301,37 @@ class ProcessTree:
                 if sub_trace:
                     splits[cuts.index(cut)].add(sub_trace)
 
-        print("Splits: ", splits)
+        splits = [list(split) for split in splits]
+
+        print("Parallel splits: ", splits)
         return splits
 
     def loop_split(self, cuts):
-        # TODO
-        pass
+        cuts = [set(cut) for cut in cuts]
+        splits = [set() for _ in range(len(cuts))]
+
+        for trace in event_log.traces:
+            current_sub_trace = ""
+            current_cut_index = -1
+            
+            for activity in trace:
+                for cut_index, cut in enumerate(cuts):
+                    if activity in cut:
+                        if current_cut_index != cut_index:
+                            if current_sub_trace:
+                                splits[current_cut_index].add(current_sub_trace)
+                                current_sub_trace = ""
+                            current_cut_index = cut_index
+                        current_sub_trace += activity
+                        break
+            
+            if current_sub_trace:
+                splits[current_cut_index].add(current_sub_trace)
+
+        splits = [list(split) for split in splits]
+
+        print("Loop splits: ", splits)
+        return splits
 
     def construct_process_tree(self):
         if "" in self.event_log.traces:
@@ -325,7 +352,6 @@ class ProcessTree:
         for find_cut, process_split, operator in cut_methods:
             cuts = find_cut(dfg)
             if cuts is not None:
-                print("Found cut: ", operator, cuts)
                 splits = process_split(cuts)
                 return (operator, splits)
             
@@ -353,18 +379,19 @@ class InductiveMiner():
 if __name__ == "__main__":
     # event_log = EventLog.from_file("../data/log_from_paper.txt")
     # event_log.load_from_file()
-    # event_log = EventLog.from_traces({'abcdfedfghabc': 3, 
-    #                                   'abcdfeghabc': 2, 
-    #                                   'abcijijkabc': 1}) # Use for loop testing
+    event_log = EventLog.from_traces({'abcdfedfghabc': 3, 
+                                      'abcdfeghabc': 2, 
+                                      'abcijijkabc': 1, # Use for loop testing
+                                      'abcijijijkabc': 1}) # Use for loop testing
     # event_log = EventLog.from_traces({'abcd': 1, 'acbd':2}) # Use for sequence testing
     # event_log = EventLog.from_traces({'a':1,
     #                                     'bc': 1, 
     #                                     'cb': 1, 
     #                                     'de': 1,
     #                                     'defde':1}) # Use for exclusive choice testing
-    event_log = EventLog.from_traces({'abc': 1, 
-                                      'acb': 1,
-                                      'cab': 1}) # Use for parallel testing
+    # event_log = EventLog.from_traces({'abc': 1, 
+    #                                   'acb': 1,
+    #                                   'cab': 1}) # Use for parallel testing
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)
 

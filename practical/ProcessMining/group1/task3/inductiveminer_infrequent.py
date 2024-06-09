@@ -67,7 +67,19 @@ class InductiveMinerInfrequent(InductiveMiner):
     def _apply_cut_filtered(self, log: List[Tuple[str]], dfg: Dict[Tuple[str, str], int],
                             start_activities: Dict[str, int],
                             end_activities: Dict[str, int]) -> Tuple[List[Set[str]], CutType]:
+        """
+        Apply different types of cuts to the current sublog based on the filtered directly follows graph and
+        eventually follows graph.
 
+        Parameters:
+            log: sublog as subset of the original event log
+            dfg: current directly follows graph
+            start_activities: start activities of the current sublog
+            end_activities: end activities of the current sublog
+
+        Returns:
+            Tuple of groups and operator
+        """
         dfg_filtered = self.get_frequent_directly_follows_graph(dfg)
         efg_filtered = self.get_frequent_eventually_follows_graph(dfg)
 
@@ -94,6 +106,15 @@ class InductiveMinerInfrequent(InductiveMiner):
             return flower_groups, CutType.NONE
 
     def _handle_base_cases_filtered(self, log: List[Tuple[str]]) -> Tuple[List[Set[str]], CutType]:
+        """
+        Apply base case logic to the current sublog with frequency filtering.
+
+        Parameters:
+            log: sublog as subset of the original event log
+
+        Returns:
+            Tuple of groups and operator
+        """
         # filter single activities
         log = self._single_activity_filtering(log)
         # filter empty traces
@@ -102,6 +123,15 @@ class InductiveMinerInfrequent(InductiveMiner):
         return super()._handle_base_cases(log)
 
     def _single_activity_filtering(self, log: List[Tuple[str]]) -> List[Tuple[str]]:
+        """
+        Filter out single activity traces that are not frequent enough.
+
+        Parameters:
+            log: sublog as subset of the original event log
+
+        Returns:
+            Filtered log
+        """
         # Get all traces in the log that contain only a single activity and are not empty
         single_activity_traces = [trace for trace in log if len(trace) == 1 and trace[0] != '']
 
@@ -118,6 +148,15 @@ class InductiveMinerInfrequent(InductiveMiner):
         return log  # If no filtering was applied, return the original log
 
     def _empty_trace_filtering(self, log: List[Tuple[str]]) -> List[Tuple[str]]:
+        """
+        Filter out empty traces that are not frequent enough.
+
+        Parameters:
+            log: sublog as subset of the original event log
+
+        Returns:
+            Filtered log
+        """
         # Get all traces in the log that are empty
         empty_traces = [trace for trace in log if trace == ('',)]
 

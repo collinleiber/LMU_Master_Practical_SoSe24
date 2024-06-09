@@ -302,32 +302,52 @@ class InductiveMiner:
 
     def _sequence_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
                       end: Dict[str, int]) -> List[Set[str]]:
-        # Step 1: Create a group per activity
+        """
+        Applies the sequence cut to the directly-follows graph (dfg).
+
+        Parameters:
+            dfg: Directly-follows graph
+            start: Start activities in the log
+            end: End activities in the log
+
+        Returns:
+            List of groups of activities that form the sequence cut.
+        """
+        # Create a group per activity
         alphabet = set(a for (a, b) in dfg).union(set(b for (a, b) in dfg))
         transitive_predecessors, transitive_successors = self._get_transitive_relations(dfg)
         groups = [{a} for a in alphabet]
         if len(groups) == 0:
             return []
 
-        # Step 2: Merge pairwise reachable nodes (based on transitive relations)
+        # Merge pairwise reachable nodes (based on transitive relations)
         old_size = None
         while old_size != len(groups):
             old_size = len(groups)
             groups = self._merge_groups(groups, transitive_successors)
 
-        # Step 3: Merge pairwise unreachable nodes (based on transitive relations)
+        # Merge pairwise unreachable nodes (based on transitive relations)
         old_size = None
         while old_size != len(groups):
             old_size = len(groups)
             groups = self._merge_groups(groups, transitive_predecessors)
 
-        # Step 4: Sort the groups based on their reachability
+        # Sort the groups based on their reachability
         groups = list(sorted(groups, key=lambda g: len(
             transitive_predecessors[next(iter(g))]) + (len(alphabet) - len(transitive_successors[next(iter(g))]))))
 
         return groups if len(groups) > 1 else []
 
-    def _get_transitive_relations(self, dfg):
+    def _get_transitive_relations(self, dfg: Dict[Tuple[str, str], int]) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:
+        """
+        Computes the transitive predecessors and successors for the directly-follows graph (dfg).
+
+        Parameters:
+            dfg: Directly-follows graph
+
+        Returns:
+
+        """
         transitive_predecessors = defaultdict(set)
         transitive_successors = defaultdict(set)
 
@@ -378,6 +398,17 @@ class InductiveMiner:
         return False
 
     def _xor_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
+        """
+        Applies the XOR cut to the directly-follows graph (dfg).
+
+        Parameters:
+            dfg: Directly-follows graph
+            start: Start activities in the log
+            end: End activities in the log
+
+        Returns:
+            List of groups of activities that form the XOR cut.
+        """
         # Convert DFG to undirected graph
         undirected_dfg = defaultdict(set)
         for (a, b) in dfg:

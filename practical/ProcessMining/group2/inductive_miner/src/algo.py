@@ -288,8 +288,19 @@ class ProcessTree:
         return splits
 
     def parallel_split(self, cuts):
-        # TODO
-        pass
+        print("Cuts: ", cuts)
+        print("Traces: ", self.event_log.traces)
+        cuts = [set(cut) for cut in cuts]
+        splits = [set() for _ in range(len(cuts))]
+
+        for trace in self.event_log.traces:
+            for cut in cuts:
+                sub_trace = ''.join([activity for activity in trace if activity in cut])
+                if sub_trace:
+                    splits[cuts.index(cut)].add(sub_trace)
+
+        print("Splits: ", splits)
+        return splits
 
     def loop_split(self, cuts):
         # TODO
@@ -314,6 +325,7 @@ class ProcessTree:
         for find_cut, process_split, operator in cut_methods:
             cuts = find_cut(dfg)
             if cuts is not None:
+                print("Found cut: ", operator, cuts)
                 splits = process_split(cuts)
                 return (operator, splits)
             
@@ -345,11 +357,14 @@ if __name__ == "__main__":
     #                                   'abcdfeghabc': 2, 
     #                                   'abcijijkabc': 1}) # Use for loop testing
     # event_log = EventLog.from_traces({'abcd': 1, 'acbd':2}) # Use for sequence testing
-    event_log = EventLog.from_traces({'a':1,
-                                        'bc': 1, 
-                                        'cb': 1, 
-                                        'de': 1,
-                                        'defde':1}) # Use for exclusive choice testing
+    # event_log = EventLog.from_traces({'a':1,
+    #                                     'bc': 1, 
+    #                                     'cb': 1, 
+    #                                     'de': 1,
+    #                                     'defde':1}) # Use for exclusive choice testing
+    event_log = EventLog.from_traces({'abc': 1, 
+                                      'acb': 1,
+                                      'cab': 1}) # Use for parallel testing
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)
 

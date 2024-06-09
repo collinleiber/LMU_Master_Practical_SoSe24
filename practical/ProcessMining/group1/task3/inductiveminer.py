@@ -3,10 +3,11 @@ from collections import defaultdict
 from enum import Enum
 from typing import List, Tuple, Dict, Set, Optional
 import pm4py
-import pandas as pd
 from pm4py.visualization.process_tree import visualizer as pt_visualizer
 from pm4py.objects.conversion.log import converter as log_converter
 from ..shared import utils
+
+logging.basicConfig(level="INFO")  # Change to DEBUG for prints
 
 
 class CutType(Enum):
@@ -35,7 +36,7 @@ class InductiveMiner:
     """
     TAU = '𝜏'
 
-    def __init__(self, event_log: Optional[List[Tuple[str]]] = None, logging_level: str = "INFO"):
+    def __init__(self, event_log: Optional[List[Tuple[str]]] = None):
         """
         Initialize the Inductive Miner with an event log.
 
@@ -46,7 +47,6 @@ class InductiveMiner:
         self.alphabet = self._get_alphabet(self.event_log)
         self.dfg, self.start_activities, self.end_activities = self._get_dfg(self.event_log)
         self.process_tree_str = '()'  # start with an empty process tree
-        logging.basicConfig(level=logging_level)
 
     def __str__(self):
         return self.process_tree_str

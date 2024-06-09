@@ -204,8 +204,8 @@ class TestInductiveMiner:
             ([('a', 'c', 'd'), ('b', 'c', 'd'), ('a', 'c', 'e'),('b', 'c', 'e')])
         ]
     )
-    @patch('practical.ProcessMining.group1.task3.inductiveminer.pt_vis.view')
-    @patch('practical.ProcessMining.group1.task3.inductiveminer.pt_vis.save')
+    @patch('practical.ProcessMining.group1.task3.inductiveminer.pt_visualizer.view')
+    @patch('practical.ProcessMining.group1.task3.inductiveminer.pt_visualizer.save')
     def test_visualize_process_tree(self, mock_save, mock_view, log: List[Tuple[str]]):
         miner = InductiveMiner(log)
         miner.run()

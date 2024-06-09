@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from enum import Enum
 from typing import List, Tuple, Dict, Set, Optional
@@ -33,7 +34,7 @@ class InductiveMiner:
     """
     TAU = '𝜏'
 
-    def __init__(self, event_log: Optional[List[Tuple[str]]] = None):
+    def __init__(self, event_log: Optional[List[Tuple[str]]] = None, logging_level: str = "INFO"):
         """
         Initialize the Inductive Miner with an event log.
 
@@ -44,6 +45,7 @@ class InductiveMiner:
         self.alphabet = self._get_alphabet(self.event_log)
         self.dfg, self.start_activities, self.end_activities = self._get_dfg(self.event_log)
         self.process_tree_str = '()'  # start with an empty process tree
+        logging.basicConfig(level=logging_level)
 
     def run(self) -> None:
         """
@@ -70,8 +72,8 @@ class InductiveMiner:
                 # Add the new sublogs to the list if not fall through case
                 if operator != CutType.NONE:
                     new_sublogs = self._split_log(log, groups, operator)
-                    print(f"Splitting log: {log} with groups: {groups} and operator: {operator}")
-                    print(f"New sublogs: {new_sublogs}")
+                    logging.debug(f"Splitting log: {log} with groups: {groups} and operator: {operator}")
+                    logging.debug(f"New sublogs: {new_sublogs}")
                     sublogs.extend(new_sublogs)
                     # Build the corresponding part of the process tree
                     self._build_process_tree(groups, operator)
@@ -82,7 +84,7 @@ class InductiveMiner:
             sublogs.remove(log)
 
             # Debug print to check the current state of sublogs
-            print(f"Current sublogs: {sublogs}")
+            logging.debug(f"Current sublogs: {sublogs}")
 
     def _apply_cut(self, log: List[Tuple[str]], dfg: Dict[Tuple[str, str], int], start_activities: Dict[str, int],
                    end_activities: Dict[str, int]) -> Tuple[List[Set[str]], CutType]:
@@ -105,26 +107,26 @@ class InductiveMiner:
         loop_cut = self._loop_cut(dfg, start_activities, end_activities)
 
         # Debug prints to check the cuts
-        print(f"Sequence Cut: {sequence_cut}")
-        print(f"XOR Cut: {xor_cut}")
-        print(f"Parallel Cut: {parallel_cut}")
-        print(f"Loop Cut: {loop_cut}")
+        logging.debug(f"Sequence Cut: {sequence_cut}")
+        logging.debug(f"XOR Cut: {xor_cut}")
+        logging.debug(f"Parallel Cut: {parallel_cut}")
+        logging.debug(f"Loop Cut: {loop_cut}")
 
         # If a nontrivial cut (>1) is found, return the partition and the corresponding operator
         if self._is_nontrivial(sequence_cut):
-            print("Applying Sequence Cut")
+            logging.debug("Applying Sequence Cut")
             return sequence_cut, CutType.SEQUENCE
         elif self._is_nontrivial(xor_cut):
-            print("Applying XOR Cut")
+            logging.debug("Applying XOR Cut")
             return xor_cut, CutType.XOR
         elif self._is_nontrivial(parallel_cut):
-            print("Applying Parallel Cut")
+            logging.debug("Applying Parallel Cut")
             return parallel_cut, CutType.PARALLEL
         elif self._is_nontrivial(loop_cut):
-            print("Applying Loop Cut")
+            logging.debug("Applying Loop Cut")
             return loop_cut, CutType.LOOP
         else:  # If no nontrivial cut is found, apply the fall-through case (flower model)
-            print("Applying Fall-Through Case")
+            logging.debug("Applying Fall-Through Case")
             flower_groups = self._handle_fall_through(log)
             return flower_groups, CutType.NONE
 

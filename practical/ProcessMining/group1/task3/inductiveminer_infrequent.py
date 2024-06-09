@@ -240,12 +240,3 @@ class InductiveMinerInfrequent(InductiveMiner):
                 data.append({"case_id": i, "activity": event, "timestamp": i})
         return pm4py.format_dataframe(pd.DataFrame(data), case_id='case_id', activity_key='activity',
                                       timestamp_key='timestamp')
-
-
-log = [('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',),
-               ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',), ('a',),
-               ('a', 'a', 'a'), ('',)]
-miner = InductiveMinerInfrequent(log, threshold=0.5)
-miner.run()
-miner.print_process_tree()
-miner.visualize_process_tree()

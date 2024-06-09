@@ -1,5 +1,6 @@
 from typing import List, Optional
 from collections import defaultdict
+import copy
 
 class Graph:
     # TODO: Add type hints and clean up
@@ -59,7 +60,7 @@ class Graph:
         return dfs(node1, node2, visited = set())
     
     def convert_to_undirected(self) -> 'Graph':
-        undirected = self.graph.copy()
+        undirected = copy.deepcopy(self.graph)
         for node in self.graph.keys():
             for neighbor in self.graph[node]:
                 if node not in self.graph[neighbor]:

@@ -118,6 +118,7 @@ class ProcessTree:
         sorted_cut_indices = cuts_graph.traverse_path(start_node)
         sorted_cuts = [cuts[i] for i in sorted_cut_indices]
 
+        print("Sequence cuts: ", sorted_cuts)
         return None if len(sorted_cuts) == 1 else sorted_cuts
 
     def find_parallel_cut(self, dfg: DirectlyFollowsGraph):
@@ -243,9 +244,24 @@ class ProcessTree:
         pass
 
     def sequence_split(self, cuts):
-        for cut in cuts:
-            pass
-        pass
+        splits = set()
+        start_index = 0
+        cut_index = 0
+        for trace in self.event_log.traces:
+            print("Trace: ", trace)
+            for activity in trace:
+                print("Activity: ", activity)
+                if activity not in cuts[cut_index]:
+                    if cut_index == len(cuts):
+                        split = trace[start_index:]
+                    else:
+                        split = trace[start_index:trace.index(activity)]
+                    start_index = trace.index(activity)
+                    cut_index += 1
+                splits.add(split)
+
+        print("Sequence splits: ", splits)
+            
 
     def parallel_split(self, cuts):
         # TODO
@@ -302,7 +318,10 @@ class InductiveMiner():
 if __name__ == "__main__":
     # event_log = EventLog.from_file("../data/log_from_paper.txt")
     # event_log.load_from_file()
-    event_log = EventLog.from_traces({'abcdfedfghabc': 3, 'abcdfeghabc': 2, 'abcijijkabc': 1})
+    # event_log = EventLog.from_traces({'abcdfedfghabc': 3, 
+    #                                   'abcdfeghabc': 2, 
+    #                                   'abcijijkabc': 1})
+    event_log = EventLog.from_traces({'abcd': 1, 'acbd':2})
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)
 

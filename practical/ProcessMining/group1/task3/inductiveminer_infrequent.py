@@ -33,7 +33,7 @@ class InductiveMinerInfrequent(InductiveMiner):
                 groups, operator = self._apply_cut(log, dfg, start_activities, end_activities)
                 # Add the new sublogs to the list if not fall through case
                 if operator != CutType.NONE:
-                    new_sublogs = self._split_log(log, groups)
+                    new_sublogs = self._split_log(log=log, cut=groups, operator=operator)
                     sublogs.extend(new_sublogs)
                     # Build the corresponding part of the process tree
                     self._build_process_tree(groups, operator)

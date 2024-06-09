@@ -193,16 +193,13 @@ class InductiveMinerInfrequent(InductiveMiner):
             operator: enum containing type of cut
         """
         if operator == CutType.SEQUENCE:
-            return super()._sequence_split(log, groups)
-            # return self.sequence_split_frequent(log, groups)
+            return self.sequence_split_filtered(log, groups)
         elif operator == CutType.XOR:
-            return super()._xor_split(log, groups)
-            # return self.xor_split_frequent(log, groups)
+            return self.xor_split_filtered(log, groups)
         elif operator == CutType.LOOP:
-            return super()._loop_split(log, groups)
-            # return self.loop_split_frequent(log, groups)
+            return self.loop_split_filtered(log, groups)
         elif operator == CutType.PARALLEL:
-            return self._parallel_split(log, groups)
+            return super()._parallel_split(log, groups)
         return []
 
     def xor_split_frequent(self, log: List[Tuple[str]], groups: List[Set[str]]):

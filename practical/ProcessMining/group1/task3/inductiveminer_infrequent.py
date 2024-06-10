@@ -315,11 +315,32 @@ class InductiveMinerInfrequent(InductiveMiner):
             return [set(x["activity"]) for x in res.values()]
 
         def sequence_condition_met(first: List[Set], second: List[Set]):
-            """ Helper function to check if the first set list equals second set list"""
-            # TODO [{"A"}, {"B"}, {"C"}, {"C"}, {"C"}] should become [{"A"}, {"B"}, {"C"}]
-            # merge must be registered in result dict by accumulating the length of all merged
+            """
+            Helper function to check if the first set list equals second set list.
+            sets of size > 1 are merged to one set before comparison.
+            """
+            second_not_base = [set(x) for x in second if len(x) > 1]
 
-            return first == second
+            current_group, last_group = None, None
+            merged_first = []
+
+            for activity in first:
+                found = False
+                for idx, not_base_set in enumerate(second_not_base):
+                    if activity.issubset(not_base_set):
+                        found = True
+                        current_group = idx
+                        break
+                if found and (last_group is None or current_group != last_group):
+                    merged_first.append(activity)
+                    last_group = current_group
+                elif found and current_group == last_group:
+                    merged_first[-1] |= activity
+                else:
+                    merged_first.append(activity)
+                    last_group = None
+
+            return merged_first == second
 
         def powerset(iterable):
             """ Helper function to get the powerset of a given list of removals"""

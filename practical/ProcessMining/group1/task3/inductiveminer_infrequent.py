@@ -346,13 +346,13 @@ class InductiveMinerInfrequent(InductiveMiner):
             """ Helper function to get the powerset of a given list of removals"""
             s = list(iterable)
             return filter(lambda x: x != (), chain.from_iterable(combinations(s, r) for r in range(len(s) + 1)))
-
-        for i, trace in enumerate(log.copy()):
-            result = {}
+        def build_sub_traces(_trace: Tuple[str]):
+            """ Helper function to build sub traces with each sub trace containing only one activity """
+            res = {}
             index = 0
             current_group = []
 
-            for j, activity in enumerate(trace):
+            for j, activity in enumerate(_trace):
                 # If no current group, start a new group with current activity
                 if not current_group:
                     current_group = {"activity": activity, "length": 1}
@@ -361,24 +361,29 @@ class InductiveMinerInfrequent(InductiveMiner):
                     current_group["length"] += 1
                 # If activity is different from the current group, append current group to result and start a new group
                 else:
-                    result[index] = current_group
+                    res[index] = current_group
                     index += 1
                     current_group = {"activity": activity, "length": 1}
             # Append the last group when finished iterating over the trace
             if current_group:
-                result[index] = current_group
+                res[index] = current_group
+            return res
 
+        for i, trace in enumerate(log.copy()):
+            # Build sub traces with each sub trace containing only one activity
+            sub_traces = build_sub_traces(trace)
+
+            total_max_size = max([v["length"] for k, v in sub_traces.items()])
+            threshold_value = total_max_size * self.threshold
             current_max_size = 1
-            total_max_size = max([v["length"] for k, v in result.items()])
-            max_costs = None
-            found_removals = []
+
+            max_costs, best_removal, visited = None, [], set()
 
             # Iterate over the trace and remove activities until the sequence condition is met
-            while (not sequence_condition_met(actual_order(result), groups)
-                   and current_max_size <= total_max_size):
+            while not max_costs or (current_max_size < max_costs and current_max_size <= total_max_size):
                 # If the current max size is smaller than the total max size times the threshold, break
-                # Used to throttle due to the powerset calculation in case of large traces # TODO
-                if current_max_size < total_max_size * self.threshold and total_max_size * self.threshold > 2:
+                # Used to throttle due to the powerset calculation in case of large traces
+                if current_max_size <= max(threshold_value, 3) and best_removal:
                     break
 
                 # Get Indices of all groups that are smaller or equal to the current max size and calculate the powerset
@@ -386,44 +391,36 @@ class InductiveMinerInfrequent(InductiveMiner):
                 powerset_values = powerset(removal_indices)
 
                 for removals in powerset_values:
-                    new_res = result.copy()
+                    if removals in visited:
+                        continue
+                    visited.add(removals)
+                    copied_subs = copy.deepcopy(sub_traces)
                     costs = 0
+
                     # Calculate the costs of the removals and remove activity set from new result
                     for rm_index in removals:
-                        costs += new_res[rm_index]["length"]
-                        new_res.pop(rm_index, None)
-
-                    # If the sequence condition is met, break
-                    if sequence_condition_met(actual_order(new_res), groups):
-                        max_costs = costs
-                        total_max_size = max_costs
-                        found_removals = removals
+                        costs += copied_subs[rm_index]["length"]
+                        copied_subs.pop(rm_index, None)
+                    if max_costs and costs >= max_costs:
                         break
 
-                if max_costs:
-                    break
+                    # Merge activities with the same activity in the result dict
+                    merged_subs = merge_dict(copied_subs)
+
+                    # If the sequence condition is met, break
+                    if sequence_condition_met(actual_order(merged_subs), groups):
+                        if not max_costs or costs < max_costs:
+                            max_costs = costs
+                            best_removal = merged_subs.copy()
 
                 # If no removal could fulfill the sequence condition
-                current_max_size += 1
-
-            # TODO minimize max_costs
-            # if found, set new max list size to min(current costs, last max size)
-            # edge case, costs 3 from 3 single lists, new max list size 3,
-            # only create powerset that is not exceeding max costs
-            # Since starting from 1, the first found removals should be quite good already
-
-            # TODO handle cut groups len > 2
-            # Not handled yet, must ignore activities in removals from groups > 1,
-            # since they are handled by other operator
-
-            # Remove all found removals from the trace
-            for j in found_removals:
-                del result[j]
+                if current_max_size <= total_max_size:
+                    current_max_size += 1
 
             # Reconstruct the trace based on the filtered result
-            trace = tuple([activity for k, v in result.items() for activity in [v["activity"]] * v["length"]])
+            trace = tuple([activity for k, v in best_removal.items()
+                           for activity in [v["activity"]] * v["length"]])
             log[i] = trace
-
         return super()._sequence_split(log=log, cut=groups)
 
     def loop_split_filtered(self, log: List[Tuple[str]], groups: List[Set[str]]) -> List[List[Tuple[str, ...]]]:

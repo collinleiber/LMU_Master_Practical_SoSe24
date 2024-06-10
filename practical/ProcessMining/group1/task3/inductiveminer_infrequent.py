@@ -1,3 +1,4 @@
+import copy
 from collections import defaultdict
 from itertools import combinations, chain
 from typing import Optional, List, Tuple, Dict, Set
@@ -83,9 +84,6 @@ class InductiveMinerInfrequent(InductiveMiner):
         """
         dfg_filtered = self.get_frequent_directly_follows_graph(dfg)
         efg_filtered = self.get_frequent_eventually_follows_graph(log)
-
-        # TODO refactor apply_cut to make super call possible instead of duplicate code
-        # super()._apply_cut(log=log, dfg=dfg, start_activities=dfg_start, end_activities=dfg_end)
 
         # Try to apply different types of cuts to the current sublog
         xor_cut = self._xor_cut(dfg_filtered, start_activities, end_activities)
@@ -183,6 +181,7 @@ class InductiveMinerInfrequent(InductiveMiner):
         """
         max_freq = defaultdict(int)
         for edge, frequency in dfg.items():
+            # Find for each node the maximum frequency of outgoing edges
             max_freq[edge[0]] = max(max_freq[edge[0]], frequency)
 
         # Filter infrequent edges of compared to max edge of each node

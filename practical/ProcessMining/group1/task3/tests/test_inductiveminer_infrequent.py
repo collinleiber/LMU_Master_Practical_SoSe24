@@ -1,5 +1,4 @@
 import pytest
-import graphviz as gviz
 from typing import List, Tuple, Set, Optional, Dict
 from unittest.mock import patch
 from practical.ProcessMining.group1.shared.utils import check_lists_of_sets_equal
@@ -119,6 +118,26 @@ class TestInductiveMinerInfrequent:
 
         result = miner.xor_split_filtered(log=log, groups=given_cut)
         assert result == expected_filter
+
+    @pytest.mark.parametrize(
+        "log,given_cut,expected_filter",
+        [
+            ([("A", "A", "A", "A", "B", "B", "B", "C", "A", "C")],
+             [{"A"}, {"B"}, {"C"}],
+             [[('A', 'A', 'A', 'A')], [('B', 'B', 'B')], [('C',)]]),  # TODO [('C',)] -> [('C', 'C')]
+
+            ([("A", "A", "A", "A", "B", "B", "B", "C", "C", "A", "A", "C", "C")],
+             [{"A"}, {"B"}, {"C"}],
+             [[('A', 'A', 'A', 'A')], [('B', 'B', 'B')], [('C', 'C')]]),
+        ]
+    )
+    def test_sequence_split_filtered(self, log: List[Tuple[str]], given_cut: List[Set[str]],
+                                     expected_filter: List[Tuple[str]]):
+        miner = InductiveMinerInfrequent(event_log=log, threshold=0.4)
+
+        result = miner.sequence_split_filtered(log=log, groups=given_cut)
+        assert result == expected_filter
+
 
     @pytest.mark.parametrize(
         "log,threshold",

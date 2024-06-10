@@ -362,6 +362,36 @@ class InductiveMinerInfrequent(InductiveMiner):
                     idx += 1
             return d
 
+        def get_removal_indices():
+            removal_indices = []
+            for trace_nr, values in sub_traces.items():
+                groups_with_multiple_items = [g for g in groups if len(g) > 1]
+
+                if groups_with_multiple_items:
+                    for group in groups_with_multiple_items:
+                        if values["activity"] not in group:
+                            if current_max_size >= values["length"]:
+                                removal_indices.append(trace_nr)
+                            break
+
+                        # Find outliers of groups with multiple items. TODO calc once
+                        found = False
+                        distance = 2
+                        for x in range(max(0, trace_nr - distance),
+                                       min(len(sub_traces), trace_nr + distance)):
+                            if x != trace_nr and sub_traces[x]["activity"] in group:
+                                found = True
+                                break
+
+                        if not found:
+                            removal_indices.append(trace_nr)
+                            break
+                else:
+                    if current_max_size >= values["length"]:
+                        removal_indices.append(trace_nr)
+
+            return removal_indices
+
         def build_sub_traces(_trace: Tuple[str]):
             """ Helper function to build sub traces with each sub trace containing only one activity """
             res = {}
@@ -403,7 +433,7 @@ class InductiveMinerInfrequent(InductiveMiner):
                     break
 
                 # Get Indices of all groups that are smaller or equal to the current max size and calculate the powerset
-                removal_indices = [k for k, v in result.items() if current_max_size >= v["length"]]
+                removal_indices = get_removal_indices()
                 powerset_values = powerset(removal_indices)
 
                 for removals in powerset_values:

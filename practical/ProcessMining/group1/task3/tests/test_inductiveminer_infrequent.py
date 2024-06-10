@@ -153,8 +153,8 @@ class TestInductiveMinerInfrequent:
             ([('a', 'c', 'e', 'g'),('a', 'e', 'c', 'g'),('b', 'd', 'f', 'g'),('b', 'f', 'd', 'g')], 0.1)
         ]
     )
-    @patch('practical.ProcessMining.group1.task3.inductiveminer_infrequent.pt_visualizer.view')
-    @patch('practical.ProcessMining.group1.task3.inductiveminer_infrequent.pt_visualizer.save')
+    @patch('practical.ProcessMining.group1.task3.inductiveminer.pt_visualizer.view')
+    @patch('practical.ProcessMining.group1.task3.inductiveminer.pt_visualizer.save')
     def test_visualize_process_tree(self, mock_save, mock_view, log: List[Tuple[str]], threshold: float):
         miner = InductiveMinerInfrequent(log, threshold)
         miner.run()

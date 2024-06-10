@@ -145,14 +145,23 @@ class Graph:
 
         for node in self.graph:
             neighbors = self.get_neighbors(node)
-            if len(neighbors) > 1:
-                for neighbor1 in neighbors:
-                    for neighbor2 in neighbors:
-                        if neighbor1 != neighbor2 and self.is_reachable(neighbor1, neighbor2):
+            for neighbor1 in neighbors:
+                for neighbor2 in neighbors:
+                    if (neighbor1 != neighbor2): 
+                        if (cut_map[node] == cut_map[neighbor1]):
+                            if (cut_map[node] == cut_map[neighbor2]):
+                                pass
+                            else:
+                                cut_graph[cut_map[node]].add(cut_map[neighbor2])
+                        elif (cut_map[neighbor1] == cut_map[neighbor2]):
                             cut_graph[cut_map[node]].add(cut_map[neighbor1])
-            elif neighbors:
+                        elif (self.is_reachable(neighbor1, neighbor2)):
+                            cut_graph[cut_map[node]].add(cut_map[neighbor1])
+                        elif (cut_graph[cut_map[node]] == set()):
+                            cut_graph[cut_map[node]].add(cut_map[neighbor2])
+            if len(neighbors) == 1:
                 neighbor = neighbors[0]
-                if cut_map[node] != cut_map[neighbor]:
+                if cut_map[node] != cut_map[neighbor]: 
                     cut_graph[cut_map[node]].add(cut_map[neighbor])
 
         return Graph(cut_graph), cut_map

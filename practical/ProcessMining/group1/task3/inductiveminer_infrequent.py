@@ -161,13 +161,14 @@ class InductiveMinerInfrequent(InductiveMiner):
         # Get all traces in the log that are empty
         empty_traces = [trace for trace in log if trace == ('',)]
 
-        # Calculate the relative frequency of the empty traces in the log
-        rel_freq = len(empty_traces) / len(log)
-        # If the relative frequency of the empty traces is below the threshold
-        if rel_freq <= self.threshold:
-            # Filter out all traces that are empty
-            filtered_traces = [trace for trace in log if trace != ('',)]
-            return filtered_traces
+        if empty_traces:
+            # Calculate the relative frequency of the empty traces in the log
+            rel_freq = len(empty_traces) / len(log)
+            # If the relative frequency of the empty traces is below the threshold
+            if rel_freq <= self.threshold:
+                # Filter out all traces that are empty
+                filtered_traces = [trace for trace in log if trace != ('',)]
+                return filtered_traces
 
         return log  # If no filtering was applied, return the original log
 

@@ -316,6 +316,9 @@ class InductiveMinerInfrequent(InductiveMiner):
 
         def sequence_condition_met(first: List[Set], second: List[Set]):
             """ Helper function to check if the first set list equals second set list"""
+            # TODO [{"A"}, {"B"}, {"C"}, {"C"}, {"C"}] should become [{"A"}, {"B"}, {"C"}]
+            # merge must be registered in result dict by accumulating the length of all merged
+
             return first == second
 
         def powerset(iterable):
@@ -387,6 +390,10 @@ class InductiveMinerInfrequent(InductiveMiner):
             # edge case, costs 3 from 3 single lists, new max list size 3,
             # only create powerset that is not exceeding max costs
             # Since starting from 1, the first found removals should be quite good already
+
+            # TODO handle cut groups len > 2
+            # Not handled yet, must ignore activities in removals from groups > 1,
+            # since they are handled by other operator
 
             # Remove all found removals from the trace
             for j in found_removals:

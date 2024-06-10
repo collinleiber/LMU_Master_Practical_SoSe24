@@ -345,7 +345,23 @@ class InductiveMinerInfrequent(InductiveMiner):
         def powerset(iterable):
             """ Helper function to get the powerset of a given list of removals"""
             s = list(iterable)
-            return filter(lambda x: x != (), chain.from_iterable(combinations(s, r) for r in range(len(s) + 1)))
+            return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
+
+        def merge_dict(d):
+            """ Helper function to merge activities with the same activity in the result dict """
+            keys = list(d.keys())
+            idx = 0
+            while idx < len(keys) - 1:
+                current_key = keys[idx]
+                next_key = keys[idx + 1]
+                if d[current_key]['activity'] == d[next_key]['activity']:
+                    d[current_key]['length'] += d[next_key]['length']
+                    del d[next_key]
+                    keys.remove(next_key)
+                else:
+                    idx += 1
+            return d
+
         def build_sub_traces(_trace: Tuple[str]):
             """ Helper function to build sub traces with each sub trace containing only one activity """
             res = {}

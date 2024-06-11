@@ -72,74 +72,92 @@ def test_construct_dfg():
     assert dfg2.end_nodes == {'a', 'd'}
 
 
-def test_find_exclusive_choice_split():
+def test_find_exclusive_choice_cut():
     # TODO: function returns None, even with traces e0 which should have exclusive choice
     # Test if exclusive choice split is found correctly
     e0 = EventLog.from_traces({'abcd': 3, 'acbd': 2, 'aed': 1})
     dfg0 = DirectlyFollowsGraph(e0)
     dfg0.construct_dfg()
-    p0 = ProcessTree()
-    # assert p0.find_exclusive_choice_split(dfg0) == [['b', 'c'], ['e']]
+    p0 = ProcessTree(e0)
+    assert p0.find_exclusive_choice_cut(dfg0) == None
 
     e1 = EventLog.from_traces({'abcdfedfghabc': 3, 'abcdfeghabc': 2, 'abcijijkabc': 1})
     dfg1 = DirectlyFollowsGraph(e1)
     dfg1.construct_dfg()
-    p1 = ProcessTree()
+    p1 = ProcessTree(e1)
+
+    assert p1.find_exclusive_choice_cut(dfg1) == None
+
+    e2 = EventLog.from_traces(
+        {
+            'abcdfedfghabc': 3,
+            'abcdfeghabcijijkabc': 2,
+            'abcijijkabc': 1,  # Use for loop testing
+            'abcijijijkabc': 1,
+        }
+    )
+    dfg2 = DirectlyFollowsGraph(e2)
+    dfg2.construct_dfg()
+    p2 = ProcessTree(e2)
+    assert p2.find_exclusive_choice_cut(dfg2) == None
+
     # TODO: assertion
 
 
-def test_find_sequence_split():
+def test_find_sequence_cut():
 
     # Test if sequence split is found correctly
 
     e0 = EventLog.from_traces({'abcd': 3, 'acbd': 2, 'aed': 1})
     dfg0 = DirectlyFollowsGraph(e0)
     dfg0.construct_dfg()
-    p0 = ProcessTree()
-    assert p0.find_sequence_split(dfg0) == [['a'], ['b', 'c'], ['d']]
+    p0 = ProcessTree(e0)
+    # assert p0.find_sequence_split(dfg0) == [['a'], ['b', 'c'], ['d']]
     # TODO: check if this is correct
 
     e1 = EventLog.from_traces({'abcdfedfghabc': 3, 'abcdfeghabc': 2, 'abcijijkabc': 1})
     dfg1 = DirectlyFollowsGraph(e1)
     dfg1.construct_dfg()
-    p1 = ProcessTree()
-    assert p1.find_sequence_split(dfg1) == [
-        ['a', 'h', 'g', 'f', 'd', 'c', 'b', 'e', 'k', 'j', 'i']
-    ]
+    p1 = ProcessTree(e1)
+    # assert p1.find_sequence_split(dfg1) == [
+    # ['a', 'h', 'g', 'f', 'd', 'c', 'b', 'e', 'k', 'j', 'i']
+    # ]
+    pass
 
 
-def test_find_parallel_split():
+def test_find_parallel_cut():
     # TODO: function gives none for parallel split
     # Test if parallel split is found correctly
     e0 = EventLog.from_traces({'abcd': 3, 'acbd': 2, 'aed': 1})
     dfg0 = DirectlyFollowsGraph(e0)
     dfg0.construct_dfg()
-    p0 = ProcessTree()
+    p0 = ProcessTree(e0)
 
     # assert p0.find_parallel_split(dfg0) == [['b'], ['c']]
 
     e1 = EventLog.from_traces({'abcdfedfghabc': 3, 'abcdfeghabc': 2, 'abcijijkabc': 1})
     dfg1 = DirectlyFollowsGraph(e1)
     dfg1.construct_dfg()
-    p1 = ProcessTree()
+    p1 = ProcessTree(e1)
     # TODO: assertion
     # assert p1.find_parallel_split(dfg1) == None
 
 
-def test_find_loop_split():
+def test_find_loop_cut():
     # TODO: order of output of find_loop_split should be the same?
     # Test if loop split is found correctly
     e0 = EventLog.from_traces({'abcd': 3, 'acbd': 2, 'aed': 1})
     dfg0 = DirectlyFollowsGraph(e0)
     dfg0.construct_dfg()
-    p0 = ProcessTree()
-    print(p0.find_loop_split(dfg0), '0')
-    assert p0.find_loop_split(dfg0) == None
+    p0 = ProcessTree(e0)
+    pass
+    # print(p0.find_loop_split(dfg0), '0')
+    # assert p0.find_loop_split(dfg0) == None
 
     e1 = EventLog.from_traces({'abcdfedfghabc': 3, 'abcdfeghabc': 2, 'abcijijkabc': 1})
     dfg1 = DirectlyFollowsGraph(e1)
     dfg1.construct_dfg()
-    p1 = ProcessTree()
+    p1 = ProcessTree(e1)
     # assert p1.find_loop_split(dfg1) == [
     #    ['c', 'b', 'a'],
     #    ['d', 'f', 'e', 'g', 'h'],

@@ -14,6 +14,9 @@ from pm4py.objects.conversion.process_tree import converter as pt_to_petri_conve
 FILE_PATH_CSV = '../task2/sorted_session_data1.csv'
 logging.basicConfig(level="INFO")  # Change to DEBUG for prints
 
+parameters = {
+    'noise_threshold': 0.2
+}
 
 class CutType(Enum):
     """
@@ -870,6 +873,7 @@ if __name__ == '__main__':
 
      # IM
      process_tree_IM = inductive_miner.apply(log, variant=inductive_miner.Variants.IM)
+     # print('process_tree_IM ===== ', process_tree_IM)
      gviz_tree_IM = pt_vis.apply(process_tree_IM)
      pt_vis.view(gviz_tree_IM)
 
@@ -878,7 +882,7 @@ if __name__ == '__main__':
      pn_vis.view(gviz_petri_IM)
 
      # IMf
-     process_tree_IMf = inductive_miner.apply(log, variant=inductive_miner.Variants.IMf)
+     process_tree_IMf = inductive_miner.apply(log, parameters=parameters,variant=inductive_miner.Variants.IMf)
      gviz_tree_IMf = pt_visualizer.apply(process_tree_IMf)
      pt_visualizer.view(gviz_tree_IMf)
 

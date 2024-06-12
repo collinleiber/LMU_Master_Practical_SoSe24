@@ -5,8 +5,13 @@ from typing import List, Tuple, Dict, Set, Optional
 import pm4py
 from pm4py.visualization.process_tree import visualizer as pt_visualizer
 from pm4py.objects.conversion.log import converter as log_converter
-from ..shared import utils
+from practical.ProcessMining.group1.shared import utils
+from pm4py.visualization.petri_net import visualizer as pn_vis
+from pm4py.algo.discovery.inductive import algorithm as inductive_miner
+from pm4py.visualization.process_tree import visualizer as pt_vis
+from pm4py.objects.conversion.process_tree import converter as pt_to_petri_converter
 
+FILE_PATH_CSV = '../task2/sorted_session_data1.csv'
 logging.basicConfig(level="INFO")  # Change to DEBUG for prints
 
 
@@ -856,3 +861,27 @@ class InductiveMiner:
                 strongconnect(node)
 
         return sccs"""
+
+if __name__ == '__main__':
+     #real log
+     #format log
+     log = utils.import_csv(FILE_PATH_CSV)
+     log = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
+
+     # IM
+     process_tree_IM = inductive_miner.apply(log, variant=inductive_miner.Variants.IM)
+     gviz_tree_IM = pt_vis.apply(process_tree_IM)
+     pt_vis.view(gviz_tree_IM)
+
+     net, initial_marking, final_marking = pt_to_petri_converter.apply(process_tree_IM)
+     gviz_petri_IM = pn_vis.apply(net, initial_marking, final_marking)
+     pn_vis.view(gviz_petri_IM)
+
+     # IMf
+     process_tree_IMf = inductive_miner.apply(log, variant=inductive_miner.Variants.IMf)
+     gviz_tree_IMf = pt_visualizer.apply(process_tree_IMf)
+     pt_visualizer.view(gviz_tree_IMf)
+
+     net, initial_marking, final_marking = pt_to_petri_converter.apply(process_tree_IMf)
+     gviz_petri_IMf = pn_vis.apply(net, initial_marking, final_marking)
+     pn_vis.view(gviz_petri_IMf)

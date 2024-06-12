@@ -659,14 +659,22 @@ class InductiveMiner:
             # Iterate over the old traces (traces in the log)
             for i, old_trace in enumerate(old_traces):
                 # Find subsequences in the old trace that match the new trace and add them to the sublog
-                while True:
-                    subtrace = self._find_subsequence_in_arbitrary_order(old_trace, new_trace)
-                    if len(subtrace) > 0:  # if a subsequence is found
-                        sublog.append(tuple(subtrace))
-                        # Remove the found subsequence from the old trace
-                        old_trace = old_trace.replace(subtrace, '?', 1)  # TODO: breaks if activity name includes '?'
-                    else:
-                        break
+                found_subtrace = True
+                while found_subtrace:
+                    found_subtrace = False
+                    # try with subsequences of the new trace of decreasing length
+                    for j in range(0, len(new_trace)):
+                        subtrace = self._find_subsequence_in_arbitrary_order(old_trace, new_trace[j:])
+                        if len(subtrace) > 0:  # if a subsequence is found
+                            found_subtrace = True
+                            sublog.append(tuple(subtrace))
+                            # Remove the found subsequence from the old trace
+                            # TODO: breaks if activity name includes '?'
+                            old_trace = old_trace.replace(subtrace, '?', 1)
+                            old_traces[i] = old_trace
+                            break
+                        j += 1
+
             # Add the sublog to the new log
             if sublog:
                 new_log.append(sublog)

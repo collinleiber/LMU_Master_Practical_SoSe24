@@ -276,7 +276,7 @@ class InductiveMiner:
 
         # Convert the groups into a string
         group_str = ', '.join([', '.join(activity) for group in groups for activity in group])
-
+        search_str = ', '.join([', '.join(activity) for group in groups for activity in group if activity != self.TAU])
         # Get the string representation of the cut type
         cut_str = f'{cut_type.value}' if cut_type != CutType.NONE else ''
 
@@ -292,7 +292,7 @@ class InductiveMiner:
         else:
             # If the current process tree is not empty, find the subsequence in the tree that matches the group string
             # and replace it with the new cut string
-            match = self._find_subsequence_in_arbitrary_order(tree, group_str.replace(f'{self.TAU}, ', ''))
+            match = self._find_subsequence_in_arbitrary_order(tree, search_str)
             tree = tree.replace(match, f'{new_cut_str}')
 
         # Update the process tree
@@ -577,39 +577,15 @@ class InductiveMiner:
 
     def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]], operator: CutType) -> List[List[Tuple[str, ...]]]:
         if operator == CutType.SEQUENCE:
-            return self._sequence_split(log, cut)
+            return self._projection_split(log, cut)
         elif operator == CutType.XOR:
             return self._xor_split(log, cut)
         elif operator == CutType.PARALLEL:
-            return self._parallel_split(log, cut)
+            return self._projection_split(log, cut)
         elif operator == CutType.LOOP:
             return self._loop_split(log, cut)
         else:
             return []
-
-    def _sequence_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
-        """
-        Splits the event log based on the groups provided.
-
-        Parameters:
-            log: List of traces
-            cut: List of groups of activities that form the cut
-
-        Returns:
-            List of sublogs resulting from the parallel split.
-        """
-        sublogs = []
-        # Iterate over the groups in the cut
-        for partition in cut:
-            sublog = []
-            # Iterate over the traces in the log
-            for trace in log:
-                # Take activtites from the trace that are in the partition
-                sub_trace = tuple(activity for activity in trace if activity in partition)
-                if sub_trace:
-                    sublog.append(sub_trace)
-            sublogs.append(sorted(sublog))
-        return sublogs
 
     def _xor_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
         sublogs = [[] for _ in range(len(cut))]
@@ -624,7 +600,7 @@ class InductiveMiner:
         sublogs = [sublog for sublog in sublogs if sublog]
         return sublogs
 
-    def _parallel_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
+    def _projection_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
         """
         Splits the event log based on the groups provided.
 
@@ -635,17 +611,30 @@ class InductiveMiner:
         Returns:
             List of sublogs resulting from the parallel split.
         """
-        sublogs = []
-        # Iterate over the groups in the cut
-        for partition in cut:
-            sublog = []
-            # Iterate over the traces in the log
-            for trace in log:
-                # Take activtites from the trace that are in the partition
-                sub_trace = tuple(activity for activity in trace if activity in partition)
-                if sub_trace:
-                    sublog.append(sub_trace)
-            sublogs.append(sorted(sublog))
+        # Initialize a dictionary to store the sublogs
+        sublogs_dict = {}
+
+        # Iterate over each trace in the log
+        for trace in log:
+            # Iterate over each group in the cut
+            for i, group in enumerate(cut):
+                subtrace = []
+
+                # Iterate over each activity in the trace
+                for activity in trace:
+                    if activity in group:
+                        subtrace.append(activity)
+
+                # If no activities were added to the subtrace, add an empty trace
+                if not subtrace:
+                    subtrace.append('')
+
+                # Add the subtrace to the corresponding group in the sublogs dictionary
+                sublogs_dict[str(group)] = sublogs_dict.get(str(group), []) + [tuple(subtrace)]
+
+        # Convert the sublogs dictionary to a list of sublogs
+        sublogs = [log for log in sublogs_dict.values()]
+
         return sublogs
 
     def _loop_split(self, log: List[Tuple[str]], cut: List[Set[str]]) -> List[List[Tuple[str]]]:
@@ -666,20 +655,21 @@ class InductiveMiner:
 
         # Iterate over the new traces (groups in the cut)
         for new_trace in new_traces:
-            sub_log = []
+            sublog = []
             # Iterate over the old traces (traces in the log)
             for i, old_trace in enumerate(old_traces):
                 # Find subsequences in the old trace that match the new trace and add them to the sublog
                 while True:
-                    sub_trace = self._find_subsequence_in_arbitrary_order(old_trace, new_trace)
-                    if len(sub_trace) > 0:  # if a subsequence is found
-                        sub_log.append(tuple(sub_trace))
+                    subtrace = self._find_subsequence_in_arbitrary_order(old_trace, new_trace)
+                    if len(subtrace) > 0:  # if a subsequence is found
+                        sublog.append(tuple(subtrace))
                         # Remove the found subsequence from the old trace
-                        old_trace = old_trace.replace(sub_trace, '_', 1)  # TODO: breaks if activity name includes '_'
+                        old_trace = old_trace.replace(subtrace, '?', 1)  # TODO: breaks if activity name includes '?'
                     else:
                         break
             # Add the sublog to the new log
-            new_log.append(sub_log)
+            if sublog:
+                new_log.append(sublog)
 
         return new_log
 

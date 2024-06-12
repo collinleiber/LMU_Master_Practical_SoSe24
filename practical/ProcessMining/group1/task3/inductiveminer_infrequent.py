@@ -239,7 +239,7 @@ class InductiveMinerInfrequent(InductiveMiner):
         elif operator == CutType.LOOP:
             return self.loop_split_filtered(log, groups)
         elif operator == CutType.PARALLEL:
-            return super()._parallel_split(log, groups)
+            return super()._projection_split(log, groups)
         return []
 
     def xor_split_filtered(self, log: List[Tuple[str]], groups: List[Set[str]]) -> List[List[Tuple[str, ...]]]:

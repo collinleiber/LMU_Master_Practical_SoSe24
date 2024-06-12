@@ -62,13 +62,14 @@ class DirectlyFollowsGraph(Graph):
                 for node in self.start_nodes:
                     if node not in self.graph: # Isolated nodes
                         self.graph[node] = []
+            else:
+                self.graph[''] = [] # Add tau node for empty traces
 
     # Debugging helper
     def print_graph(self):
         print("Graph: ", dict(self.graph))
         print("Start nodes: ", self.start_nodes)
         print("End nodes: ", self.end_nodes)
-
 
 class ProcessTree:
     def __init__(self, event_log: EventLog):
@@ -79,8 +80,16 @@ class ProcessTree:
         )  # TODO: Think about data structure for different types of nodes, dictionary sufficient?
         self.edges = []  # Format: (node1, node2)
 
-    def find_base_case(self, event_log):
-        pass
+    def find_base_case(self):
+        if len(self.event_log.traces) == 0:
+            return 'tau'
+        elif len(self.event_log.traces) == 1:
+            only_trace = next(iter(self.event_log.traces))
+            if only_trace == "":
+                return 'tau'
+            elif len(only_trace) == 1:
+                return only_trace
+        return None
 
     def find_exclusive_choice_cut(self, dfg: DirectlyFollowsGraph):
         # Convert the graph to undirected
@@ -105,7 +114,8 @@ class ProcessTree:
 
         # Find pairwise unreachable nodes and merge them to one node
         unreachable_pairs = dfg.find_unreachable_pairs()
-        merged_nodes = list({node for pair in unreachable_pairs for node in pair if node in remaining_nodes})
+        merged_nodes = list({node for pair in unreachable_pairs 
+                             for node in pair if node in remaining_nodes})
         if merged_nodes:
             cuts.append(merged_nodes)
 
@@ -142,7 +152,10 @@ class ProcessTree:
         nodes = dfg.get_all_nodes()
         for node1 in nodes:
             for node2 in nodes:
-                if node1 != node2 and node2 not in updated_graph.graph[node1] and (node1, node2) not in removed_edges:
+                if (node1 != node2 
+                        and node2 not in updated_graph.graph[node1] 
+                        and (node1, node2) not in removed_edges
+                    ):
                     updated_graph.graph[node1].append(node2)
 
         # Remove dual edges to be removed
@@ -227,18 +240,22 @@ class ProcessTree:
         for node in connected_nodes_start:
             for start_node in start_nodes:
                 if start_node not in dfg.get_neighbors(node):
-                    components_connected_to_start_nodes = {c for c in components_connected_to_start_nodes if node not in c}
+                    components_connected_to_start_nodes = {c for c in components_connected_to_start_nodes 
+                                                           if node not in c}
                     break
 
         # Check reachability completeness from end nodes
         for node in connected_nodes_end:
             for end_node in end_nodes:
                 if not node in dfg.get_neighbors(end_node):
-                    components_connected_from_end_nodes = {c for c in components_connected_from_end_nodes if node not in c}
+                    components_connected_from_end_nodes = {c for c in components_connected_from_end_nodes 
+                                                           if node not in c}
                     break
 
         # Remove components that are not connected to start nodes in do-body
-        invalid_components = components - (components_connected_to_start_nodes.union(components_connected_from_end_nodes))
+        invalid_components = components - (components_connected_to_start_nodes.union(
+            components_connected_from_end_nodes)
+            )
         loop_bodies = components - invalid_components
 
         # Merge invalid components to do-body
@@ -259,35 +276,32 @@ class ProcessTree:
         splits = [set() for _ in range(len(cuts))]
 
         for trace in self.event_log.traces:
-            for i, cut in enumerate(cuts):
-                if all(activity in cut for activity in trace):
-                    splits[i].add(trace)
-                    break
+            if trace:
+                for i, cut in enumerate(cuts):
+                    if all(activity in cut for activity in trace):
+                        splits[i].add(trace)
+                        break
 
         splits = [list(split) for split in splits]
-            
-        print("Exclusive choice plits: ", splits)
+
+        print("Exclusive choice splits: ", splits)
         return splits
 
     def sequence_split(self, cuts):
-        cuts = [set(cut) for cut in cuts]
+        cuts = [set(cut) for cut in cuts] # Convert to set for faster lookup
         splits = [set() for _ in range(len(cuts))]
 
         for trace in self.event_log.traces:
             trace_split = []
-            cut_index = 0
-            sub_trace = ""
-            for activity in trace:
-                while activity not in cuts[cut_index]:
-                    cut_index = (cut_index + 1) % len(cuts)
-                    trace_split.append(sub_trace)
-                    sub_trace = ""
-                sub_trace = sub_trace.join(activity)
-
-            trace_split.append(sub_trace)
-
-            for i, sub_trace in enumerate(trace_split):
-                splits[i].add(sub_trace)
+            subtrace = ""
+            trace = list(trace)
+            for i,cut in enumerate(cuts):
+                while trace and trace[0] in cut:
+                    subtrace += trace.pop(0)
+                splits[i].add(subtrace)
+                subtrace = ""
+            # splits.append(trace_split)
+                    
 
         splits = [list(split) for split in splits]
 
@@ -337,15 +351,10 @@ class ProcessTree:
         return splits
 
     def construct_process_tree(self):
-        base_case = self.find_base_case(event_log) # TODO
+        base_case = self.find_base_case()
         if base_case is not None:
             return base_case
         
-        if "" in self.event_log.traces:
-            return None
-        if len(self.event_log.traces) == 1 and len(list(self.event_log.traces.keys())[0]) == 1:
-            return None
-            
         dfg = DirectlyFollowsGraph(self.event_log)
         dfg.construct_dfg()
 
@@ -362,10 +371,15 @@ class ProcessTree:
                 print("Found cut: ", operator, cuts)
                 splits = process_split(cuts)
                 print("Splits: ", splits)
-                return (operator, splits)
-            
-        return None
-    
+                subtrees = []
+                for split in splits:
+                    sublog = dict()
+                    for trace in split:
+                        sublog[trace] = 1
+                    subtree = ProcessTree(EventLog(traces=sublog)).construct_process_tree()
+                    subtrees.append(subtree)
+                return operator, subtrees
+
 class InductiveMiner():
     def __init__(self):
         pass
@@ -379,7 +393,7 @@ class InductiveMiner():
 
         # Construct Process Tree from DFG
         process_tree = ProcessTree(event_log).construct_process_tree()
-        print(process_tree)
+        print("Process Tree: ", process_tree)
 
         return process_tree
 
@@ -391,7 +405,7 @@ if __name__ == "__main__":
     #                                   'abcdfeghabc': 2, 
     #                                   'abcijijkabc': 1, # Use for loop testing
     #                                   'abcijijijkabc': 1}) # Use for loop testing
-    event_log = EventLog.from_traces({'abcdd': 1, 'acbd':2}) # Use for sequence testing
+    event_log = EventLog.from_traces({'abcd': 1, 'ad':2}) # Use for sequence testing
     # event_log = EventLog.from_traces({'a':1,
     #                                     'bc': 1, 
     #                                     'cb': 1, 
@@ -402,6 +416,7 @@ if __name__ == "__main__":
     #                                   'cab': 1,}) # Use for parallel testing
     # event_log = EventLog.from_traces({'abcd': 1,
     #                                     'ad': 1})
+
     inductive_miner = InductiveMiner()
     process_tree = inductive_miner.mine_process_model(event_log)
 

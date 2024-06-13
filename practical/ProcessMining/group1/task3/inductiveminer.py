@@ -21,6 +21,7 @@ parameters = {
     'noise_threshold': 0.2
 }
 
+
 class CutType(Enum):
     """
     Enum class to represent the different types of cuts that can be applied to the directly-follows graph.
@@ -921,6 +922,7 @@ class InductiveMiner:
                 strongconnect(node)
 
         return sccs"""
+
 
 if __name__ == '__main__':
      #real log

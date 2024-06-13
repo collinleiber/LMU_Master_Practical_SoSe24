@@ -521,7 +521,7 @@ class InductiveMiner:
         inner_edges = [edge for edge in edges if edge[0] not in groups[0] and edge[1] not in groups[0]]
 
         # Create a group for the inner edges (loop group)
-        groups.append(set([activity for edge in inner_edges for activity in edge]))
+        groups.append({activity for edge in inner_edges for activity in edge})
 
         # Exclude sets that are non-reachable from start/end activities from the loop groups
         def exclude_non_reachable(groups):
@@ -626,16 +626,12 @@ class InductiveMiner:
         for trace in log:
             # Iterate over each group in the cut
             for i, group in enumerate(cut):
-                subtrace = []
-
                 # Iterate over each activity in the trace
-                for activity in trace:
-                    if activity in group:
-                        subtrace.append(activity)
+                subtrace = [activity for activity in trace if activity in group]
 
                 # If no activities were added to the subtrace, add an empty trace
                 if not subtrace:
-                    subtrace.append('')
+                    subtrace = ['']
 
                 # Add the subtrace to the corresponding group in the sublogs dictionary
                 sublogs_dict[str(group)] = sublogs_dict.get(str(group), []) + [tuple(subtrace)]
@@ -762,108 +758,6 @@ class InductiveMiner:
         # optionally save the image if needed
         # pt_visualizer.save(gviz, "process_tree.png")
 
-
-    """
-    UNUSED CODE @Dilemmaqwer
-    
-    
-    def _invert_graph(graph: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
-        inverted = defaultdict(set)
-        all_nodes = set(graph.keys())
-        for src in graph:
-            for dest in graph[src]:
-                inverted[dest].add(src)
-            all_nodes.update(graph[src])
-
-        for node in all_nodes:
-            if node not in inverted:
-                inverted[node] = set()
-
-        return inverted
-    
-    def _sequence_cut(dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
-        adj_list = defaultdict(set)
-        for (a, b) in dfg:
-            adj_list[a].add(b)
-
-        sccs = _strongly_connected_components(adj_list)
-
-        scc_map = {}
-        for scc in sccs:
-            for node in scc:
-                scc_map[node] = scc
-
-        scc_graph = defaultdict(set)
-        for (a, b) in dfg:
-            if scc_map[a] != scc_map[b]:
-                scc_graph[frozenset(scc_map[a])].add(frozenset(scc_map[b]))
-
-        in_degree = defaultdict(int)
-        for src in scc_graph:
-            for dest in scc_graph[src]:
-                in_degree[dest] += 1
-
-        zero_in_degree = [node for node in scc_graph if in_degree[node] == 0]
-        topo_sorted_sccs = []
-        while zero_in_degree:
-            node = zero_in_degree.pop()
-            topo_sorted_sccs.append(node)
-            for neighbor in scc_graph[node]:
-                in_degree[neighbor] -= 1
-                if in_degree[neighbor] == 0:
-                    zero_in_degree.append(neighbor)
-
-        first_part = set()
-        second_part = set()
-        in_first_part = True
-        for scc in topo_sorted_sccs:
-            if in_first_part:
-                first_part.update(scc)
-                if any(node in end for node in scc):
-                    in_first_part = False
-            else:
-                second_part.update(scc)
-
-        return [first_part, second_part]
-
-    def _strongly_connected_components(self, graph: Dict[str, Set[str]]) -> List[Set[str]]:
-        index = 0
-        stack = []
-        indices = {}
-        lowlinks = {}
-        on_stack = defaultdict(bool)
-        sccs = []
-
-        def strongconnect(node):
-            nonlocal index
-            indices[node] = index
-            lowlinks[node] = index
-            index += 1
-            stack.append(node)
-            on_stack[node] = True
-
-            for neighbor in graph[node]:
-                if neighbor not in indices:
-                    strongconnect(neighbor)
-                    lowlinks[node] = min(lowlinks[node], lowlinks[neighbor])
-                elif on_stack[neighbor]:
-                    lowlinks[node] = min(lowlinks[node], indices[neighbor])
-
-            if lowlinks[node] == indices[node]:
-                scc = set()
-                while True:
-                    w = stack.pop()
-                    on_stack[w] = False
-                    scc.add(w)
-                    if w == node:
-                        break
-                sccs.append(scc)
-
-        for node in graph:
-            if node not in indices:
-                strongconnect(node)
-
-        return sccs"""
 
 if __name__ == '__main__':
      #real log

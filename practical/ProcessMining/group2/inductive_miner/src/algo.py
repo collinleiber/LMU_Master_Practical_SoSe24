@@ -114,8 +114,7 @@ class ProcessTree:
 
         # Find pairwise unreachable nodes and merge them to one node
         unreachable_pairs = dfg.find_unreachable_pairs()
-        merged_nodes = list({node for pair in unreachable_pairs 
-                             for node in pair if node in remaining_nodes})
+        merged_nodes = list({node for pair in unreachable_pairs for node in pair})
         if merged_nodes:
             cuts.append(merged_nodes)
 
@@ -405,7 +404,7 @@ if __name__ == "__main__":
     #                                   'abcdfeghabc': 2, 
     #                                   'abcijijkabc': 1, # Use for loop testing
     #                                   'abcijijijkabc': 1}) # Use for loop testing
-    event_log = EventLog.from_traces({'abcd': 1, 'ad':2}) # Use for sequence testing
+    event_log = EventLog.from_traces({'abcd': 1, 'acbd':1, 'aed':1}) # Use for sequence testing
     # event_log = EventLog.from_traces({'a':1,
     #                                     'bc': 1, 
     #                                     'cb': 1, 

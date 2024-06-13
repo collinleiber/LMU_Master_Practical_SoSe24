@@ -467,7 +467,7 @@ class InductiveMinerInfrequent(InductiveMiner):
             trace = tuple([activity for k, v in best_removal.items()
                            for activity in [v["activity"]] * v["length"]])
             log[i] = trace
-        return super()._sequence_split(log=log, cut=groups)
+        return super()._projection_split(log=log, cut=groups)
 
     def loop_split_filtered(self, log: List[Tuple[str]], groups: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
         return super()._loop_split(log=log, cut=groups)

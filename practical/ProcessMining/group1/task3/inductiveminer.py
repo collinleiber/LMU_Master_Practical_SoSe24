@@ -776,7 +776,7 @@ class InductiveMiner:
                     else:
                         child_id = f'node{child}'
                         graph.node(child_id, child, shape='box')
-                    graph.edge(node_id, child_id)
+                    graph.edge(node_id, child_id, arrowhead='none')
             else:
                 node_id = f'node{node}'
                 graph.node(node_id, node, shape='box')

@@ -3,6 +3,7 @@ from collections import defaultdict
 from enum import Enum
 from typing import List, Tuple, Dict, Set, Optional
 import graphviz
+import pandas as pd
 from IPython.display import Image, display
 import pm4py
 from pm4py.visualization.process_tree import visualizer as pt_visualizer
@@ -19,6 +20,7 @@ logging.basicConfig(level="INFO")  # Change to DEBUG for prints
 parameters = {
     'noise_threshold': 0.2
 }
+
 
 class CutType(Enum):
     """
@@ -57,6 +59,7 @@ class InductiveMiner:
         self.alphabet = self._get_alphabet(self.event_log)
         self.dfg, self.start_activities, self.end_activities = self._get_dfg(self.event_log)
         self.process_tree_str = '()'  # start with an empty process tree
+        self.net, self.initial_marking, self.final_marking = None, None, None
 
     def __str__(self):
         return self.process_tree_str
@@ -769,7 +772,7 @@ class InductiveMiner:
                     else:
                         child_id = f'node{child}'
                         graph.node(child_id, child, shape='box')
-                    graph.edge(node_id, child_id)
+                    graph.edge(node_id, child_id, arrowhead='none')
             else:
                 node_id = f'node{node}'
                 graph.node(node_id, node, shape='box')
@@ -790,9 +793,31 @@ class InductiveMiner:
         graph_bytes = graph.pipe(format='png')
         display(Image(graph_bytes))
 
+    def build_and_visualize_petrinet(self):
+        """
+        Builds and visualizes the Petri net from the event log using PM4Py.
+
+        Uses the inductive miner algorithm to discover the Petri net.
+        """
+        if self.net is None or self.initial_marking is None or self.final_marking is None:
+            # Convert the event log to PM4Py event log format
+            data = [{'case:concept:name': idx, 'concept:name': activity, 'time:timestamp': idx}
+                    for idx, trace in enumerate(self.event_log)
+                    for activity in trace]
+            df = pd.DataFrame(data)
+            event_log = log_converter.apply(df)
+
+            # Discover ProcessTree using inductive miner algorithm
+            process_tree = inductive_miner.apply(event_log)
+
+            # Convert ProcessTree to PetriNet
+            self.net, self.initial_marking, self.final_marking = pt_to_petri_converter.apply(process_tree)
+
+        # Visualize the Petri net
+        gviz = pn_vis.apply(self.net, self.initial_marking, self.final_marking)
+        pn_vis.view(gviz)
 
 if __name__ == '__main__':
-    """
      #real log
      #format log
      log = utils.import_csv(FILE_PATH_CSV)
@@ -815,4 +840,4 @@ if __name__ == '__main__':
 
      net, initial_marking, final_marking = pt_to_petri_converter.apply(process_tree_IMf)
      gviz_petri_IMf = pn_vis.apply(net, initial_marking, final_marking)
-     pn_vis.view(gviz_petri_IMf)"""
+     pn_vis.view(gviz_petri_IMf)

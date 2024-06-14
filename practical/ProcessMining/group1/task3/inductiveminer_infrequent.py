@@ -470,4 +470,43 @@ class InductiveMinerInfrequent(InductiveMiner):
         return super()._projection_split(log=log, cut=groups)
 
     def loop_split_filtered(self, log: List[Tuple[str]], groups: List[Set[str]]) -> List[List[Tuple[str, ...]]]:
-        return super()._loop_split(log=log, cut=groups)
+        """
+        Filters the sublog before splitting logs based on loop operator.
+
+        Parameters:
+            log: sublog as subset of event log
+            groups: result groups of operator cuts to alphabet of corresponding log
+        """
+        loop_body, redo = groups[0], groups[1]
+        found = set()
+        removals = []  # Could be also replaced by simple counter
+
+        for trace in log:
+            # Find infrequent activities at trace start
+            for i, activity in enumerate(trace):
+                if activity in loop_body:
+                    # TODO Questionable Condition
+                    # Should already found activities be removed when other activities from loop body lacking?
+                    if activity in found:
+                        removals.append(i)
+                    found.add(activity)
+                    if found == loop_body:
+                        break
+                else:
+                    removals.append(i)
+            found.clear()
+            # Find infrequent activities at trace end
+            for i, activity in enumerate(reversed(trace)):
+                if activity in loop_body:
+                    if activity in found:
+                        removals.append(len(trace) - i - 1)
+                    found.add(activity)
+                    if found == loop_body:
+                        break
+                else:
+                    removals.append(len(trace) - i - 1)
+
+        base_result = super()._loop_split(log=log, cut=groups)
+        # Add amount of empty traces based on removals
+        base_result[0] = base_result[0] + [('',)] * len(removals)
+        return base_result

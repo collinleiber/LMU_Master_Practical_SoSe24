@@ -83,7 +83,7 @@ class ProcessTree:
 
     def find_base_case(self):
         if len(self.event_log.traces) == 0:
-            return 'tau'
+            return ()
         elif len(self.event_log.traces) == 1:
             only_trace = next(iter(self.event_log.traces))
             if only_trace == "":
@@ -192,6 +192,11 @@ class ProcessTree:
             updated_graph.graph[edge[0]].remove(edge[1])
 
         cuts = updated_graph.find_components()
+
+        # Check if each component contains both a start and end node
+        for cut in cuts:
+            if not dfg.start_nodes.intersection(set(cut)) or not dfg.end_nodes.intersection(set(cut)):
+                return None
 
         print("Parallel cuts: ", cuts)
         return None if len(cuts) == 1 else cuts
@@ -407,6 +412,9 @@ class ProcessTree:
                     subtree = ProcessTree(EventLog(traces=sublog)).construct_process_tree()
                     subtrees.append(subtree)
                 return operator, subtrees
+        
+        # Fallthrough case
+        return 'O', ['tau'] + dfg.get_all_nodes()
 
 class InductiveMiner():
     def __init__(self):
@@ -429,11 +437,14 @@ class InductiveMiner():
 if __name__ == "__main__":
     # event_log = EventLog.from_file("../data/log_from_paper.txt")
     # event_log.load_from_file()
-    # event_log = EventLog.from_traces({'abcdfedfghabc': 3, 
-    #                                   'abcdfeghabc': 2, 
-    #                                   'abcijijkabc': 1, # Use for loop testing
-    #                                   'abcijijijkabc': 1}) # Use for loop testing
-    event_log = EventLog.from_traces({'abcd': 1, 'acd':1,'adef':1, 'adf':1}) # Use for sequence testing
+    event_log = EventLog.from_traces({'abcdfedfghabc': 3, 
+                                      'abcdfeghabc': 2, 
+                                      'abcijijkabc': 1, # Use for loop testing
+                                      'abcijijijkabc': 1}) # Use for loop testing
+    # event_log = EventLog.from_traces({'ff': 3,
+                                        # 'dfe': 2, 
+                                    #   }) # Use for loop testing
+    # event_log = EventLog.from_traces({'abcd': 1, 'acd':1,'adef':1, 'adf':1}) # Use for sequence testing
     # event_log = EventLog.from_traces({'a':1,
     #                                     'bc': 1, 
     #                                     'cb': 1, 

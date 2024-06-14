@@ -1,5 +1,6 @@
 import os
 import copy
+import itertools
 from practical.ProcessMining.group2.inductive_miner.src.graph_utils import *
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -101,6 +102,19 @@ class ProcessTree:
         return None if len(cuts) == 1 else cuts
     
     def find_sequence_cut(self, dfg: DirectlyFollowsGraph):
+        def is_skippable(p: int, cuts: list) -> bool:
+            # Check for skippable activities (according to strict sequence cut detection)
+            # This can be helpful if optionality in sequence is present
+            edges = dfg.get_all_edges()
+            for i, j in itertools.product(range(p), range(p + 1, len(sorted_cuts))):
+                for node1, node2 in itertools.product(sorted_cuts[i], sorted_cuts[j]):
+                    transitive_edge = (node1, node2)
+                    if (transitive_edge in edges 
+                        or node1 in dfg.end_nodes 
+                        or node2 in dfg.start_nodes):
+                        return True
+            return False
+
         remaining_nodes = set(dfg.get_all_nodes())
         cuts = []
 
@@ -135,8 +149,24 @@ class ProcessTree:
         sorted_cut_indices = cuts_graph.traverse_path(start_node)
         sorted_cuts = [cuts[i] for i in sorted_cut_indices]
 
-        print("Sequence cuts: ", sorted_cuts)
-        return None if len(sorted_cuts) == 1 else sorted_cuts
+        # Merge skippable cuts
+        merged_cuts = []
+        i = 0
+        while i < len(sorted_cuts):
+            # If the current cut is skippable, start merging process
+            if is_skippable(i, sorted_cuts):
+                start = i
+                while i < len(sorted_cuts) and is_skippable(i, sorted_cuts):
+                    i += 1
+                # Merge all consecutive skippable cuts into one
+                merged_cuts.append([activity for cut in sorted_cuts[start:i] for activity in cut])
+            else:
+                # If the current cut is not skippable, just add it to the result
+                merged_cuts.append(sorted_cuts[i])
+                i += 1
+
+        print("Sequence cuts: ", merged_cuts)
+        return None if len(sorted_cuts) == 1 else merged_cuts
 
     def find_parallel_cut(self, dfg: DirectlyFollowsGraph):
         # Mark edges to be removed
@@ -291,7 +321,6 @@ class ProcessTree:
         splits = [set() for _ in range(len(cuts))]
 
         for trace in self.event_log.traces:
-            trace_split = []
             subtrace = ""
             trace = list(trace)
             for i,cut in enumerate(cuts):
@@ -299,8 +328,8 @@ class ProcessTree:
                     subtrace += trace.pop(0)
                 splits[i].add(subtrace)
                 subtrace = ""
-            # splits.append(trace_split)
-                    
+                if not trace:
+                    break
 
         splits = [list(split) for split in splits]
 
@@ -404,7 +433,7 @@ if __name__ == "__main__":
     #                                   'abcdfeghabc': 2, 
     #                                   'abcijijkabc': 1, # Use for loop testing
     #                                   'abcijijijkabc': 1}) # Use for loop testing
-    event_log = EventLog.from_traces({'abcd': 1, 'acbd':1, 'aed':1}) # Use for sequence testing
+    event_log = EventLog.from_traces({'abcd': 1, 'acd':1,'adef':1, 'adf':1}) # Use for sequence testing
     # event_log = EventLog.from_traces({'a':1,
     #                                     'bc': 1, 
     #                                     'cb': 1, 

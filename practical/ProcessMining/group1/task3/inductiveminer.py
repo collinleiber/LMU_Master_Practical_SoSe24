@@ -430,40 +430,17 @@ class InductiveMiner:
         Returns:
             List of groups of activities that form the XOR cut.
         """
-        # Convert DFG to undirected graph
-        undirected_dfg = defaultdict(set)
-        for (a, b) in dfg:
-            undirected_dfg[a].add(b)
-            undirected_dfg[b].add(a)
+        # Convert DFG to an undirected networkx graph
+        undirected_graph = nx.Graph()
+        undirected_graph.add_nodes_from(self._get_alphabet_from_dfg(dfg).union(start.keys()).union(end.keys()))
+        undirected_graph.add_edges_from(dfg.keys())
 
-        for activity in start.keys():
-            undirected_dfg[activity]
+        # Detect connected components in the graph
+        components = list(nx.connected_components(undirected_graph))
+        # Replace empty component with the TAU activity
+        groups = [component if component != {''} else set(self.TAU) for component in components]
 
-        for activity in end.keys():
-            undirected_dfg[activity]
-
-        # Detect connected components in the undirected graph
-        def dfs(activity, component):
-            stack = [activity]
-            while stack:
-                node = stack.pop()
-                if node not in visited:
-                    visited.add(node)
-                    component.add(node)
-                    for neighbor in undirected_dfg[node]:
-                        if neighbor not in visited:
-                            stack.append(neighbor)
-
-        visited = set()
-        components = []
-
-        for activity in undirected_dfg:
-            if activity not in visited:
-                component = set()
-                dfs(activity, component)
-                components += [component] if component != {''} else [set(self.TAU)]
-
-        return components if len(components) > 1 else []
+        return groups
 
     def _parallel_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int],
                       end: Dict[str, int]) -> List[Set[str]]:
@@ -600,6 +577,7 @@ class InductiveMiner:
 
         # Return the cut if more than one group (i.e., do- and loop-group found)
         groups = [group for group in groups if group != set()]
+
         return groups if len(groups) > 1 else []
 
     def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]], operator: CutType) -> List[List[Tuple[str, ...]]]:

@@ -3,6 +3,7 @@ from collections import defaultdict
 from enum import Enum
 from typing import List, Tuple, Dict, Set, Optional
 import graphviz
+import networkx as nx
 import pandas as pd
 from IPython.display import Image, display
 import pm4py
@@ -460,7 +461,7 @@ class InductiveMiner:
             if activity not in visited:
                 component = set()
                 dfs(activity, component)
-                components.append(component)
+                components += [component] if component != {''} else [set(self.TAU)]
 
         return components if len(components) > 1 else []
 
@@ -531,9 +532,15 @@ class InductiveMiner:
 
         # Extract inner edges (excluding start and end activities)
         inner_edges = [edge for edge in edges if edge[0] not in groups[0] and edge[1] not in groups[0]]
+        graph = nx.Graph()
+        graph.add_edges_from(inner_edges)
+        connected_components = list(nx.connected_components(graph))
 
         # Create a group for the inner edges (loop group)
-        groups.append({activity for edge in inner_edges for activity in edge})
+        groups += connected_components if len(connected_components) > 0 else []
+
+        alphabet = self._get_alphabet_from_dfg(dfg)
+        groups += [{a} for a in alphabet if not any(a in group for group in groups)]
 
         # Exclude sets that are non-reachable from start/end activities from the loop groups
         def exclude_non_reachable(groups):

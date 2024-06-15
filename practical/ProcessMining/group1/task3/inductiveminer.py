@@ -359,7 +359,8 @@ class InductiveMiner:
 
         return groups if len(groups) > 1 else []
 
-    def _get_transitive_relations(self, dfg: Dict[Tuple[str, str], int]) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:
+    def _get_transitive_relations(self, dfg: Dict[Tuple[str, str], int]) -> Tuple[
+        Dict[str, Set[str]], Dict[str, Set[str]]]:
         """
         Computes the transitive predecessors and successors for the directly-follows graph (dfg).
 
@@ -456,36 +457,36 @@ class InductiveMiner:
             List of groups of activities that form the parallel cut.
         """
         # Extract edges from the dfg
-        edges = dfg.keys()
+        edges = set(dfg.keys())
         start_activities = set(start.keys())
         end_activities = set(end.keys())
-        # Initialize groups with individual activities
-        groups = [{activity} for activity in set([activity for edge in edges for activity in edge])]
 
-        # Merge groups that are connected by edges
-        done = False
-        while not done:
-            done = True
-            i = 0
-            while i < len(groups):
-                j = i + 1
-                while j < len(groups):
-                    group_a, group_b = groups[i], groups[j]
-                    # If any pair of activities from the two groups is not connected by an edge in both directions,
-                    # merge the two groups
-                    if any((a, b) not in edges or (b, a) not in edges for a in group_a for b in group_b):
-                        groups[i] = group_a.union(group_b)
+        # Initialize groups with individual activities
+        all_activities = {activity for edge in edges for activity in edge}
+        groups = [{activity} for activity in all_activities]
+
+        # Function to determine if two groups should be merged
+        def should_merge(group_a, group_b):
+            return any((a, b) not in edges or (b, a) not in edges for a in group_a for b in group_b)
+
+        # Merge groups that are not connected by edges
+        merged = True
+        while merged:
+            merged = False
+            for i in range(len(groups)):
+                for j in range(i + 1, len(groups)):
+                    if should_merge(groups[i], groups[j]):
+                        groups[i] = groups[i].union(groups[j])
                         groups.pop(j)
-                        done = False
-                    else:
-                        j += 1
-                if not done:
+                        merged = True
+                        break
+                if merged:
                     break
-                i += 1
 
         # Filter out groups that do not contain start and end activities
-        groups = sorted((group for group in groups if group & start_activities and group & end_activities), key=len)
-        return groups
+        groups = [group for group in groups if group & start_activities and group & end_activities]
+
+        return sorted(groups, key=len)
 
     def _loop_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
         """
@@ -499,25 +500,26 @@ class InductiveMiner:
         Returns:
             List of groups of activities that form the loop cut.
         """
-        # Extract edges from the dfg
-        edges = dfg.keys()
+        # Extract edges and activities
+        edges = list(dfg.keys())
         start_activities = set(start.keys())
         end_activities = set(end.keys())
 
         # Merge start and end activities into the first group (do-group)
-        groups = [start_activities.union(end_activities)]
+        do_group = start_activities.union(end_activities)
 
         # Extract inner edges (excluding start and end activities)
-        inner_edges = [edge for edge in edges if edge[0] not in groups[0] and edge[1] not in groups[0]]
+        inner_edges = [edge for edge in edges if edge[0] not in do_group and edge[1] not in do_group]
+
+        # Add connected components as loop groups
         graph = nx.Graph()
         graph.add_edges_from(inner_edges)
         connected_components = list(nx.connected_components(graph))
+        loop_groups = connected_components if len(connected_components) > 0 else []
 
-        # Create a group for the inner edges (loop group)
-        groups += connected_components if len(connected_components) > 0 else []
-
+        # Add remaining activities to their own groups
         alphabet = self._get_alphabet_from_dfg(dfg)
-        groups += [{a} for a in alphabet if not any(a in group for group in groups)]
+        loop_groups += [{a} for a in alphabet if not any(a in group for group in loop_groups + [do_group])]
 
         # Exclude sets that are non-reachable from start/end activities from the loop groups
         def exclude_non_reachable(groups):
@@ -534,7 +536,7 @@ class InductiveMiner:
         for a in pure_start_activities:
             for (x, b) in edges:
                 if x == a:
-                    exclude_non_reachable(groups)
+                    exclude_non_reachable(loop_groups)
 
         pure_end_activities = end_activities.difference(start_activities)  # only end, not start activity
         # Put all activities in the do-group that precede an end activity which is not a start activity
@@ -542,42 +544,26 @@ class InductiveMiner:
         for b in pure_end_activities:
             for (a, x) in edges:
                 if x == b:
-                    exclude_non_reachable(groups)
-        # Check start completeness
-        # All loop activities must be able to reach the start activities
+                    exclude_non_reachable(loop_groups)
+
+        # Ensure all loop activities can reach start activities
         i = 1
-        while i < len(groups):
-            merge = False
-            for a in groups[i]:
-                for (x, b) in edges:
-                    if x == a and b in start_activities:
-                        if not any((a, s) in edges for s in start_activities):  # no direct edge from activity to start
-                            merge = True  # merge with the do-group as it cannot be in the loop-group
-            if merge:
-                groups[0] = groups[0].union(groups[i])
-                groups.pop(i)
+        while i < len(loop_groups):
+            if any((a, b) not in edges for a in loop_groups[i] for b in start_activities):
+                do_group.update(loop_groups.pop(i))
             else:
                 i += 1
 
-        # Check end completeness
-        # All loop activities must be able to be reached from the end activities
+        # Ensure all loop activities can be reached from end activities
         i = 1
-        while i < len(groups):
-            merge = False
-            for a in groups[i]:
-                for (b, x) in edges:
-                    if x == a and b in end_activities:
-                        if not any((e, a) in edges for e in end_activities):  # no direct edge from end to activity
-                            merge = True  # merge with the do-group as it cannot be in the loop-group
-            if merge:
-                groups[0] = groups[0].union(groups[i])
-                groups.pop(i)
+        while i < len(loop_groups):
+            if any((b, a) not in edges for a in loop_groups[i] for b in end_activities):
+                do_group.update(loop_groups.pop(i))
             else:
                 i += 1
 
         # Return the cut if more than one group (i.e., do- and loop-group found)
-        groups = [group for group in groups if group != set()]
-
+        groups = [do_group, *loop_groups]
         return groups if len(groups) > 1 else []
 
     def _split_log(self, log: List[Tuple[str]], cut: List[Set[str]], operator: CutType) -> List[List[Tuple[str, ...]]]:
@@ -716,6 +702,7 @@ class InductiveMiner:
         This method parses the process tree string generated by the Inductive Miner algorithm,
         constructs a graph using Graphviz, and displays the resulting image.
         """
+
         def parse_tree(tree_str):
             """
             Parses the process tree string into a nested structure.
@@ -809,27 +796,28 @@ class InductiveMiner:
         gviz = pn_vis.apply(self.net, self.initial_marking, self.final_marking)
         pn_vis.view(gviz)
 
+
 if __name__ == '__main__':
-     #real log
-     #format log
-     log = utils.import_csv(FILE_PATH_CSV)
-     log = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
+    #real log
+    #format log
+    log = utils.import_csv(FILE_PATH_CSV)
+    log = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
 
-     # IM
-     process_tree_IM = inductive_miner.apply(log, variant=inductive_miner.Variants.IM)
-     # print('process_tree_IM ===== ', process_tree_IM)
-     gviz_tree_IM = pt_vis.apply(process_tree_IM)
-     pt_vis.view(gviz_tree_IM)
+    # IM
+    process_tree_IM = inductive_miner.apply(log, variant=inductive_miner.Variants.IM)
+    # print('process_tree_IM ===== ', process_tree_IM)
+    gviz_tree_IM = pt_vis.apply(process_tree_IM)
+    pt_vis.view(gviz_tree_IM)
 
-     net, initial_marking, final_marking = pt_to_petri_converter.apply(process_tree_IM)
-     gviz_petri_IM = pn_vis.apply(net, initial_marking, final_marking)
-     pn_vis.view(gviz_petri_IM)
+    net, initial_marking, final_marking = pt_to_petri_converter.apply(process_tree_IM)
+    gviz_petri_IM = pn_vis.apply(net, initial_marking, final_marking)
+    pn_vis.view(gviz_petri_IM)
 
-     # IMf
-     process_tree_IMf = inductive_miner.apply(log, parameters=parameters,variant=inductive_miner.Variants.IMf)
-     gviz_tree_IMf = pt_visualizer.apply(process_tree_IMf)
-     pt_visualizer.view(gviz_tree_IMf)
+    # IMf
+    process_tree_IMf = inductive_miner.apply(log, parameters=parameters, variant=inductive_miner.Variants.IMf)
+    gviz_tree_IMf = pt_visualizer.apply(process_tree_IMf)
+    pt_visualizer.view(gviz_tree_IMf)
 
-     net, initial_marking, final_marking = pt_to_petri_converter.apply(process_tree_IMf)
-     gviz_petri_IMf = pn_vis.apply(net, initial_marking, final_marking)
-     pn_vis.view(gviz_petri_IMf)
+    net, initial_marking, final_marking = pt_to_petri_converter.apply(process_tree_IMf)
+    gviz_petri_IMf = pn_vis.apply(net, initial_marking, final_marking)
+    pn_vis.view(gviz_petri_IMf)

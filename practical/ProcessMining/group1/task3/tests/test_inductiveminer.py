@@ -251,7 +251,7 @@ class TestInductiveMiner:
             ("L14 = [<a,b,c,d>^10,<d,a,b>^10,<a,d,c>^10,<b,c,d>^5]",
              f'{CutType.LOOP.value}({InductiveMiner.TAU}, a, b, c, d)'),
             ("L15 = [<a,b>^25,<a,c>^25,<d,b>^25,<d,c>^25,<a,b,a,c>^1]",
-             f'{CutType.LOOP.value}({InductiveMiner.TAU}, a, b, c, d)'),
+             f'{CutType.SEQUENCE.value}({CutType.XOR.value}(d, {InductiveMiner.TAU}), {CutType.XOR.value}({CutType.PARALLEL.value}({CutType.LOOP.value}({InductiveMiner.TAU}, a), {CutType.XOR.value}(b, {InductiveMiner.TAU})), {InductiveMiner.TAU}), {CutType.XOR.value}(c, {InductiveMiner.TAU}))'),
             ("L16 = [<a,b,c,d>^20,<a,d>^20]",
              f'{CutType.SEQUENCE.value}(a, {CutType.XOR.value}({CutType.SEQUENCE.value}(b, c), {InductiveMiner.TAU}), d)'),
             ("L17 = [<a,b,c,d,e>^10,<a,d,b,e>^10,<a,e,b>^10,<a,c,b>^10,<a,b,d,e,c>^10,<c,a,d>^1]",

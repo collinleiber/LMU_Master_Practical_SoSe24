@@ -3,7 +3,8 @@ import pytest
 import graphviz as gviz
 from typing import List, Set, Tuple
 from unittest.mock import patch
-from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe, check_lists_of_sets_equal
+from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe, check_lists_of_sets_equal, \
+    extract_traces_from_text
 from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
 import pm4py
 from pm4py.objects.log.obj import EventLog, Trace, Event
@@ -39,10 +40,10 @@ class TestInductiveMiner:
              [sorted([('b',), ('b',)]), sorted([('c',), ('c',)])]),
 
             ([('b', 'e'),
-             ('b', 'e', 'c', 'd', 'b'),
-             ('b', 'c', 'e', 'd', 'b'),
-             ('b', 'c', 'd', 'e', 'b'),
-             ('e', 'b', 'c', 'd', 'b')],
+              ('b', 'e', 'c', 'd', 'b'),
+              ('b', 'c', 'e', 'd', 'b'),
+              ('b', 'c', 'd', 'e', 'b'),
+              ('e', 'b', 'c', 'd', 'b')],
              [set('e'), set('bcd')],
              [sorted([('e',), ('e',), ('e',), ('e',), ('e',)]),
               sorted([('b',),
@@ -60,7 +61,6 @@ class TestInductiveMiner:
 
         parallel_split = miner._split_log(miner.event_log, parallel_cut, CutType.PARALLEL)
         assert all(sorted(sl) in split_result for sl in parallel_split)
-
 
     @pytest.mark.parametrize(
         "log,expected_cut,expected_split",
@@ -172,7 +172,7 @@ class TestInductiveMiner:
              [set('a'), set('𝜏')], CutType.XOR),
             ([('a',), ('a', 'a'), ('a', 'a', 'a')],  # once or more than once
              [set('a'), set('𝜏')], CutType.LOOP),
-            ([('',), ('a',), ('a', 'a')],   # never, once or more than once
+            ([('',), ('a',), ('a', 'a')],  # never, once or more than once
              [set('𝜏'), set('a')], CutType.LOOP)
         ]
     )
@@ -200,8 +200,9 @@ class TestInductiveMiner:
     @pytest.mark.parametrize(
         "log",
         [
-            ([('a', 'b', 'c', 'd', 'e', 'f', 'b', 'd', 'c', 'e', 'g'), ('a', 'b', 'd', 'c', 'e', 'g'), ('a', 'b', 'c', 'd', 'e', 'f', 'b', 'c', 'd', 'e', 'f', 'b', 'd', 'c', 'e', 'g')]),
-            ([('a', 'c', 'd'), ('b', 'c', 'd'), ('a', 'c', 'e'),('b', 'c', 'e')])
+            ([('a', 'b', 'c', 'd', 'e', 'f', 'b', 'd', 'c', 'e', 'g'), ('a', 'b', 'd', 'c', 'e', 'g'),
+              ('a', 'b', 'c', 'd', 'e', 'f', 'b', 'c', 'd', 'e', 'f', 'b', 'd', 'c', 'e', 'g')]),
+            ([('a', 'c', 'd'), ('b', 'c', 'd'), ('a', 'c', 'e'), ('b', 'c', 'e')])
         ]
     )
     @patch('practical.ProcessMining.group1.task3.inductiveminer.pt_visualizer.view')
@@ -217,3 +218,52 @@ class TestInductiveMiner:
 
         # Optionally check if the save method was called when actually saving the image
         # mock_save.assert_called_once_with(gviz, "process_tree.png")
+
+    @pytest.mark.parametrize(
+        "log,expected_tree",
+        [
+            ("L1 = [<a,b,c,d>^3,<a,c,b,d>^2,<a,e,d>^1]",
+             f'{CutType.SEQUENCE.value}(a, {CutType.XOR.value}({CutType.PARALLEL.value}(b, c), e), d)'),
+            ("L2 = [<a,b,c,d>^3,<a,c,b,d>^4,<a,b,c,e,f,b,c,d>^2,<a,b,c,e,f,c,b,d>^1,<a,c,b,e,f,b,c,d>^2,<a,c,b,e,f,b,c,e,f,c,b,d>^1]",
+                f'{CutType.SEQUENCE.value}(a, {CutType.LOOP.value}({CutType.PARALLEL.value}(b, c), {CutType.SEQUENCE.value}(e, f)), d)'),
+            ("L3 = [<a,b,c,d,e,f,b,d,c,e,g>^1,<a,b,d,c,e,g>^2,<a,b,c,d,e,f,b,c,d,e,f,b,d,c,e,g>^1]",
+             f'{CutType.SEQUENCE.value}(a, {CutType.LOOP.value}({CutType.SEQUENCE.value}(b, {CutType.PARALLEL.value}(c,d), e), f), g)'),
+            ("L4 = [<a,c,d>^45,<b,c,d>^42,<a,c,e>^38,<b,c,e>^22]",
+             f'{CutType.SEQUENCE.value}({CutType.XOR.value}(a, b), c, {CutType.XOR.value}(d, e))'),
+            ("L5 = [<a,b,e,f>^2,<a,b,e,c,d,b,f>^3,<a,b,c,e,d,b,f>^2,<a,b,c,d,e,b,f>^4,<a,e,b,c,d,b,f>^3]",
+             f'{CutType.SEQUENCE.value}(a, {CutType.PARALLEL.value}({CutType.LOOP.value}(b, {CutType.SEQUENCE.value}(c, d)), e), f)'),
+            ("L6 = [<a,c,e,g>^2,<a,e,c,g>^3,<b,d,f,g>^2,<b,f,d,g>^4]",
+             f'{CutType.SEQUENCE.value}({CutType.XOR.value}({CutType.SEQUENCE.value}(a, {CutType.PARALLEL.value}(c, e)), {CutType.SEQUENCE.value}(b, {CutType.PARALLEL.value}(d, f))), g)'),
+            ("L7 = [<a,c>^2,<a,b,c>^3,<a,b,b,c>^2,<a,b,b,b,b,c>^1]",
+             f'{CutType.SEQUENCE.value}(a, {CutType.LOOP.value}({InductiveMiner.TAU}, b), c)'),
+            ("L8 = [<a,b,d>^3,<a,b,c,b,d>^2,<a,b,c,b,c,b,d>^1]",
+             f'{CutType.SEQUENCE.value}(a, {CutType.LOOP.value}(b, c), d)'),
+            ("L9 = [<a,c,d>^45,<b,c,e>^42]",
+             f'{CutType.SEQUENCE.value}({CutType.XOR.value}(a, b), c, {CutType.XOR.value}(d, e))'),
+            ("L10 = [<a,a>^55]",
+             f'{CutType.LOOP.value}(a, {InductiveMiner.TAU})'),
+            ("L11 = [<a,b,c>^20,<a,c>^30]",
+             f'{CutType.SEQUENCE.value}(a, {CutType.XOR.value}(b, {InductiveMiner.TAU}), c)'),
+            ("L12 = [<a,c,d>^45,<b,c,e>^42,<a,c,e>^20]",
+             f'{CutType.SEQUENCE.value}({CutType.XOR.value}(a, b), c, {CutType.XOR.value}(d, e))'),
+            ("L13 = [<a,b,c,d,e>^10,<a,d,b,e>^10,<a,e,b>^1,<a,c,b>^1, <a,b,d,e,c>^2]",
+             f'{CutType.SEQUENCE.value}(a, {CutType.PARALLEL.value}(b, {CutType.LOOP.value}({InductiveMiner.TAU}, c, d, e)))'),
+            ("L14 = [<a,b,c,d>^10,<d,a,b>^10,<a,d,c>^10,<b,c,d>^5]",
+             f'{CutType.LOOP.value}({InductiveMiner.TAU}, a, b, c, d)'),
+            ("L15 = [<a,b>^25,<a,c>^25,<d,b>^25,<d,c>^25,<a,b,a,c>^1]",
+             f'{CutType.LOOP.value}({InductiveMiner.TAU}, a, b, c, d)'),
+            ("L16 = [<a,b,c,d>^20,<a,d>^20]",
+             f'{CutType.SEQUENCE.value}(a, {CutType.XOR.value}({CutType.SEQUENCE.value}(b, c), {InductiveMiner.TAU}), d)'),
+            ("L17 = [<a,b,c,d,e>^10,<a,d,b,e>^10,<a,e,b>^10,<a,c,b>^10,<a,b,d,e,c>^10,<c,a,d>^1]",
+             f'{CutType.LOOP.value}({InductiveMiner.TAU}, a, b, c, d, e)'),
+            ("L18 = [<a,b,c,g,e,h>^10,<a,b,c,f,g,h>^10,<a,b,d,g,e,h>^10,<a,b,d,e,g>^10,<a,c,b,e,g,h>^10,<a,c,b,f,g,h>^10,<a,d,b,e,g,h>^10,<a,d,b,f,g,h>^10]",
+             f'{CutType.SEQUENCE.value}(a, {CutType.PARALLEL.value}(b, {CutType.XOR.value}(c, d)), {CutType.XOR.value}(f, {InductiveMiner.TAU}), {CutType.PARALLEL.value}({CutType.XOR.value}(e, {InductiveMiner.TAU}), g), {CutType.XOR.value}(h, {InductiveMiner.TAU}))'),
+            ("L19 = [<a,b,c,d,f,e>^1,<a,c,b,d,f,e>^1,<a,c,b,d,e>^1,<a,b,c,d,e>^1]",
+             f'{CutType.SEQUENCE.value}(a, {CutType.PARALLEL.value}(b, c), d, {CutType.XOR.value}(f, {InductiveMiner.TAU}), e)')
+        ]
+    )
+    def test_simple_event_logs(self, log: str, expected_tree: str):
+        key, event_log = extract_traces_from_text(log)
+        miner = InductiveMiner(event_log)
+        miner.run()
+        assert miner.process_tree_str == expected_tree

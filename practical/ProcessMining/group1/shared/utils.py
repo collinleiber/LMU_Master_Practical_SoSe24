@@ -41,13 +41,19 @@ def read_txt_test_logs(file):
     event_dict = {}
     with open(file, 'r') as file:
         for line in file:
-            key, traces = re.match(r'(L\d+) = \[(.*)\]', line.strip()).groups()
-            traces = re.findall(r'<(.*?)>\^(\d+)', traces)
-            event_dict[key] = []
-            for trace, frequency in traces:
-                for _ in range(int(frequency)):
-                    event_dict[key].append(tuple(trace.replace(' ', '').split(',')))
+            key, traces = extract_traces_from_text(line)
+            event_dict[key] = traces
     return event_dict
+
+
+def extract_traces_from_text(string_trace):
+    extracted_traces = []
+    key, traces = re.match(r'(L\d+)\s?=\s?\[(.*)]', string_trace.strip()).groups()
+    traces = re.findall(r'<(.*?)>\^(\d+)', traces)
+    for trace, frequency in traces:
+        for _ in range(int(frequency)):
+            extracted_traces.append(tuple(trace.replace(' ', '').split(',')))
+    return key, extracted_traces
 
 
 def deduplicate_list(list_with_duplicates):

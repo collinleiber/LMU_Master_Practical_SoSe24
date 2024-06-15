@@ -313,7 +313,7 @@ class InductiveMiner:
         else:
             # If the current process tree is not empty, find the subsequence in the tree that matches the group string
             # and replace it with the new cut string
-            match = self._find_subsequence_in_arbitrary_order(tree, search_str)
+            match = self._find_substring_in_arbitrary_order(tree, search_str)
             tree = tree.replace(match, f'{new_cut_str}')
 
         # Update the process tree
@@ -596,40 +596,51 @@ class InductiveMiner:
         Returns:
             List of sublogs resulting from the loop split.
         """
-        # Convert the groups in the cut and the traces in the log to strings for easier comparison
-        new_traces = [''.join(map(str, group)).replace(self.TAU, '') for group in cut]
-        old_traces = [''.join(map(str, trace)) for trace in log]
         new_log = []
 
-        # Iterate over the new traces (groups in the cut)
-        for new_trace in new_traces:
+        # Iterate over each group in the cut
+        for group in cut:
             sublog = []
-            # Iterate over the old traces (traces in the log)
-            for i, old_trace in enumerate(old_traces):
-                # Find subsequences in the old trace that match the new trace and add them to the sublog
-                found_subtrace = True
-                while found_subtrace:
-                    found_subtrace = False
-                    # try with subsequences of the new trace of decreasing length
-                    for j in range(0, len(new_trace)):
-                        subtrace = self._find_subsequence_in_arbitrary_order(old_trace, new_trace[j:])
-                        if len(subtrace) > 0:  # if a subsequence is found
-                            found_subtrace = True
-                            sublog.append(tuple(subtrace))
-                            # Remove the found subsequence from the old trace
-                            # TODO: breaks if activity name includes '?'
-                            old_trace = old_trace.replace(subtrace, '?', 1)
-                            old_traces[i] = old_trace
-                            break
-                        j += 1
-
-            # Add the sublog to the new log
+            # Iterate over each trace in the log
+            for trace in log:
+                trace_list = list(trace)  # Convert the trace tuple to a list for manipulation
+                # Continuously find and remove subtraces that match the current group
+                while True:
+                    subtrace = self._find_subsequence_in_arbitrary_order(trace_list, list(group))
+                    if not subtrace:
+                        break
+                    sublog.append(tuple(subtrace))  # Add the found subsequence to the sublog
+                    # Remove the elements of the found subsequence from the trace_list
+                    for item in subtrace:
+                        trace_list.remove(item)
             if sublog:
                 new_log.append(sublog)
 
         return new_log
 
-    def _find_subsequence_in_arbitrary_order(self, main: str, sub: str) -> str:
+    def _find_subsequence_in_arbitrary_order(self, main: List[str], sub: List[str]) -> List[str]:
+        """
+        Finds a subsequence in the main list that contains the same elements as the sub list,
+        regardless of their order.
+
+        Parameters:
+            main: The main list in which to find the subsequence.
+            sub: The sub list whose elements should be found in the main list.
+
+        Returns:
+            The found subsequence in the main list. If no such subsequence is found, returns an empty list.
+        """
+        sub_len = len(sub)
+        sorted_sub = sorted(sub)  # Sort the sub list for comparison
+
+        # Slide a window over the main list to find a matching subsequence
+        for i in range(len(main) - sub_len + 1):
+            window = main[i:i + sub_len]
+            if sorted(window) == sorted_sub:  # Check if the sorted window matches the sorted sub list
+                return window
+        return []
+
+    def _find_substring_in_arbitrary_order(self, main: str, sub: str) -> str:
         """
         Finds a subsequence in the main string that contains the same characters as the sub string,
         regardless of their order.

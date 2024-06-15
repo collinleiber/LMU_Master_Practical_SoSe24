@@ -8,8 +8,8 @@ from algo import DirectlyFollowsGraph, EventLog
 
 
 
-l1 = EventLog.from_traces({'abcd': 3,   'acbd' : 4, 'abcefbcd': 2,  'abcefcbd' : 1, 'acbefbcd' : 2, 'acbefbcefcbd' : 1})
-l2 = EventLog.from_traces({'bc': 3,   'cb' : 4, 'bcefbc': 2,  'bcefcb' : 1, 'cbefbc' : 2, 'cbefbcefcb' : 1})
+l1 = EventLog({'abcd': 3,   'acbd' : 4, 'abcefbcd': 2,  'abcefcbd' : 1, 'acbefbcd' : 2, 'acbefbcefcbd' : 1})
+l2 = EventLog({'bc': 3,   'cb' : 4, 'bcefbc': 2,  'bcefcb' : 1, 'cbefbc' : 2, 'cbefbcefcb' : 1})
 
 dfg1 = DirectlyFollowsGraph(l1)
 dfg1.construct_dfg()

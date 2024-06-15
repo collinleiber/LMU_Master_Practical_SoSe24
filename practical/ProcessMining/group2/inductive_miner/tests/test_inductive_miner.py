@@ -73,13 +73,16 @@ def test_construct_dfg():
 
 
 def test_find_exclusive_choice_cut():
-    # TODO: function returns None, even with traces e0 which should have exclusive choice
     # Test if exclusive choice split is found correctly
-    e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
+    e0 = EventLog({'e': 1, 'bc': 1, 'cb': 1})
     dfg0 = DirectlyFollowsGraph(e0)
     dfg0.construct_dfg()
     p0 = ProcessTree(e0)
-    assert p0.find_exclusive_choice_cut(dfg0) == None
+    actual = p0.find_exclusive_choice_cut(dfg0)
+    target = [['e'], ['b', 'c']]
+    assert set(frozenset(sub) for sub in actual) == set(
+        frozenset(sub) for sub in target
+    )
 
     e1 = EventLog({'abcdfedfghabc': 3, 'abcdfeghabc': 2, 'abcijijkabc': 1})
     dfg1 = DirectlyFollowsGraph(e1)
@@ -88,88 +91,160 @@ def test_find_exclusive_choice_cut():
 
     assert p1.find_exclusive_choice_cut(dfg1) == None
 
-    e2 = EventLog(
-        {
-            'abcdfedfghabc': 3,
-            'abcdfeghabcijijkabc': 2,
-            'abcijijkabc': 1,  # Use for loop testing
-            'abcijijijkabc': 1,
-        }
-    )
+    e2 = EventLog({})
     dfg2 = DirectlyFollowsGraph(e2)
     dfg2.construct_dfg()
     p2 = ProcessTree(e2)
-    assert p2.find_exclusive_choice_cut(dfg2) == None
+    assert p2.find_exclusive_choice_cut(dfg2) == []
 
-    # TODO: assertion
+    # TODO: empty list is probably not the best return parameter?
+
+
+def test_exclusive_choice_split():
+    e0 = EventLog({'e': 1, 'bc': 1, 'cb': 1})
+    dfg0 = DirectlyFollowsGraph(e0)
+    dfg0.construct_dfg()
+    p0 = ProcessTree(e0)
+    actual = p0.exclusive_choice_split([['e'], ['b', 'c']])
+    target = [['e'], ['bc', 'cb']]
+    assert set(frozenset(sub) for sub in actual) == set(
+        frozenset(sub) for sub in target
+    )
 
 
 def test_find_sequence_cut():
-
     # Test if sequence split is found correctly
 
     e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
     dfg0 = DirectlyFollowsGraph(e0)
     dfg0.construct_dfg()
     p0 = ProcessTree(e0)
-    # assert p0.find_sequence_split(dfg0) == [['a'], ['b', 'c'], ['d']]
-    # TODO: check if this is correct
+    actual = p0.find_sequence_cut(dfg0)
+    target = [['a'], ['b', 'c', 'e'], ['d']]
+    assert set(frozenset(sub) for sub in actual) == set(
+        frozenset(sub) for sub in target
+    )
 
     e1 = EventLog({'abcdfedfghabc': 3, 'abcdfeghabc': 2, 'abcijijkabc': 1})
     dfg1 = DirectlyFollowsGraph(e1)
     dfg1.construct_dfg()
     p1 = ProcessTree(e1)
-    # assert p1.find_sequence_split(dfg1) == [
-    # ['a', 'h', 'g', 'f', 'd', 'c', 'b', 'e', 'k', 'j', 'i']
-    # ]
-    pass
+    assert p1.find_sequence_cut(dfg1) == None
+
+    e2 = EventLog({})
+    dfg2 = DirectlyFollowsGraph(e2)
+    dfg2.construct_dfg()
+    p2 = ProcessTree(e2)
+    # TODO: fix in line 124 if the evenlog is empty
+    # assert p2.find_sequence_cut(dfg2) == None
+
+
+def test_sequence_split():
+    e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
+    dfg0 = DirectlyFollowsGraph(e0)
+    dfg0.construct_dfg()
+    p0 = ProcessTree(e0)
+    actual = p0.sequence_split([['a'], ['b', 'c', 'e'], ['d']])
+    target = [['a'], ['e', 'bc', 'cb'], ['d']]
+    assert set(frozenset(sub) for sub in actual) == set(
+        frozenset(sub) for sub in target
+    )
 
 
 def test_find_parallel_cut():
-    # TODO: function gives none for parallel split
     # Test if parallel split is found correctly
-    e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
+    e0 = EventLog({'bc': 1, 'cb': 1})
     dfg0 = DirectlyFollowsGraph(e0)
     dfg0.construct_dfg()
     p0 = ProcessTree(e0)
-
-    # assert p0.find_parallel_split(dfg0) == [['b'], ['c']]
+    assert p0.find_parallel_cut(dfg0) == [['b'], ['c']]
 
     e1 = EventLog({'abcdfedfghabc': 3, 'abcdfeghabc': 2, 'abcijijkabc': 1})
     dfg1 = DirectlyFollowsGraph(e1)
     dfg1.construct_dfg()
     p1 = ProcessTree(e1)
-    # TODO: assertion
-    # assert p1.find_parallel_split(dfg1) == None
+    assert p1.find_parallel_cut(dfg1) == None
+
+    e2 = EventLog({})
+    dfg2 = DirectlyFollowsGraph(e2)
+    dfg2.construct_dfg()
+    p2 = ProcessTree(e2)
+    assert p2.find_parallel_cut(dfg2) == []
+    # TODO Empty List
+
+
+def test_parallel_split():
+    e0 = EventLog({'bc': 1, 'cb': 1})
+    dfg0 = DirectlyFollowsGraph(e0)
+    dfg0.construct_dfg()
+    p0 = ProcessTree(e0)
+    assert p0.parallel_split([['b'], ['c']]) == [['b'], ['c']]
 
 
 def test_find_loop_cut():
-    # TODO: order of output of find_loop_split should be the same?
-    # Test if loop split is found correctly
-    e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
+    # Test if loop cut is found correctly
+    e0 = EventLog(
+        {'cbefbcefcb': 1, 'cbefbc': 1, 'bc': 1, 'bcefcb': 1, 'cb': 1, 'bcefbc': 1}
+    )
     dfg0 = DirectlyFollowsGraph(e0)
     dfg0.construct_dfg()
     p0 = ProcessTree(e0)
-    pass
-    # print(p0.find_loop_split(dfg0), '0')
-    # assert p0.find_loop_split(dfg0) == None
+    actual = p0.find_loop_cut(dfg0)
+    target = [['b', 'c'], ['e', 'f']]
+    assert set(frozenset(sub) for sub in actual) == set(
+        frozenset(sub) for sub in target
+    )
 
-    e1 = EventLog({'abcdfedfghabc': 3, 'abcdfeghabc': 2, 'abcijijkabc': 1})
+    e1 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
     dfg1 = DirectlyFollowsGraph(e1)
     dfg1.construct_dfg()
     p1 = ProcessTree(e1)
-    # assert p1.find_loop_split(dfg1) == [
-    #    ['c', 'b', 'a'],
-    #    ['d', 'f', 'e', 'g', 'h'],
-    #    ['i', 'j', 'k'],
-    # ]
+
+    assert p1.find_loop_cut(dfg1) == None
+
+    e2 = EventLog({})
+    dfg2 = DirectlyFollowsGraph(e2)
+    dfg2.construct_dfg()
+    p2 = ProcessTree(e2)
+    assert p2.find_loop_cut(dfg2) == None
+    # TODO: here is None not empty list
+
+
+def test_loop_split():
+    e0 = EventLog(
+        {'cbefbcefcb': 1, 'cbefbc': 1, 'bc': 1, 'bcefcb': 1, 'cb': 1, 'bcefbc': 1}
+    )
+    dfg0 = DirectlyFollowsGraph(e0)
+    dfg0.construct_dfg()
+    p0 = ProcessTree(e0)
+    # assert p0.loop_split([['b', 'c'], ['e', 'f']]) == [['b', 'c'], ['e', 'f']]
+    # TODO: name error
 
 
 def test_construct_process_tree():
     # Test if process tree is constructed correctly
-    pass
+    def to_frozenset(item):
+        if isinstance(item, list):
+            return frozenset(to_frozenset(e) for e in item)
+        elif isinstance(item, tuple):
+            return tuple(to_frozenset(e) for e in item)
+        else:
+            return item
+
+    e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
+    dfg0 = DirectlyFollowsGraph(e0)
+    dfg0.construct_dfg()
+    p0 = ProcessTree(e0)
+    actual = p0.construct_process_tree()
+    target = (
+        '->',
+        ['a', ('X', [('||', ['c', 'b']), 'e']), 'd'],
+    )
+    assert to_frozenset(actual) == to_frozenset(target)
 
 
 def test_mine_process_model():
-    # Test if process model is mined correctly
-    pass
+    e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
+    i0 = InductiveMiner()
+    p0 = i0.mine_process_model(e0)
+    # TODO: recheck functionality of mine_process_model

@@ -226,7 +226,7 @@ class InductiveMiner:
             List of groups of activities that form the flower model.
         """
         # Tau in the do part of the loop cut (= 0..* execution of any activity)
-        flower_groups = [set(self.TAU), [set(activity) for activity in sorted(list(self._get_alphabet(log)))]]
+        flower_groups = [[set(self.TAU)], [set(activity) for activity in sorted(list(self._get_alphabet(log)))]]
         return flower_groups
 
     def _apply_cut(self, log: List[Tuple[str]], dfg: Dict[Tuple[str, str], int], start_activities: Dict[str, int],
@@ -286,6 +286,13 @@ class InductiveMiner:
         """
         # Get the current process tree
         tree = self.process_tree_str
+
+        groups = [sorted([activity for activity in group]) for group in groups]
+        # Sort the groups for cut types where order of groups is not important to make the output deterministic
+        if cut_type == CutType.XOR or cut_type == CutType.PARALLEL:
+            groups = sorted(groups, key=lambda x: x[0])
+        if cut_type == CutType.LOOP:
+            groups = groups[0] + sorted(groups[1:], key=lambda x: x[0])
 
         # Convert the groups into a string
         group_str = ', '.join([', '.join(activity) for group in groups for activity in group])

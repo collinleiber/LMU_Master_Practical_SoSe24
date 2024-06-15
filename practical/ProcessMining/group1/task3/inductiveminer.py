@@ -1,7 +1,8 @@
 import logging
+import os
 from collections import defaultdict
 from enum import Enum
-from typing import List, Tuple, Dict, Set, Optional
+from typing import List, Tuple, Dict, Set, Optional, Union
 import graphviz
 import networkx as nx
 import pandas as pd
@@ -49,14 +50,17 @@ class InductiveMiner:
     """
     TAU = '𝜏'
 
-    def __init__(self, event_log: Optional[List[Tuple[str]]] = None):
+    def __init__(self, event_log: Optional[Union[List[Tuple[str]], str]] = None):
         """
         Initialize the Inductive Miner with an event log.
 
         Parameters:
             event_log: List of traces
         """
-        self.event_log = event_log
+        if isinstance(event_log, str):
+            self.event_log = self._import_event_log(event_log)
+        else:
+            self.event_log = event_log
         self.alphabet = self._get_alphabet(self.event_log)
         self.dfg, self.start_activities, self.end_activities = self._get_dfg(self.event_log)
         self.process_tree_str = '()'  # start with an empty process tree
@@ -119,6 +123,40 @@ class InductiveMiner:
                 operation_found = False
 
         return operation_found, groups, new_sublogs
+
+    def _import_event_log(self, file_path: str, case_id='case_id', activity_key='activity',
+                          timestamp_key='timestamp') -> List[Tuple[str]]:
+        """
+        Imports the event log from a file.
+
+        Parameters:
+            file_path (str): The path to the event log file.
+
+        Returns:
+            Tuple[pd.DataFrame, Dict[int, str], List[Tuple[int, int]]]: The event log data,
+            the mapping of activity IDs to activity names, and all pairs of activities.
+        """
+        # Check if the file exists
+        if not os.path.exists(file_path):
+            raise Exception("File does not exist")
+
+        # Differentiate between CSV and XES files
+        extension = os.path.splitext(file_path)[1]
+        if extension == '.csv':
+            event_log = pd.read_csv(file_path, sep=';')
+            event_log = pm4py.format_dataframe(event_log, case_id=case_id, activity_key=activity_key,
+                                               timestamp_key=timestamp_key)
+        elif extension == '.xes':
+            event_log = pm4py.read_xes(file_path)
+        else:
+            raise Exception("File extension must be .csv or xes")
+
+        # Sort the event log by case ID and timestamp
+        event_log = event_log.sort_values(['case:concept:name', 'time:timestamp'])
+        # Group the event log by case ID and extract the activities as tuples
+        event_log = event_log.groupby('case:concept:name')['concept:name'].apply(tuple).reset_index()
+        event_log = event_log['concept:name'].tolist()
+        return event_log
 
     def _get_dfg(self, log: List[Tuple]) -> Tuple[Dict[Tuple[str, str], int], Dict[str, int], Dict[str, int]]:
         """

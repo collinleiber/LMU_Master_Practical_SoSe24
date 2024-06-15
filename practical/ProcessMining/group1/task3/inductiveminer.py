@@ -335,89 +335,51 @@ class InductiveMiner:
             List of groups of activities that form the sequence cut.
         """
         # Create a group per activity
-        alphabet = set(a for (a, b) in dfg).union(set(b for (a, b) in dfg))
-        transitive_predecessors, transitive_successors = self._get_transitive_relations(dfg)
-        groups = [{a} for a in alphabet]
-        if len(groups) == 0:
-            return []
+        alphabet = self._get_alphabet_from_dfg(dfg)
+        groups = [set(activity) for activity in alphabet]
+
+        # Initialize directed graph
+        directed_graph = nx.DiGraph()
+        directed_graph.add_edges_from(dfg)
+
+        # Compute transitive predecessors and successors
+        transitive_successors = {node: set(nx.descendants(directed_graph, node)) for node in directed_graph.nodes}
+        transitive_predecessors = {node: set(nx.ancestors(directed_graph, node)) for node in directed_graph.nodes}
+
+        # Function to merge groups based on transitive relations
+        def merge_groups(groups, transitive_relations):
+            merged = True
+            while merged:
+                merged = False
+                for i in range(len(groups)):
+                    for j in range(i + 1, len(groups)):
+                        if should_merge(groups[i], groups[j], transitive_relations):
+                            groups[i] = groups[i].union(groups[j])
+                            groups.pop(j)
+                            merged = True
+                            break
+                    if merged:
+                        break
+            return groups
+
+        # Function to check if two groups should be merged
+        def should_merge(group_a, group_b, transitive_relations):
+            return any(
+                (b in transitive_relations[a] and a in transitive_relations[b]) or
+                (b not in transitive_relations[a] and a not in transitive_relations[b])
+                for a in group_a for b in group_b
+            )
 
         # Merge pairwise reachable nodes (based on transitive relations)
-        old_size = None
-        while old_size != len(groups):
-            old_size = len(groups)
-            groups = self._merge_groups(groups, transitive_successors)
-
+        groups = merge_groups(groups, transitive_successors)
         # Merge pairwise unreachable nodes (based on transitive relations)
-        old_size = None
-        while old_size != len(groups):
-            old_size = len(groups)
-            groups = self._merge_groups(groups, transitive_predecessors)
+        groups = merge_groups(groups, transitive_predecessors)
 
         # Sort the groups based on their reachability
-        groups = list(sorted(groups, key=lambda g: len(
-            transitive_predecessors[next(iter(g))]) + (len(alphabet) - len(transitive_successors[next(iter(g))]))))
+        groups.sort(key=lambda g: len(transitive_predecessors[next(iter(g))]) + (
+                    len(alphabet) - len(transitive_successors[next(iter(g))])))
 
-        return groups if len(groups) > 1 else []
-
-    def _get_transitive_relations(self, dfg: Dict[Tuple[str, str], int]) -> Tuple[
-        Dict[str, Set[str]], Dict[str, Set[str]]]:
-        """
-        Computes the transitive predecessors and successors for the directly-follows graph (dfg).
-
-        Parameters:
-            dfg: Directly-follows graph
-
-        Returns:
-
-        """
-        transitive_predecessors = defaultdict(set)
-        transitive_successors = defaultdict(set)
-
-        for (a, b) in dfg:
-            transitive_successors[a].add(b)
-            transitive_predecessors[b].add(a)
-
-        def dfs(node, graph):
-            visited = set()
-            stack = [node]
-            while stack:
-                current = stack.pop()
-                for neighbor in graph[current]:
-                    if neighbor not in visited:
-                        visited.add(neighbor)
-                        stack.append(neighbor)
-            return visited
-
-        nodes = list(transitive_successors.keys())
-        for node in nodes:
-            transitive_successors[node] = dfs(node, transitive_successors)
-
-        nodes = list(transitive_predecessors.keys())
-        for node in nodes:
-            transitive_predecessors[node] = dfs(node, transitive_predecessors)
-
-        return transitive_predecessors, transitive_successors
-
-    def _merge_groups(self, groups, trans_succ):
-        i = 0
-        while i < len(groups):
-            j = i + 1
-            while j < len(groups):
-                if self._check_merge_condition(groups[i], groups[j], trans_succ):
-                    groups[i] = groups[i].union(groups[j])
-                    del groups[j]
-                    continue
-                j = j + 1
-            i = i + 1
         return groups
-
-    def _check_merge_condition(self, g1, g2, trans_succ):
-        for a1 in g1:
-            for a2 in g2:
-                if (a2 in trans_succ[a1] and a1 in trans_succ[a2]) or (
-                        a2 not in trans_succ[a1] and a1 not in trans_succ[a2]):
-                    return True
-        return False
 
     def _xor_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
         """
@@ -465,11 +427,10 @@ class InductiveMiner:
         all_activities = {activity for edge in edges for activity in edge}
         groups = [{activity} for activity in all_activities]
 
-        # Function to determine if two groups should be merged
+        # Determine if two groups are not connected by edges
         def should_merge(group_a, group_b):
             return any((a, b) not in edges or (b, a) not in edges for a in group_a for b in group_b)
 
-        # Merge groups that are not connected by edges
         merged = True
         while merged:
             merged = False
@@ -486,7 +447,7 @@ class InductiveMiner:
         # Filter out groups that do not contain start and end activities
         groups = [group for group in groups if group & start_activities and group & end_activities]
 
-        return sorted(groups, key=len)
+        return groups
 
     def _loop_cut(self, dfg: Dict[Tuple[str, str], int], start: Dict[str, int], end: Dict[str, int]) -> List[Set[str]]:
         """

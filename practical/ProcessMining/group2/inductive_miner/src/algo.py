@@ -62,7 +62,7 @@ class ProcessTree:
 
     def find_base_case(self):
         if len(self.event_log.traces) == 0:
-            return ()
+            return 'tau'
         elif len(self.event_log.traces) == 1:
             only_trace = next(iter(self.event_log.traces))
             if only_trace == "":
@@ -97,7 +97,7 @@ class ProcessTree:
         cuts = []
 
         # Find strongly connected components
-        components = dfg.find_strongly_con_components()
+        components = dfg.find_strongly_connected_components()
         for component in components:
             if len(component) > 1:
                 cuts.append(component)
@@ -141,7 +141,7 @@ class ProcessTree:
                 merged_cuts.append(sorted_cuts[i])
                 i += 1
 
-        return None if len(sorted_cuts) == 1 else merged_cuts
+        return None if len(merged_cuts) == 1 else merged_cuts
 
     def find_parallel_cut(self, dfg: DirectlyFollowsGraph):
         # Mark edges to be removed

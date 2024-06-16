@@ -207,8 +207,11 @@ class Graph:
                         # Ignore neighbors in the same cut
                         if current_cut == second_cut:
                             continue
+                        if neighbor_cut == second_cut:
+                            cut_graph[current_cut].add(neighbor_cut)
+                            break
                         # If a second neighbor belongs to a different cut, check for reachability and the non-reachable neighbor
-                        if second_cut != neighbor_cut and self.is_reachable(neighbor, second_neighbor):
+                        if self.is_reachable(neighbor, second_neighbor):
                             cut_graph[current_cut].add(neighbor_cut)
                             break
 

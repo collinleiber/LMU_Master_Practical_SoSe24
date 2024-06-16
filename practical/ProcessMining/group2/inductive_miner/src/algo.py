@@ -145,7 +145,7 @@ class ProcessTree:
         components = dfg.find_strongly_connected_components()
         for component in components:
             if len(component) > 1:
-                cuts.append(component)
+                cuts.append(set(component))
                 for node in component:
                     remaining_nodes.discard(node)
 
@@ -153,14 +153,22 @@ class ProcessTree:
         unreachable_pairs = dfg.find_unreachable_pairs()
         merged_nodes = list({node for pair in unreachable_pairs for node in pair})
         if merged_nodes:
-            cuts.append(merged_nodes)
+            should_append = True
+            for cut in cuts:
+                if cut.intersection(merged_nodes):
+                    cut.update(merged_nodes)
+                    should_append = False
+                    break
+            
+            if should_append:
+                cuts.append(merged_nodes)
 
         # Remove merged nodes from remaining nodes to be processed
         for node in merged_nodes:
             remaining_nodes.discard(node)
 
         for node in remaining_nodes:
-            cuts.append([node])
+            cuts.append(node)
 
         # Build cuts graph
         cuts_graph, cut_map = dfg.build_cuts_graph(cuts)
@@ -183,7 +191,7 @@ class ProcessTree:
                 merged_cuts.append([activity for cut in sorted_cuts[start:i] for activity in cut])
             else:
                 # If the current cut is not skippable, just add it to the result
-                merged_cuts.append(sorted_cuts[i])
+                merged_cuts.append(list(sorted_cuts[i]))
                 i += 1
 
         return None if len(merged_cuts) == 1 else merged_cuts
@@ -512,7 +520,7 @@ class InductiveMiner():
         return process_tree
     
 if __name__ == '__main__':
-    event_log = EventLog({'abcd': 1, 'ad': 1})
+    event_log = EventLog({'abcd':1, 'acbd':1, 'aed':1})
     print("Event Log:", event_log.traces)
     miner = InductiveMiner()
     process_tree = miner.mine_process_model(event_log)

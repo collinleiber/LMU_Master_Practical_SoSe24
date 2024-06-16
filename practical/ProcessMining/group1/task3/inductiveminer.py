@@ -391,7 +391,7 @@ class InductiveMiner:
                 merged = False
                 for i in range(len(groups)):
                     for j in range(i + 1, len(groups)):
-                        if should_merge(groups[i], groups[j], transitive_relations):
+                        if has_transitive_relation(groups[i], groups[j], transitive_relations):
                             groups[i] = groups[i].union(groups[j])
                             groups.pop(j)
                             merged = True
@@ -401,7 +401,7 @@ class InductiveMiner:
             return groups
 
         # Function to check if two groups should be merged
-        def should_merge(group_a, group_b, transitive_relations):
+        def has_transitive_relation(group_a, group_b, transitive_relations):
             return any(
                 (b in transitive_relations[a] and a in transitive_relations[b]) or
                 (b not in transitive_relations[a] and a not in transitive_relations[b])

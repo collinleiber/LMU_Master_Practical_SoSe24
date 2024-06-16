@@ -1,6 +1,6 @@
 from practical.ProcessMining.group2.inductive_miner.src.algo import *
 
-
+from practical.ProcessMining.group2.inductive_miner.src.process_tree_visualisation import *
 def test_file_loading():
     # Tests about different test cases, like empty file, file with only one trace, file with multiple traces
     # Test if file is loaded correctly
@@ -248,3 +248,15 @@ def test_mine_process_model():
     i0 = InductiveMiner()
     p0 = i0.mine_process_model(e0)
     # TODO: recheck functionality of mine_process_model
+
+
+def test_visualisation():
+    e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
+    dfg0 = DirectlyFollowsGraph(e0)
+    dfg0.construct_dfg()
+    p0 = ProcessTree(e0)
+    actual = p0.construct_process_tree()
+   
+    visobject = Visualisation()
+    visobject.visualize_process_tree(actual)
+

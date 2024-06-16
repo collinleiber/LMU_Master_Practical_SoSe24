@@ -152,13 +152,20 @@ class TestInductiveMiner:
              [sorted([('b', 'c'), ('c', 'b'), ('b', 'c'), ('b', 'c'), ('c', 'b'), ('b', 'c'), ('b', 'c'),
                       ('c', 'b'), ('c', 'b'), ('b', 'c'), ('c', 'b')]),
               sorted([('e', 'f'), ('e', 'f'), ('e', 'f'), ('e', 'f'), ('e', 'f')])]),
+            ([('a', 'b', 'a', 'b', 'a'),
+              ('a', 'c', 'a', 'c', 'a')],
+             [set('a'), set('b'), set('c')],
+             [sorted([('a',), ('a',), ('a',), ('a',), ('a',), ('a',)]),
+              sorted([('b',), ('b',)]),
+              sorted([('c',), ('c',)])]),
         ]
     )
     def test_loop_cut(self, log: List[Tuple[str]], expected_cut: List[Set], expected_split: List[Tuple]):
         miner = InductiveMiner(log)
 
         loop_cut = miner._loop_cut(miner.dfg, miner.start_activities, miner.end_activities)
-        assert loop_cut == expected_cut  # order does matter
+        assert loop_cut[0] == expected_cut[0]  # order does matter
+        assert check_lists_of_sets_equal(loop_cut[1:], expected_cut[1:])
 
         loop_split = miner._split_log(miner.event_log, loop_cut, CutType.LOOP)
         assert all(sorted(sl) in expected_split for sl in loop_split)

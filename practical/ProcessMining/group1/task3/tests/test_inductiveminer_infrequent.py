@@ -154,6 +154,12 @@ class TestInductiveMinerInfrequent:
              [sorted([('A',), ('',), ('',)]),
               sorted([('B',), ('B',)])]),
 
+            ([("B", "A", "B"), ("C", "A", "C")],
+             [{"A"}, {"B"}, {"C"}],
+             [sorted([('A',), ('',), ('',), ('A',), ('',), ('',)]),
+              sorted([('B',), ('B',)]),
+              sorted([('C',), ('C',)])]),
+
             ([("B", "A", "B")],
              [{"B"}, {"A"}],
              [sorted([('B',), ('B',)]),
@@ -162,7 +168,7 @@ class TestInductiveMinerInfrequent:
     )
     def test_loop_split_filtered(self, log: List[Tuple[str]], given_cut: List[Set[str]],
                                  expected_filter: List[Tuple[str]]):
-        assert len(given_cut) == 2, "Invalid cut, loop split requires exactly two groups"
+        assert len(given_cut) >= 2, "Invalid cut, loop split requires at least two groups"
         miner = InductiveMinerInfrequent(event_log=log, threshold=0.4)
 
         result = miner.loop_split_filtered(log=log, groups=given_cut)

@@ -7,14 +7,24 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 class EventLog:
-    # Priority of given traces over file path
-    def __init__(self, traces):
+    def __init__(self, traces: Dict[str, int]):
+        """
+        Initialize EventLog object.
+
+        :param traces: Dictionary where keys are traces and values are counts.
+        """
         self.traces = traces
 
     @classmethod
-    def from_file(cls, file_path=None): 
+    def from_file(cls, file_path: str = None) -> 'EventLog':
+        """
+        Create an EventLog object from a file.
+
+        :param file_path: Path to the file containing traces.
+        :return: EventLog object.
+        """
         with open(os.path.join(script_dir, file_path), 'r') as file:
-            traces = dict()
+            traces = {}
             for line in file:
                 trace = line.strip()
                 if trace in traces:
@@ -24,13 +34,19 @@ class EventLog:
             return EventLog(traces)
 
 class DirectlyFollowsGraph(Graph):
-    def __init__(self, event_log: EventLog):
+    def __init__(self, event_log: EventLog) -> None:
+        """
+        Initialize DirectlyFollowsGraph object.
+
+        :param event_log: EventLog object.
+        """
         self.event_log = event_log
         self.graph = defaultdict(list)  # Adjacency list, format: "node_id" : [children]
         self.start_nodes = set()
         self.end_nodes = set()
 
-    def construct_dfg(self):
+    def construct_dfg(self) -> None:
+        """Construct Directly Follows Graph."""
         for trace in self.event_log.traces.keys():
             if trace:  # Check if trace is not empty
                 self.start_nodes.add(trace[0])  # First activity in trace is a start
@@ -51,16 +67,27 @@ class DirectlyFollowsGraph(Graph):
             else:
                 self.graph[''] = [] # Add tau node for empty traces
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Represent Directly Follows Graph as string."""
         return f"Directly Follows Graph: (\n\tGraph: {dict(self.graph)}\n\tStart nodes: {self.start_nodes}\n\tEnd nodes: {self.end_nodes}\n)"
 
 class ProcessTree:
-    def __init__(self, event_log: EventLog):
+    def __init__(self, event_log: EventLog) -> None:
+        """
+        Initialize ProcessTree object.
+
+        :param event_log: EventLog object.
+        """
         self.event_log = event_log
         self.root = None
         self.children = []
 
-    def find_base_case(self):
+    def find_base_case(self) -> str:
+        """
+        Find base case for the Process Tree.
+
+        :return: Base case activity or None.
+        """
         if len(self.event_log.traces) == 0:
             return 'tau'
         elif len(self.event_log.traces) == 1:
@@ -71,7 +98,13 @@ class ProcessTree:
                 return only_trace
         return None
 
-    def find_exclusive_choice_cut(self, dfg: DirectlyFollowsGraph):
+    def find_exclusive_choice_cut(self, dfg: DirectlyFollowsGraph) -> List[List[str]]:
+        """
+        Find exclusive choice cut.
+
+        :param dfg: DirectlyFollowsGraph object.
+        :return: List of lists representing cuts.
+        """
         # Convert the graph to undirected
         undirected = dfg.convert_to_undirected()
         # Find connected components
@@ -79,10 +112,22 @@ class ProcessTree:
 
         return None if len(cuts) == 1 else cuts
     
-    def find_sequence_cut(self, dfg: DirectlyFollowsGraph):
+    def find_sequence_cut(self, dfg: DirectlyFollowsGraph) -> List[List[str]]:
+        """
+        Find sequence cut.
+
+        :param dfg: DirectlyFollowsGraph object.
+        :return: List of lists representing cuts.
+        """
         def is_skippable(p: int, cuts: list) -> bool:
-            # Check for skippable activities (according to strict sequence cut detection)
-            # This can be helpful if optionality in sequence is present
+            """
+            Check if a cut is skippable (according to strict sequence cut detection).
+            .This can be helpful if optionality in sequence is present
+
+            :param p: Index of the cut.
+            :param cuts: List of cuts.
+            :return: True if the cut is skippable, False otherwise.
+            """
             edges = dfg.get_all_edges()
             for i, j in itertools.product(range(p), range(p + 1, len(sorted_cuts))):
                 for node1, node2 in itertools.product(sorted_cuts[i], sorted_cuts[j]):
@@ -143,7 +188,13 @@ class ProcessTree:
 
         return None if len(merged_cuts) == 1 else merged_cuts
 
-    def find_parallel_cut(self, dfg: DirectlyFollowsGraph):
+    def find_parallel_cut(self, dfg: DirectlyFollowsGraph) -> Optional[List[List[str]]]:
+        """
+        Find parallel cut.
+
+        :param dfg: DirectlyFollowsGraph object.
+        :return: List of lists representing cuts.
+        """
         # Mark edges to be removed
         edges = set(dfg.get_all_edges())
         removed_edges = set()
@@ -175,7 +226,13 @@ class ProcessTree:
 
         return None if len(cuts) == 1 else cuts
 
-    def find_loop_cut(self, dfg: DirectlyFollowsGraph):
+    def find_loop_cut(self, dfg: DirectlyFollowsGraph) -> Optional[List[List[str]]]:
+        """
+        Find loop cut.
+
+        :param dfg: DirectlyFollowsGraph object.
+        :return: List of lists representing cuts.
+        """
         cuts = []
         # Create do-body, start with all start/end nodes
         start_nodes = dfg.start_nodes
@@ -278,7 +335,13 @@ class ProcessTree:
         # We need at least to components for a valid loop cut
         return None if len(cuts) < 2 else cuts
 
-    def exclusive_choice_split(self, cuts):
+    def exclusive_choice_split(self, cuts: List[List[str]]) -> List[List[str]]:
+        """
+        Split the log based on exclusive choice.
+
+        :param cuts: List of lists representing cuts.
+        :return: List of lists representing splits.
+        """
         cuts = [set(cut) for cut in cuts]
         splits = [set() for _ in range(len(cuts))]
 
@@ -293,7 +356,13 @@ class ProcessTree:
 
         return splits
 
-    def sequence_split(self, cuts):
+    def sequence_split(self, cuts: List[List[str]]) -> List[List[str]]:
+        """
+        Split the log based on sequence.
+
+        :param cuts: List of lists representing cuts.
+        :return: List of lists representing splits.
+        """
         cuts = [set(cut) for cut in cuts] # Convert to set for faster lookup
         splits = [set() for _ in range(len(cuts))]
 
@@ -312,7 +381,13 @@ class ProcessTree:
 
         return splits
 
-    def parallel_split(self, cuts):
+    def parallel_split(self, cuts: List[List[str]]) -> List[List[str]]:
+        """
+        Split the log based on parallelism.
+
+        :param cuts: List of lists representing cuts.
+        :return: List of lists representing splits.
+        """
         cuts = [set(cut) for cut in cuts]
         splits = [set() for _ in range(len(cuts))]
 
@@ -326,7 +401,13 @@ class ProcessTree:
 
         return splits
 
-    def loop_split(self, cuts):
+    def loop_split(self, cuts: List[List[str]]) -> List[List[str]]:
+        """
+        Split the log based on loops.
+
+        :param cuts: List of lists representing cuts.
+        :return: List of lists representing splits.
+        """
         cuts = [set(cut) for cut in cuts]
         splits = [set() for _ in range(len(cuts))]
 
@@ -352,7 +433,12 @@ class ProcessTree:
 
         return splits
     
-    def construct_process_tree(self):
+    def construct_process_tree(self) -> Tuple[str, List[str]]:
+        """
+        Construct the process tree.
+
+        :return: Tuple containing the operator and subtrees.
+        """
         base_case = self.find_base_case()
         if base_case is not None:
             return base_case
@@ -386,6 +472,11 @@ class ProcessTree:
         return 'O', ['tau'] + dfg.get_all_nodes()
     
     def __str__(self) -> str:
+        """
+        Return the string representation of the process tree.
+
+        :return: String representation of the process tree.
+        """
         operator_map = {
             'O': '↺',
             'X': 'x',
@@ -404,10 +495,13 @@ class ProcessTree:
         return print_tree(tree)
             
 class InductiveMiner():
-    def __init__(self):
-        pass
+    def mine_process_model(self, event_log: EventLog) -> ProcessTree:
+        """
+        Mine process model using Inductive Miner.
 
-    def mine_process_model(self, event_log):
+        :param event_log: EventLog object.
+        :return: ProcessTree object.
+        """
         # Construct Directly-Follows Graph (DFG)
         dfg = DirectlyFollowsGraph(event_log)
         dfg.construct_dfg()
@@ -416,3 +510,10 @@ class InductiveMiner():
         process_tree = ProcessTree(event_log)
 
         return process_tree
+    
+if __name__ == '__main__':
+    event_log = EventLog({'abcd': 1, 'ad': 1})
+    print("Event Log:", event_log.traces)
+    miner = InductiveMiner()
+    process_tree = miner.mine_process_model(event_log)
+    print("Process tree: ", process_tree)

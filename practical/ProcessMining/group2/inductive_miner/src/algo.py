@@ -493,11 +493,12 @@ class ProcessTree:
             'tau': '𝝉'
         }
         tree = self.construct_process_tree()
-        def print_tree(node) -> str:
-            if isinstance(node, str):
-                return node
+
+        def print_tree(subtree) -> str:
+            if isinstance(subtree, str): # Base case
+                return subtree
             else:
-                operator, children = node
+                operator, children = subtree
                 return f"{operator_map[operator]}({', '.join(print_tree(child) for child in children)})"
             
         return print_tree(tree)
@@ -520,7 +521,7 @@ class InductiveMiner():
         return process_tree
     
 if __name__ == '__main__':
-    event_log = EventLog({'abcd':1, 'acbd':1, 'aed':1})
+    event_log = EventLog({'abcd':1, 'ad':1})
     print("Event Log:", event_log.traces)
     miner = InductiveMiner()
     process_tree = miner.mine_process_model(event_log)

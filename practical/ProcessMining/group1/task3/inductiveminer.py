@@ -777,7 +777,7 @@ class InductiveMiner:
 
         # Parse the process tree string into a nested structure
         tree = parse_tree(tree_str)
-        print(f"Parsed tree: {tree}")  # show the parsed tree if needed
+        # print(f"Parsed tree: {tree}")  # show the parsed tree if needed
 
         # Create a new Graphviz graph
         graph = graphviz.Digraph(format='png')
@@ -813,28 +813,3 @@ class InductiveMiner:
         gviz = pn_vis.apply(self.net, self.initial_marking, self.final_marking)
         pn_vis.view(gviz)
 
-
-if __name__ == '__main__':
-    #real log
-    #format log
-    log = utils.import_csv(FILE_PATH_CSV)
-    log = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
-
-    # IM
-    process_tree_IM = inductive_miner.apply(log, variant=inductive_miner.Variants.IM)
-    # print('process_tree_IM ===== ', process_tree_IM)
-    gviz_tree_IM = pt_vis.apply(process_tree_IM)
-    pt_vis.view(gviz_tree_IM)
-
-    net, initial_marking, final_marking = pt_to_petri_converter.apply(process_tree_IM)
-    gviz_petri_IM = pn_vis.apply(net, initial_marking, final_marking)
-    pn_vis.view(gviz_petri_IM)
-
-    # IMf
-    process_tree_IMf = inductive_miner.apply(log, parameters=parameters, variant=inductive_miner.Variants.IMf)
-    gviz_tree_IMf = pt_visualizer.apply(process_tree_IMf)
-    pt_visualizer.view(gviz_tree_IMf)
-
-    net, initial_marking, final_marking = pt_to_petri_converter.apply(process_tree_IMf)
-    gviz_petri_IMf = pn_vis.apply(net, initial_marking, final_marking)
-    pn_vis.view(gviz_petri_IMf)

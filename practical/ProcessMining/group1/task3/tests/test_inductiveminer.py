@@ -210,11 +210,11 @@ class TestInductiveMiner:
     def test_visualize_process_tree(self, mock_view, mock_render):
         log = [('a', 'b'), ('b', 'c')]
         miner = InductiveMiner(log)
-        miner.process_tree_str = 'x(→(a,c),x(→(d,e,x(h,τ,f)),→(i,j,k)))'  # mock the process tree string
+        miner.process_tree_str = '→(×(a, 𝜏), b, ×(c, 𝜏))'  # mock the process tree string
 
         with patch('IPython.display.Image', wraps=Image) as mock_image:
             with patch('IPython.display.display', wraps=display) as mock_display:
-                print("Calling visualize_process_tree...")  # 调试信息
+                print("Calling visualize_process_tree...")
                 miner.visualize_process_tree()
                 mock_render.assert_called_once_with('process_tree', format='png', cleanup=True)
                 mock_view.assert_called_once_with('process_tree')

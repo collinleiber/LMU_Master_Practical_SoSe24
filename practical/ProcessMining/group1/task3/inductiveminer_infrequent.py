@@ -477,36 +477,36 @@ class InductiveMinerInfrequent(InductiveMiner):
             log: sublog as subset of event log
             groups: result groups of operator cuts to alphabet of corresponding log
         """
-        loop_body, redo = groups[0], groups[1]
-        found = set()
-        removals = []  # Could be also replaced by simple counter
+        loop_body, redo = groups[0], groups[1:]
+        removals = defaultdict(set)  # Could be replaced by simple counter, but this way more comprehensible
 
-        for trace in log:
+        for x, trace in enumerate(log):
+            found = set()
             # Find infrequent activities at trace start
             for i, activity in enumerate(trace):
                 if activity in loop_body:
                     # TODO Questionable Condition
                     # Should already found activities be removed when other activities from loop body lacking?
                     if activity in found:
-                        removals.append(i)
+                        removals[x].add(i)
                     found.add(activity)
                     if found == loop_body:
                         break
                 else:
-                    removals.append(i)
+                    removals[x].add(i)
             found.clear()
             # Find infrequent activities at trace end
             for i, activity in enumerate(reversed(trace)):
                 if activity in loop_body:
                     if activity in found:
-                        removals.append(len(trace) - i - 1)
+                        removals[x].add(len(trace) - i - 1)
                     found.add(activity)
                     if found == loop_body:
                         break
                 else:
-                    removals.append(len(trace) - i - 1)
+                    removals[x].add(len(trace) - i - 1)
 
         base_result = super()._loop_split(log=log, cut=groups)
         # Add amount of empty traces based on removals
-        base_result[0] = base_result[0] + [('',)] * len(removals)
+        base_result[0] = base_result[0] + [('',)] * len(list(chain(*removals.values())))
         return base_result

@@ -139,10 +139,10 @@ class ProcessTree:
             return False
 
         remaining_nodes = set(dfg.get_all_nodes())
-        cuts = []
 
         # Find strongly connected components
         components = dfg.find_strongly_connected_components()
+        cuts = []
         for component in components:
             if len(component) > 1:
                 cuts.append(set(component))
@@ -151,20 +151,27 @@ class ProcessTree:
 
         # Find pairwise unreachable nodes and merge them to one node
         unreachable_pairs = dfg.find_unreachable_pairs()
-        # merged_nodes = list({node for pair in unreachable_pairs for node in pair})
+        
         merged_nodes = set()
-        if cuts:
-            for pair in unreachable_pairs:
-                for cut in cuts:
-                    if cut.intersection(set(pair)):
-                        cut.update(set(pair))
-                        merged_nodes.update(set(pair))
+        for pair1, pair2 in itertools.product(unreachable_pairs, repeat=2):
+            set1, set2 = set(pair1), set(pair2)
+            if pair1 != pair2:
+                if set1.intersection(set2):
+                    merged_nodes.update(set1.union(set2))
+
+        if merged_nodes and cuts:
+            for cut in cuts:
+                if cut.intersection(merged_nodes):
+                    cut.update(merged_nodes)
+                    break
+        elif merged_nodes:
+            cuts.append(merged_nodes)
         else:
-            cuts = [set(pair) for pair in unreachable_pairs]
-            merged_nodes = set({node for pair in unreachable_pairs for node in pair})
+            for pair in unreachable_pairs:
+                cuts.append(set(pair))
+                remaining_nodes = remaining_nodes - set(pair)
 
         # Remove merged nodes from remaining nodes to be processed
-        
         remaining_nodes = remaining_nodes - merged_nodes
 
         for node in remaining_nodes:
@@ -529,6 +536,12 @@ if __name__ == '__main__':
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
 
+    event_log = EventLog({'abcd':1, 'ad':1, 'aefd':1})
+    print("=========== Example 1 ===========")
+    print("Event Log:", event_log.traces)
+    process_tree = miner.mine_process_model(event_log)
+    print("Process tree: ", process_tree)
+
     print("=========== Example 2 ===========")
     event_log = EventLog({'abcd':1, 'abcd':1, 'aed':1})
     print("Event Log:", event_log.traces)
@@ -537,124 +550,114 @@ if __name__ == '__main__':
 
     print("=========== L1 ===========")
     event_log = EventLog({'abcd':3, 'acbd':2, 'aed':1})
-    print("Event Log L1:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
 
     print("=========== L2 ===========")
     event_log = EventLog({'abcd':3, 'acbd':4, 'abcefbcd':2, 'abcefcbd':1, 'acbefbcd':2, 'acbefbcefcbd':1})
-    print("Event Log L2:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
-
 
     print("=========== L3 ===========")
     event_log = EventLog({'abcdefbdceg':1, 'abdceg':2, 'abcdefbcdefbdceg':1})
-    print("Event Log L3:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
 
-
     print("=========== L4 ===========")
     event_log = EventLog({'acd':45, 'bcd':42, 'ace':38, 'bce':22})
-    print("Event Log L4:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
 
     print("=========== L5 ===========")
     event_log = EventLog({'abef':2, 'abecdbf':3, 'abcedbf':2, 'abcdebf':4, 'aebcdbf':3})
-    print("Event Log L5:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
-
 
     print("=========== L6 ===========")
     event_log = EventLog({'aceg':2, 'aecg':3, 'bdfg':2, 'bfdg':4})
-    print("Event Log L6:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
-
    
     print("=========== L7 ===========")
     event_log = EventLog({'ac':2, 'abc':3, 'abbc':2, 'abbbbc':1})
-    print("Event Log L7:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
     
     print("=========== L8 ===========")
     event_log = EventLog({'abd':3, 'abcbd':2, 'abcbcbd':1})
-    print("Event Log L8:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
         
     print("=========== L9 ===========")
     event_log = EventLog({'acd':45, 'bce':42})
-    print("Event Log L9:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
         
     print("=========== L10 ===========")
     event_log = EventLog({'aa':55})
-    print("Event Log L10:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
 
-
     print("=========== L11 ===========")
     event_log = EventLog({'abc':20, 'ac':30})
-    print("Event Log L11:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
 
     print("=========== L12 ===========")
     event_log = EventLog({'acd':45, 'bce':42, 'ace':20})
-    print("Event Log L12:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
 
     print("=========== L13 ===========")
     event_log = EventLog({'abcde':10, 'adbe':10, 'aeb':1, 'acb':1, 'abdec':2})
-    print("Event Log L13:", event_log.traces)
+    print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
-    
 
-    # print("=========== L14 ===========")
-    # event_log = EventLog({'abcd':10, 'dab':10, 'adc':10, 'bcd':5})
-    # print("Event Log L14:", event_log.traces)
-    # process_tree = miner.mine_process_model(event_log)
-    # print("Process tree: ", process_tree)
+    print("=========== L14 ===========")
+    event_log = EventLog({'abcd':10, 'dab':10, 'adc':10, 'bcd':5})
+    print("Event Log:", event_log.traces)
+    process_tree = miner.mine_process_model(event_log)
+    print("Process tree: ", process_tree)
 
-    # print("=========== L15 ===========")
-    # event_log = EventLog({'ab':25, 'ac':25, 'db':25, 'dc':25, 'abac':1})
-    # print("Event Log L15:", event_log.traces)
-    # process_tree = miner.mine_process_model(event_log)
-    # print("Process tree: ", process_tree)
+    print("=========== L15 ===========")
+    event_log = EventLog({'ab':25, 'ac':25, 'db':25, 'dc':25, 'abac':1})
+    print("Event Log:", event_log.traces)
+    process_tree = miner.mine_process_model(event_log)
+    print("Process tree: ", process_tree)
      
-    # print("=========== L16 ===========")
-    # event_log = EventLog({'abcd':20, 'ad':20})
-    # print("Event Log L16:", event_log.traces)
-    # process_tree = miner.mine_process_model(event_log)
-    # print("Process tree: ", process_tree)
+    print("=========== L16 ===========")
+    event_log = EventLog({'abcd':20, 'ad':20})
+    print("Event Log:", event_log.traces)
+    process_tree = miner.mine_process_model(event_log)
+    print("Process tree: ", process_tree)
 
-    # print("=========== L17 ===========")
-    # event_log = EventLog({'abcde':10, 'adbe':10, 'aeb':10, 'acb':10, 'abdec':10, 'cad':1})
-    # print("Event Log L17:", event_log.traces)
-    # process_tree = miner.mine_process_model(event_log)
-    # print("Process tree: ", process_tree)
+    print("=========== L17 ===========")
+    event_log = EventLog({'abcde':10, 'adbe':10, 'aeb':10, 'acb':10, 'abdec':10, 'cad':1})
+    print("Event Log:", event_log.traces)
+    process_tree = miner.mine_process_model(event_log)
+    print("Process tree: ", process_tree)
 
-    # print("=========== L18 ===========")
-    # event_log = EventLog({'abcgeh':10, 'abcfgh':10, 'abdgeh':10, 'abdeg':10, 'acbegh':10, 'acbfgh':10, 'adbegh':10, 'adbfgh':10})
-    # print("Event Log L18:", event_log.traces)
-    # process_tree = miner.mine_process_model(event_log)
-    # print("Process tree: ", process_tree)
-    
+    print("=========== L18 ===========")
+    event_log = EventLog({'abcgeh':10, 'abcfgh':10, 'abdgeh':10, 'abdeg':10, 'acbegh':10, 'acbfgh':10, 'adbegh':10, 'adbfgh':10})
+    print("Event Log:", event_log.traces)
+    process_tree = miner.mine_process_model(event_log)
+    print("Process tree: ", process_tree)
 
-    # print("=========== L19 ===========")
-    # event_log = EventLog({'abcdfe':1, 'acbdfe':1, 'acbde':1, 'abcde':1})
-    # print("Event Log L19:", event_log.traces)
-    # process_tree = miner.mine_process_model(event_log)
-    # print("Process tree: ", process_tree)
-    
-    
-    
+    print("=========== L19 ===========")
+    event_log = EventLog({'abcdfe':1, 'acbdfe':1, 'acbde':1, 'abcde':1})
+    print("Event Log:", event_log.traces)
+    process_tree = miner.mine_process_model(event_log)
+    print("Process tree: ", process_tree)

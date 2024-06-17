@@ -174,7 +174,7 @@ class Graph:
             node = stack.pop()
             if node not in visited:
                 current_scc = set()
-                reversed_graph.dfs(node, visit_func=lambda n: current_scc.append(n), visited=visited)
+                reversed_graph.dfs(node, visit_func=lambda n: current_scc.add(n), visited=visited)
                 visited.update(current_scc)
                 sccs.append(current_scc)
 

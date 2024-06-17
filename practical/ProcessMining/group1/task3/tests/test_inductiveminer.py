@@ -1,3 +1,4 @@
+from pathlib import Path
 import pytest
 import graphviz as gviz
 from typing import List, Set, Tuple
@@ -14,6 +15,38 @@ from unittest.mock import MagicMock, patch
 
 
 class TestInductiveMiner:
+    def test__str(self):
+        miner = InductiveMiner(event_log=[("a",), ("b",)])
+        process_tree = str(miner)
+        assert process_tree
+        assert isinstance(process_tree, str)
+        assert process_tree.startswith("(") and process_tree.endswith(")")
+
+    @pytest.mark.parametrize(
+        "file",
+        [
+            "running-example.xes",
+            "running-example.csv",
+            "simple_event_logs.txt",
+            "not-a-file.xes",
+        ]
+    )
+    def test_import_event_log(self, file: str) -> None:
+        log_path = str(Path("../../shared/example_files") / file)
+        if Path(log_path).exists():
+            # Test valid file formats
+            if file.endswith(".xes") or file.endswith('.csv'):
+                valid_miner = InductiveMiner(log_path)
+                assert isinstance(valid_miner, InductiveMiner), "Failed to import file"
+
+            # Test unsupported file extension
+            elif file.endswith(".txt"):
+                with pytest.raises(Exception):
+                    InductiveMiner(log_path), "Failed to raise exception for unsupported file extension"
+        else:
+            # Test non-existent file
+            with pytest.raises(Exception):
+                InductiveMiner(log_path), "Failed to raise exception for non-existent file"
 
     @pytest.mark.parametrize(
         "log",

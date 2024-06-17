@@ -1,65 +1,114 @@
-from typing import List, Optional
+from typing import Callable, Dict, List, Optional, Set, Tuple
 from collections import defaultdict
 import copy
 
 class Graph:
-    # TODO: Add type hints and clean up
-    def __init__(self, initial_graph: Optional[dict] = None):
+    def __init__(self, initial_graph: Optional[Dict[str, List[str]]] = None):
+        """
+        Initialize the graph.
+        :param initial_graph: Optional initial adjacency list.
+        """
         if initial_graph is not None:
             self.graph = initial_graph
         else:
-            self.graph = defaultdict(list)  # Adjacency list, format: "node_id" : [children]
+            self.graph = defaultdict(list)
 
-    def add_edge(self, u, v) -> None:
+    def add_edge(self, u: str, v: str) -> None:
+        """
+        Add an edge to the graph.
+        :param u: Starting node of the edge.
+        :param v: Ending node of the edge.
+        """
+        if u not in self.graph:
+            self.graph[u] = []
         self.graph[u].append(v)
 
-    def add_node(self, u) -> None:
+    def add_node(self, u: str) -> None:
+        """
+        Add a node to the graph.
+        :param u: Node to be added.
+        """
         if u not in self.graph:
             self.graph[u] = []
 
-    def get_neighbors(self, u) -> list:
+    def get_neighbors(self, u: str) -> List[str]:
+        """
+        Get the neighbors of a node.
+        :param u: Node whose neighbors are to be fetched.
+        :return: List of neighbors.
+        """
         return self.graph[u]
 
-    def get_all_nodes(self) -> list:
+    def get_all_nodes(self) -> List[str]:
+        """
+        Get all nodes in the graph.
+        :return: List of all nodes.
+        """
         return list(self.graph.keys())
     
-    def get_all_edges(self) -> list:
-        edges = [(node,neighbor) for node in self.graph for neighbor in self.graph[node]]
-        return edges
-
-    def __str__(self) -> str:
-        result = ""
-        for node in self.graph:
-            result += f"{node} -> {self.graph[node]}\n"
-        return result
+    def get_all_edges(self) -> List[Tuple[str, str]]:
+        """
+        Get all edges in the graph.
+        :return: List of all edges.
+        """
+        return [(node, neighbor) for node in self.graph for neighbor in self.graph[node]]
     
     @staticmethod
-    def build_graph_from_edges(edges : set) -> 'Graph':
-        graph = {}
-
+    def build_graph_from_edges(edges: Set[Tuple[str, str]]) -> 'Graph':
+        """
+        Build a graph from a set of edges.
+        :param edges: Set of edges.
+        :return: Graph object.
+        """
+        graph = defaultdict(list)
         for u, v in edges:
-            if u not in graph:
-                graph[u] = []
-            if v not in graph:
-                graph[v] = []
             graph[u].append(v)
             graph[v].append(u)
         return Graph(graph)
+    
+    def dfs(self, start: str, 
+            visit_func: Optional[Callable[[str], None]] = None, 
+            visited: Optional[set] = None) -> List[str]:
+        """
+        Generalized DFS method.
+        :param start: Starting node for DFS.
+        :param visit_func: Function to call on each visited node.
+        :param condition_func: Condition function to determine if a neighbor should be visited.
+        :return: List of visited nodes.
+        """
+        if visited is None:
+            visited = set()
+        stack = [start]
+        result = []
 
-    def is_reachable(self, node1, node2) -> bool:
-        def dfs(current, target, visited):
-            if current == target:
-                return True
-            visited.add(current)
-            for neighbor in self.get_neighbors(current):
-                if neighbor not in visited:
-                    if dfs(neighbor, target, visited):
-                        return True
-            return False
-        
-        return dfs(node1, node2, visited = set())
+        while stack:
+            node = stack.pop()
+            if node not in visited:
+                visited.add(node)
+                if visit_func:
+                    visit_func(node)
+                result.append(node)
+                for neighbor in self.get_neighbors(node):
+                    if neighbor not in visited:
+                        stack.append(neighbor)
+
+        return result
+
+    def is_reachable(self, node1: str, node2: str) -> bool:
+        """
+        Check if node2 is reachable from node1.
+        :param node1: Starting node.
+        :param node2: Target node.
+        :return: True if reachable, False otherwise.
+        """
+        path = self.dfs(node1)
+        return node2 in path
     
     def convert_to_undirected(self) -> 'Graph':
+        """
+        Convert the graph to an undirected graph.
+        :return: Undirected graph.
+        """
         undirected = copy.deepcopy(self.graph)
         for node in self.graph.keys():
             for neighbor in self.graph[node]:
@@ -67,129 +116,127 @@ class Graph:
                     undirected[neighbor].append(node)
         return Graph(undirected)
 
-    def find_components(self) -> List[List]:
-        def dfs(node, component):
-            visited.add(node)
-            component.append(node)
-            for neighbor in self.graph[node]:
-                if neighbor not in visited:
-                    dfs(neighbor, component)
-
+    def find_components(self) -> List[Set[str]]:
+        """
+        Find all connected components in the graph.
+        :return: List of components.
+        """
         visited = set()
         components = []
 
         for node in self.graph.keys():
             if node not in visited:
-                component = []
-                dfs(node, component)
-                components.append(component)
+                current_component = set()
+                self.dfs(node, visit_func=lambda n: current_component.add(n), visited=visited)
+                visited.update(current_component)
+                components.append(current_component)
 
         return components
 
-    def find_strongly_con_components(self) -> List[List]:
-        # Kosaraju's Algorithm
-
-        def fill_stack(node):
-            # Get order for reverse dfs
+    def find_strongly_connected_components(self) -> List[List[str]]:
+        """
+        Find all strongly connected components using Kosaraju's algorithm.
+        :return: List of strongly connected components.
+        """
+        def fill_stack(node: str) -> None:
+            """Function to fill the stack with nodes in order of completion."""
             visited.add(node)
             for child in self.graph[node]:
                 if child not in visited:
                     fill_stack(child)
-            stack.append(node) 
+            stack.append(node)
 
-        def reverse_graph(self) -> dict:
-            # Reverse all edges
+        def reverse_graph(self) -> 'Graph':
+            """Function to reverse the graph."""
             reversed_graph = defaultdict(list)
             for node in self.graph.keys():
-                for child in self.graph[node]:
-                    reversed_graph[child].append(node)
-            return reversed_graph
-
-        def dfs(graph, node, scc):
-            scc.append(node)
-            visited.add(node)
-            for child in graph[node]:
-                if child not in visited:
-                    dfs(graph, child, scc)
+                for neighbor in self.graph[node]:
+                    reversed_graph[neighbor].append(node)
+            return Graph(reversed_graph)
 
         visited = set()
         stack = []
-        sccs = [] # Strongly connected components
+        sccs = []
 
         # 1. Apply DFS on original graph and find order of nodes
         for node in self.graph.keys():
             if node not in visited:
-                fill_stack(node) 
+                fill_stack(node)
+                visited.update(stack)
 
         # 2. Reverse the graph
         reversed_graph = reverse_graph(self)
 
         # 3. Apply DFS on reversed graph in order of nodes from stack
-        visited = set()
+        visited.clear()
+
         while stack:
             node = stack.pop()
             if node not in visited:
-                scc = []
-                dfs(reversed_graph, node, scc)
-                sccs.append(scc)
+                current_scc = set()
+                reversed_graph.dfs(node, visit_func=lambda n: current_scc.append(n), visited=visited)
+                visited.update(current_scc)
+                sccs.append(current_scc)
 
         return sccs
-    
-    def build_cuts_graph(self, cuts) -> 'Graph':
-        cut_graph = {k: set() for k in range(len(cuts))}
-        cut_map = {}
 
-        for i, scc in enumerate(cuts):
-            for node in scc:
-                cut_map[node] = i
+    def build_cuts_graph(self, cuts: List[List[str]]) -> Tuple['Graph', Dict[str, int]]:
+        """
+        Builds a graph representing connections between cuts and maps each node to its corresponding cut index.
+        :param cuts: List of lists, where each inner list represents a cut.
+        :return: Tuple containing the resulting graph (always a path) and a mapping of nodes to their cut indices.
+        """
+        cut_graph = {i: set() for i in range(len(cuts))}
+        cut_map = {node: i for i, scc in enumerate(cuts) for node in scc}
 
-        for node in self.graph:
-            neighbors = self.get_neighbors(node)
-            for neighbor1 in neighbors:
-                for neighbor2 in neighbors:
-                    if (neighbor1 != neighbor2): 
-                        if (cut_map[node] == cut_map[neighbor1]):
-                            if (cut_map[node] != cut_map[neighbor2]):
-                                cut_graph[cut_map[node]].add(cut_map[neighbor2])
-                        elif (cut_map[neighbor1] == cut_map[neighbor2]):
-                            cut_graph[cut_map[node]].add(cut_map[neighbor1])
-                        elif (self.is_reachable(neighbor1, neighbor2)):
-                            cut_graph[cut_map[node]].add(cut_map[neighbor1])
-                        elif (cut_graph[cut_map[node]] == set):
-                            cut_graph[cut_map[node]].add(cut_map[neighbor2])
-            if len(neighbors) == 1:
-                neighbor = neighbors[0]
-                if cut_map[node] != cut_map[neighbor]: 
-                    cut_graph[cut_map[node]].add(cut_map[neighbor])
-
+        for node in self.get_all_nodes():
+            current_cut = cut_map[node]
+            neighbors = set(self.get_neighbors(node))
+            
+            for neighbor in neighbors:
+                neighbor_cut = cut_map[neighbor]
+                # If the neighbor belongs to a different cut, add its cut index to the current cut's set
+                if current_cut == neighbor_cut:
+                    continue
+                if len(neighbors) == 1:
+                    cut_graph[current_cut].add(neighbor_cut)
+                else:
+                    # Check for other neighbors
+                    for second_neighbor in (neighbors - {neighbor}):
+                        second_cut = cut_map[second_neighbor]
+                        if current_cut == second_cut:
+                            cut_graph[current_cut].add(neighbor_cut)
+                        # Ignore neighbors in the same cut
+                        if neighbor_cut == second_cut:
+                            cut_graph[current_cut].add(neighbor_cut)
+                            break
+                        # If a second neighbor belongs to a different cut, check for reachability and the non-reachable neighbor
+                        if self.is_reachable(neighbor, second_neighbor):
+                            cut_graph[current_cut].add(neighbor_cut)
+                            break
 
         return Graph(cut_graph), cut_map
-    
 
-    def dfs_in_dag(self, start, visited):
-        stack = [start]
-        reachable = set()
-        while stack:
-            node = stack.pop()
-            if node not in visited:
-                visited.add(node)
-                reachable.add(node)
-                stack.extend(self.graph.get(node, [])) # TODO: maybe refactor a little bit
-        return reachable
-
-    def all_pairs_reachability_dag(self):
+    def all_pairs_reachability_dag(self) -> Dict[str, Set[str]]:
+        """
+        Compute reachability for all pairs in a DAG.
+        :return: Dictionary with reachability sets.
+        """
         nodes = list(self.graph.keys())
         reach = {node: set() for node in nodes}
         
         for node in nodes:
-            visited = set()
-            reach[node] = self.dfs_in_dag(node, visited)
+            reach[node] = set(self.dfs(node))
         
         return reach
 
-    def find_unreachable_pairs(self): # TODO: refactor
+    def find_unreachable_pairs(self) -> List[Tuple[str, str]]:
+        """
+        Find all pairs of nodes that are not reachable from each other.
+        :return: List of unreachable pairs.
+        """
         reach = self.all_pairs_reachability_dag()
-        nodes = list(self.graph.keys())
+        nodes = self.get_all_nodes()
         non_reachable_pairs = set()
         
         for i in range(len(nodes)):
@@ -200,8 +247,13 @@ class Graph:
                     non_reachable_pairs.add((u, v))
 
         return list(non_reachable_pairs)
-    
-    def traverse_path(self, start_node):
+
+    def traverse_path(self, start_node: str) -> List[str]:
+        """
+        Traverse the path starting from the given node.
+        :param start_node: Starting node.
+        :return: List of nodes in the traversal order.
+        """
         traversal_order = []
         current_node = start_node
         while current_node is not None and current_node not in traversal_order:
@@ -209,9 +261,10 @@ class Graph:
             next_nodes = list(self.graph[current_node])
             current_node = next_nodes[0] if next_nodes else None
         return traversal_order
-
-
-# graph = {'a': ['b', 'c'], 'b': ['c', 'd', 'e'], 'c': ['d', 'b', 'e'], 'd': [], 'e': ['f'], 'f': ['c', 'b']}
-# g = Graph(graph)
-# scc = g.find_components()
-# print(scc)
+    
+    def __str__(self) -> str:
+        """
+        String representation of the graph.
+        :return: String representation.
+        """
+        return "\n".join(f"{node} -> {neighbors}" for node, neighbors in self.graph.items())

@@ -774,6 +774,7 @@ class InductiveMiner:
 
         # Parse the process tree string into a nested structure
         tree = parse_tree(tree_str)
+        # print(f"Parsed tree: {tree}")  # show the parsed tree if needed
 
         # Create a new Graphviz graph
         graph = graphviz.Digraph(format='png')
@@ -782,8 +783,8 @@ class InductiveMiner:
         create_graph(tree, graph)
 
         # Render the graph to a PNG file in memory and display it
-        graph_bytes = graph.pipe(format='png')
-        display(Image(graph_bytes))
+        graph.render('process_tree', format='png', cleanup=True)
+        graph.view('process_tree')
 
     def build_and_visualize_petrinet(self):
         """

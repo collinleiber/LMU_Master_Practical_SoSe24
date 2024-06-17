@@ -1,4 +1,3 @@
-import pm4py
 import pytest
 import graphviz as gviz
 from typing import List, Set, Tuple
@@ -10,6 +9,8 @@ import pm4py
 from pm4py.objects.log.obj import EventLog, Trace, Event
 from pm4py.algo.discovery.inductive import algorithm as inductive_miner
 from pm4py.visualization.process_tree import visualizer as pt_vis
+from IPython.display import Image, display
+from unittest.mock import MagicMock, patch
 
 
 class TestInductiveMiner:
@@ -204,27 +205,49 @@ class TestInductiveMiner:
         miner.run()
         assert miner.process_tree_str == expected_string
 
-    @pytest.mark.parametrize(
-        "log",
-        [
-            ([('a', 'b', 'c', 'd', 'e', 'f', 'b', 'd', 'c', 'e', 'g'), ('a', 'b', 'd', 'c', 'e', 'g'),
-              ('a', 'b', 'c', 'd', 'e', 'f', 'b', 'c', 'd', 'e', 'f', 'b', 'd', 'c', 'e', 'g')]),
-            ([('a', 'c', 'd'), ('b', 'c', 'd'), ('a', 'c', 'e'), ('b', 'c', 'e')])
-        ]
-    )
-    @patch('practical.ProcessMining.group1.task3.inductiveminer.pt_visualizer.view')
-    @patch('practical.ProcessMining.group1.task3.inductiveminer.pt_visualizer.save')
-    def test_visualize_process_tree(self, mock_save, mock_view, log: List[Tuple[str]]):
+    @patch('graphviz.Digraph.render', return_value='process_tree.png')
+    @patch('graphviz.Digraph.view')
+    def test_visualize_process_tree(self, mock_view, mock_render):
+        log = [('a', 'b'), ('b', 'c')]
         miner = InductiveMiner(log)
-        miner.run()
+        miner.process_tree_str = 'x(→(a,c),x(→(d,e,x(h,τ,f)),→(i,j,k)))'  # mock the process tree string
 
-        miner.visualize_process_tree()
+        with patch('IPython.display.Image', wraps=Image) as mock_image:
+            with patch('IPython.display.display', wraps=display) as mock_display:
+                print("Calling visualize_process_tree...")  # 调试信息
+                miner.visualize_process_tree()
+                mock_render.assert_called_once_with('process_tree', format='png', cleanup=True)
+                mock_view.assert_called_once_with('process_tree')
+                print(f"Render call args: {mock_render.call_args}")
+                print(f"View call args: {mock_view.call_args}")
+                print(f"Display call count: {mock_display.call_count}")
+                print(f"Image call count: {mock_image.call_count}")
+                assert mock_display.call_count == 0
+                assert mock_image.call_count == 0
 
-        # Check if the view method was called
-        mock_view.assert_called_once()
+    @patch('pm4py.visualization.petri_net.visualizer.view')
+    @patch('pm4py.visualization.petri_net.visualizer.apply', return_value='gviz')
+    @patch('pm4py.objects.conversion.process_tree.converter.apply',
+           return_value=(MagicMock(), MagicMock(), MagicMock()))
+    @patch('pm4py.objects.conversion.log.converter.apply')
+    def test_build_and_visualize_petrinet(self, mock_log_converter, mock_pt_converter, mock_pn_apply, mock_pn_view):
+        log = [('a', 'b'), ('b', 'c')]
+        miner = InductiveMiner(log)
+        miner.net = None
+        miner.initial_marking = None
+        miner.final_marking = None
 
-        # Optionally check if the save method was called when actually saving the image
-        # mock_save.assert_called_once_with(gviz, "process_tree.png")
+        # Mocking log converter
+        mock_log_converter.return_value = MagicMock()
+
+        # Call the method
+        miner.build_and_visualize_petrinet()
+
+        # Assertions
+        mock_log_converter.assert_called_once()
+        mock_pt_converter.assert_called_once()
+        mock_pn_apply.assert_called_once_with(miner.net, miner.initial_marking, miner.final_marking)
+        mock_pn_view.assert_called_once()
 
     @pytest.mark.parametrize(
         "log,expected_tree",

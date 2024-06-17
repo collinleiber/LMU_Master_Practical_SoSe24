@@ -204,9 +204,9 @@ class Graph:
                     # Check for other neighbors
                     for second_neighbor in (neighbors - {neighbor}):
                         second_cut = cut_map[second_neighbor]
-                        # Ignore neighbors in the same cut
                         if current_cut == second_cut:
-                            continue
+                            cut_graph[current_cut].add(neighbor_cut)
+                        # Ignore neighbors in the same cut
                         if neighbor_cut == second_cut:
                             cut_graph[current_cut].add(neighbor_cut)
                             break

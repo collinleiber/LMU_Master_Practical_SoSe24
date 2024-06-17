@@ -728,22 +728,23 @@ class InductiveMiner:
             stack = []
             node_counter = 0
 
+            # Iterate over each character in the process tree string
             for char in tree_str:
                 if char == '(':
-                    stack.append(char)
+                    stack.append(char)  # Add opening bracket to the stack
                 elif char == ')':
                     children = []
                     while stack and stack[-1] != '(':
-                        children.append(stack.pop())
-                    stack.pop()  # remove '('
-                    operator = stack.pop()
-                    node_id = f'node{node_counter}'
+                        children.append(stack.pop())  # Collect all children until an opening bracket is found
+                    stack.pop()  # Remove the opening bracket
+                    operator = stack.pop()  # Get the operator
+                    node_id = f'node{node_counter}'  # Generate a unique node ID
                     node_counter += 1
-                    stack.append((operator, children[::-1], node_id))
+                    stack.append((operator, children[::-1], node_id))  # Append the parsed subtree
                 elif char not in ' ,':
-                    stack.append(char)
+                    stack.append(char)  # Add activity or operator to the stack
 
-            return stack[0] if stack else None
+            return stack[0] if stack else None  # Return the root of the parsed tree
 
         def create_graph(node, graph):
             """
@@ -755,22 +756,22 @@ class InductiveMiner:
             """
             if isinstance(node, tuple):
                 operator, children, node_id = node
-                graph.node(node_id, operator, shape='circle')
+                graph.node(node_id, operator, shape='circle')  # Create a circular node for the operator
                 for child in children:
                     if isinstance(child, tuple):
                         child_id = child[2]
-                        create_graph(child, graph)
+                        create_graph(child, graph)  # Recursively add child nodes
                     else:
                         # Create a unique ID for each τ
                         if child == '𝜏':
                             child_id = f'node{child}_{id(child)}'
                         else:
                             child_id = f'node{child}'
-                        graph.node(child_id, child, shape='box')
-                    graph.edge(node_id, child_id, arrowhead='none')  # Use 'arrowhead' attribute to remove arrows
+                        graph.node(child_id, child, shape='box')  # Create a rectangular node for the activity
+                    graph.edge(node_id, child_id, arrowhead='none')  # Add an edge from the operator to the child node
             else:
                 node_id = f'node{node}'
-                graph.node(node_id, node, shape='box')
+                graph.node(node_id, node, shape='box')  # Create a rectangular node for the activity
 
         # Get the process tree string from the Inductive Miner instance
         tree_str = self.process_tree_str
@@ -801,7 +802,7 @@ class InductiveMiner:
                     for idx, trace in enumerate(self.event_log)
                     for activity in trace]
             df = pd.DataFrame(data)
-            event_log = log_converter.apply(df)
+            event_log = log_converter.apply(df)  # Convert the DataFrame to an event log
 
             # Discover ProcessTree using inductive miner algorithm
             process_tree = inductive_miner.apply(event_log)
@@ -812,4 +813,3 @@ class InductiveMiner:
         # Visualize the Petri net
         gviz = pn_vis.apply(self.net, self.initial_marking, self.final_marking)
         pn_vis.view(gviz)
-

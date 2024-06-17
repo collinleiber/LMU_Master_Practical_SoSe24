@@ -537,12 +537,12 @@ if __name__ == '__main__':
     print("Process tree: ", process_tree)
 
     event_log = EventLog({'abcd':1, 'ad':1, 'aefd':1})
-    print("=========== Example 1 ===========")
+    print("=========== Example 2 ===========")
     print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)
     print("Process tree: ", process_tree)
 
-    print("=========== Example 2 ===========")
+    print("=========== Example 3 ===========")
     event_log = EventLog({'abcd':1, 'abcd':1, 'aed':1})
     print("Event Log:", event_log.traces)
     process_tree = miner.mine_process_model(event_log)

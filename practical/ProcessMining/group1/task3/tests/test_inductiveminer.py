@@ -1,15 +1,10 @@
 from pathlib import Path
 import pytest
-import graphviz as gviz
 from typing import List, Set, Tuple
-from unittest.mock import patch
 from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe, check_lists_of_sets_equal, \
     extract_traces_from_text
 from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
 import pm4py
-from pm4py.objects.log.obj import EventLog, Trace, Event
-from pm4py.algo.discovery.inductive import algorithm as inductive_miner
-from pm4py.visualization.process_tree import visualizer as pt_vis
 from IPython.display import Image, display
 from unittest.mock import MagicMock, patch
 
@@ -232,31 +227,21 @@ class TestInductiveMiner:
     )
     def test_fall_through_flower_model(self, log: List[Tuple[str]], expected_string: str):
         miner = InductiveMiner(log)
-        # process_tree = inductive_miner.apply(pm4py.format_dataframe(event_log_to_dataframe(log), case_id='case_id',
-        #                                                          activity_key='activity', timestamp_key='timestamp'))
-        # print('process_tree', process_tree)
         miner.run()
         assert miner.process_tree_str == expected_string
 
-    @patch('graphviz.Digraph.render', return_value='process_tree.png')
-    @patch('graphviz.Digraph.view')
-    def test_visualize_process_tree(self, mock_view, mock_render):
+    @patch('graphviz.Digraph.pipe', return_value=b'')
+    def test_visualize_process_tree(self, mock_pipe):
         log = [('a', 'b'), ('b', 'c')]
         miner = InductiveMiner(log)
         miner.process_tree_str = '→(×(a, 𝜏), b, ×(c, 𝜏))'  # mock the process tree string
 
-        with patch('IPython.display.Image', wraps=Image) as mock_image:
-            with patch('IPython.display.display', wraps=display) as mock_display:
-                print("Calling visualize_process_tree...")
-                miner.visualize_process_tree()
-                mock_render.assert_called_once_with('process_tree', format='png', cleanup=True)
-                mock_view.assert_called_once_with('process_tree')
-                print(f"Render call args: {mock_render.call_args}")
-                print(f"View call args: {mock_view.call_args}")
-                print(f"Display call count: {mock_display.call_count}")
-                print(f"Image call count: {mock_image.call_count}")
-                assert mock_display.call_count == 0
-                assert mock_image.call_count == 0
+        # Call the method
+        result = miner.visualize_process_tree()
+
+        # Assertions
+        mock_pipe.assert_called_once_with(format='png')
+        assert isinstance(result, Image)
 
     @patch('pm4py.visualization.petri_net.visualizer.view')
     @patch('pm4py.visualization.petri_net.visualizer.apply', return_value='gviz')
@@ -330,3 +315,21 @@ class TestInductiveMiner:
         miner = InductiveMiner(event_log)
         miner.run()
         assert miner.process_tree_str == expected_tree
+
+
+    @pytest.mark.parametrize(
+        "log,expected_string",
+        [
+            ([('test1', 'test2', 'test3', 'test4'), ('test4', 'test1', 'test2'),
+              ('test1', 'test4', 'test3'), ('test2', 'test3', 'test4',)],
+             f'{CutType.LOOP.value}({InductiveMiner.TAU}, test1, test2, test3, test4)'),
+            ([('test1', 'test2', 'test3', 'test4'), ('test1', 'test3', 'test2', 'test4'), ('test1', 'test5', 'test4')],
+             f'{CutType.SEQUENCE.value}(test1, {CutType.XOR.value}({CutType.PARALLEL.value}(test2, test3), test5), test4)'),
+            ([('test 1', 'test 2', 'test 4'), ('test 1', 'test 2', 'test 3', 'test 2', 'test 4'), ('test 1', 'test 2', 'test 3', 'test 2', 'test 3', 'test 2', 'test 4')],
+             f'{CutType.SEQUENCE.value}(test 1, {CutType.LOOP.value}(test 2, test 3), test 4)')
+        ]
+    )
+    def test_long_activity_identifiers(self, log: List[Tuple[str]], expected_string: str):
+        miner = InductiveMiner(log)
+        miner.run()
+        assert miner.process_tree_str == expected_string

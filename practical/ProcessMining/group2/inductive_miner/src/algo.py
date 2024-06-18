@@ -5,7 +5,6 @@ from practical.ProcessMining.group2.inductive_miner.src.graph_utils import *
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
-
 class EventLog:
     def __init__(self, traces: Dict[str, int]):
         """

@@ -1,14 +1,89 @@
 import pytest
 from typing import List, Tuple, Set, Optional, Dict
-from practical.ProcessMining.group1.shared.utils import check_lists_of_sets_equal
+from practical.ProcessMining.group1.shared.utils import read_txt_test_logs
 from practical.ProcessMining.group1.task3.inductiveminer import CutType
 from practical.ProcessMining.group1.task3.inductiveminer_infrequent import InductiveMinerInfrequent
+
+
+def logs_for_testing(key: str):
+    test_logs = read_txt_test_logs("../../shared/example_files/simple_event_logs.txt")
+    return test_logs[key]
 
 
 class TestInductiveMinerInfrequent:
     @pytest.fixture
     def dummy_miner(self):
-        return InductiveMinerInfrequent([('a', 'c'), ('b')], 0.5)
+        return InductiveMinerInfrequent([('a', 'c'), ('b',)], 0.5)
+
+    @pytest.mark.parametrize(
+        "log_key,threshold,expected_process_tree",
+        [
+            ("L1", 0.0, "→(a, ×(∧(b, c), e), d)"),
+            ("L2", 0.0, "→(a, ↺(∧(b, c), →(e, f)), d)"),
+            ("L3", 0.0, "→(a, ↺(→(b, ∧(c, d), e), f), g)"),
+            ("L4", 0.0, "→(×(a, b), c, ×(d, e))"),
+            ("L5", 0.0, "→(a, ∧(↺(b, →(c, d)), e), f)"),
+            ("L6", 0.0, "→(×(→(a, ∧(c, e)), →(b, ∧(d, f))), g)"),
+            ("L7", 0.0, "→(a, ↺(𝜏, b), c)"),
+            ("L8", 0.0, "→(a, ↺(b, c), d)"),
+            ("L9", 0.0, "→(×(a, b), c, ×(d, e))"),
+            ("L10", 0.0, "↺(a, 𝜏)"),
+            ("L11", 0.0, "→(a, ×(b, 𝜏), c)"),
+            ("L12", 0.0, "→(×(a, b), c, ×(d, e))"),
+            ("L13", 0.0, "→(a, ∧(b, ↺(𝜏, c, d, e)))"),
+            ("L14", 0.0, "↺(𝜏, a, b, c, d)"),
+            ("L15", 0.0, "→(×(d, 𝜏), ×(∧(↺(𝜏, a), ×(b, 𝜏)), 𝜏), ×(c, 𝜏))"),
+            ("L16", 0.0, "→(a, ×(b, 𝜏), ×(c, 𝜏), d)"),
+            ("L17", 0.0, "↺(𝜏, a, b, c, d, e)"),
+            ("L18", 0.0, "→(a, ∧(b, ×(c, d)), ×(f, 𝜏), ∧(×(e, 𝜏), g), ×(h, 𝜏))"),
+            ("L19", 0.0, "→(a, ∧(b, c), d, ×(f, 𝜏), e)"),
+
+            ("L1", 0.5, "→(a, ×(∧(b, c), e), d)"),
+            ("L2", 0.5, "→(a, ↺(∧(b, c), →(e, f)), d)"),
+            ("L3", 0.5, "→(a, ↺(→(b, ∧(c, d), e), f), g)"),
+            ("L4", 0.5, "→(×(a, b), c, ×(d, e))"),
+            ("L5", 0.5, "→(a, ∧(↺(b, →(c, d)), e), f)"),
+            ("L6", 0.5, "→(×(→(a, ∧(c, e)), →(b, ∧(d, f))), g)"),
+            ("L7", 0.5, "→(a, ↺(𝜏, b), c)"),
+            ("L8", 0.5, "→(a, ↺(b, c), d)"),
+            ("L9", 0.5, "→(×(a, b), c, ×(d, e))"),
+            ("L10", 0.5, "↺(a, 𝜏)"),
+            ("L11", 0.5, "→(a, ×(b, 𝜏), c)"),
+            ("L12", 0.5, "→(×(a, b), c, ×(d, e))"),
+            ("L13", 0.5, "→(a, ∧(b, ↺(𝜏, c, d, e)))"),
+            ("L14", 0.5, "↺(𝜏, a, b, c, d)"),
+            ("L15", 0.5, "→(×(d, 𝜏), ×(∧(↺(𝜏, a), ×(b, 𝜏)), 𝜏), ×(c, 𝜏))"),
+            ("L16", 0.5, "→(a, ×(b, 𝜏), ×(c, 𝜏), d)"),
+            ("L17", 0.5, "→(a, ∧(×(b, 𝜏), ↺(𝜏, c, d, e)))"),
+            ("L18", 0.5, "→(a, ∧(b, ×(c, d)), ×(f, 𝜏), ∧(×(e, 𝜏), g), ×(h, 𝜏))"),
+            ("L19", 0.5, "→(a, ∧(b, c), d, ×(f, 𝜏), e)"),
+
+            ("L1", 0.9, "→(a, ×(∧(b, c), e), d)"),
+            ("L2", 0.9, "→(a, ↺(∧(b, c), →(e, f)), d)"),
+            ("L3", 0.9, "→(a, ↺(→(b, ∧(c, d), e), f), g)"),
+            ("L4", 0.9, "→(×(a, b), c, ×(d, e))"),
+            ("L5", 0.9, "→(a, ∧(↺(b, →(c, d)), e), f)"),
+            ("L6", 0.9, "→(×(→(a, ∧(c, e)), →(b, ∧(d, f))), g)"),
+            ("L7", 0.9, "→(a, ↺(𝜏, b), c)"),
+            ("L8", 0.9, "→(a, ↺(b, c), d)"),
+            ("L9", 0.9, "→(×(a, b), c, ×(d, e))"),
+            ("L10", 0.9, "↺(a, 𝜏)"),
+            ("L11", 0.9, "→(a, ×(b, 𝜏), c)"),
+            ("L12", 0.9, "→(×(a, b), c, ×(d, e))"),
+            ("L13", 0.9, "→(a, ∧(b, ↺(𝜏, c, d, e)))"),
+            ("L14", 0.9, "↺(𝜏, a, b, c, d)"),
+            ("L15", 0.9, "→(×(d, 𝜏), ×(∧(↺(𝜏, a), ×(b, 𝜏)), 𝜏), ×(c, 𝜏))"),
+            ("L16", 0.9, "→(a, ×(b, 𝜏), ×(c, 𝜏), d)"),
+            ("L17", 0.9, "→(a, ∧(×(b, 𝜏), ↺(𝜏, c, d, e)))"),
+            ("L18", 0.9, "→(a, ∧(b, ×(c, d)), ×(f, 𝜏), ∧(×(e, 𝜏), g), ×(h, 𝜏))"),
+            ("L19", 0.9, "→(a, ∧(b, c), d, ×(f, 𝜏), e)"),
+        ]
+    )
+    def test_infrequent_run(self, log_key: str, threshold: float, expected_process_tree: str):
+        miner = InductiveMinerInfrequent(event_log=logs_for_testing(log_key), threshold=threshold)
+        miner.run()
+        assert str(miner) == expected_process_tree
+
 
     @pytest.mark.parametrize(
         "log,threshold,expected_cut,expected_operator",

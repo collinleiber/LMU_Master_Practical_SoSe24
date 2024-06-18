@@ -131,6 +131,28 @@ def test_find_sequence_cut():
     p1 = ProcessTree(e1)
     assert p1.find_sequence_cut(dfg1) == None
 
+    e2 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1, 'ad': 1})
+    dfg2 = DirectlyFollowsGraph(e2)
+    dfg2.construct_dfg()
+    p2 = ProcessTree(e2)
+    actual = p2.find_sequence_cut(dfg2)
+    target = [['a'], ['e', 'b', 'c'], ['d']]
+    assert set(frozenset(sub) for sub in actual) == set(
+        frozenset(sub) for sub in target
+    )
+
+    e3 = EventLog({'abc': 1, 'def': 1})
+    dfg3 = DirectlyFollowsGraph(e3)
+    dfg3.construct_dfg()
+    p3 = ProcessTree(e3)
+    assert p3.find_sequence_cut(dfg3) == None
+
+    e4 = EventLog({'a': 1, 'b': 1})
+    dfg4 = DirectlyFollowsGraph(e4)
+    dfg4.construct_dfg()
+    p4 = ProcessTree(e4)
+    assert p4.find_sequence_cut(dfg4) == None
+
 
 def test_sequence_split():
     e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
@@ -200,7 +222,30 @@ def test_find_loop_cut():
     dfg2.construct_dfg()
     p2 = ProcessTree(e2)
     assert p2.find_loop_cut(dfg2) == None
-    # TODO: here is None not empty list
+
+    e3 = EventLog(
+        {'cbefbcefcb': 1, 'cbefbc': 1, 'bc': 1, 'bcefcb': 1, 'cbg': 1, 'bcefbc': 1}
+    )
+    dfg3 = DirectlyFollowsGraph(e3)
+    dfg3.construct_dfg()
+    p3 = ProcessTree(e3)
+    actual = p3.find_loop_cut(dfg3)
+    target = [['b', 'c', 'g'], ['e', 'f']]
+    assert set(frozenset(sub) for sub in actual) == set(
+        frozenset(sub) for sub in target
+    )
+
+    e4 = EventLog(
+        {'cbefbcefxcb': 1, 'cbefbc': 1, 'bc': 1, 'bcefcb': 1, 'cb': 1, 'bcefbc': 1}
+    )
+    dfg4 = DirectlyFollowsGraph(e4)
+    dfg4.construct_dfg()
+    p4 = ProcessTree(e4)
+    actual = p4.find_loop_cut(dfg4)
+    target = [['b', 'c'], ['e', 'f', 'x']]
+    assert set(frozenset(sub) for sub in actual) == set(
+        frozenset(sub) for sub in target
+    )
 
 
 def test_loop_split():
@@ -239,6 +284,13 @@ def test_construct_process_tree():
     )
     assert to_frozenset(actual) == to_frozenset(target)
 
+    e1 = EventLog({})
+    dfg1 = DirectlyFollowsGraph(e1)
+    dfg1.construct_dfg()
+
+    p1 = ProcessTree(e1)
+    assert p1.construct_process_tree() == 'tau'
+
 
 def test_mine_process_model():
     e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
@@ -271,3 +323,21 @@ def test_find_base_case():
     dfg3.construct_dfg()
     p3 = ProcessTree(e3)
     assert p3.find_base_case() == 'tau'
+
+
+def test_dfg__str__():
+    e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
+    dfg0 = DirectlyFollowsGraph(e0)
+    dfg0.construct_dfg()
+    assert (
+        str(dfg0)
+        == "Directly Follows Graph: (\n\tGraph: {'a': ['b', 'c', 'e'], 'b': ['c', 'd'], 'c': ['d', 'b'], 'd': [], 'e': ['d']}\n\tStart nodes: {'a'}\n\tEnd nodes: {'d'}\n)"
+    )
+
+
+def test_pt__str__():
+    e0 = EventLog({'abcd': 3, 'acbd': 2, 'aed': 1})
+    dfg0 = DirectlyFollowsGraph(e0)
+    dfg0.construct_dfg()
+    p0 = ProcessTree(e0)
+    assert str(p0) == "➜(a, x(∧(b, c), e), d)" or "➜(a, x(e, ∧(b, c)), d)"

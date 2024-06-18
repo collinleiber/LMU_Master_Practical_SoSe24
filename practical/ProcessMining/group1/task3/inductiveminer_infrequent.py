@@ -340,7 +340,9 @@ class InductiveMinerInfrequent(InductiveMiner):
                     merged_first.append(activity)
                     last_group = None
 
-            return merged_first == second
+            # return if merged first set is equal to the second set or if all first sets are subsets of the second sets
+            return (merged_first == second or
+                    len(merged_first) == len(second) and all(f.issubset(s) for f, s in zip(merged_first, second)))
 
         def powerset(iterable):
             """ Helper function to get the powerset of a given list of removals"""
@@ -426,7 +428,8 @@ class InductiveMinerInfrequent(InductiveMiner):
             max_costs, best_removal, visited = None, [], set()
 
             # If the sequence condition is already met, continue with the next trace
-            if sequence_condition_met(actual_order(sub_traces), groups):
+            trace_order = actual_order(sub_traces)
+            if sequence_condition_met(trace_order, groups):
                 continue
 
             # Iterate over the trace and find and minimize costs for removals that fulfill the sequence condition

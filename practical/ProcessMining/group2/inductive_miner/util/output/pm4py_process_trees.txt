@@ -1,0 +1,109 @@
+=========== Example 1 ===========
+Log:		{'abcd': 1, 'ad': 1}
+pm4py:		->( 'a', X( tau, ->( 'b', 'c' ) ), 'd' )
+Our output:	➜(a, x(tau, ➜(b, c)), d)
+
+=========== Example 2 ===========
+Log:		{'abcd': 1, 'ad': 1, 'aefd': 1}
+pm4py:		->( 'a', X( tau, ->( 'b', 'c' ), ->( 'e', 'f' ) ), 'd' )
+Our output:	➜(a, x(tau, ➜(e, f), ➜(b, c)), d)
+
+=========== Example 3 ===========
+Log:		{'abcd': 1, 'aed': 1}
+pm4py:		->( 'a', X( ->( 'b', 'c' ), 'e' ), 'd' )
+Our output:	➜(a, x(e, ➜(b, c)), d)
+
+=========== L1 ===========
+Log:		{'abcd': 3, 'acbd': 2, 'aed': 1}
+pm4py:		->( 'a', X( +( 'c', 'b' ), 'e' ), 'd' )
+Our output:	➜(a, x(e, ∧(b, c)), d)
+
+=========== L2 ===========
+Log:		{'abcd': 3, 'acbd': 4, 'abcefbcd': 2, 'abcefcbd': 1, 'acbefbcd': 2, 'acbefbcefcbd': 1}
+pm4py:		->( 'a', *( +( 'c', 'b' ), ->( 'e', 'f' ) ), 'd' )
+Our output:	➜(a, ↺(∧(b, c), ➜(e, f)), d)
+
+=========== L3 ===========
+Log:		{'abcdefbdceg': 1, 'abdceg': 2, 'abcdefbcdefbdceg': 1}
+pm4py:		->( 'a', *( ->( 'b', +( 'c', 'd' ), 'e' ), 'f' ), 'g' )
+Our output:	➜(a, ↺(➜(b, ∧(d, c), e), f), g)
+
+=========== L4 ===========
+Log:		{'acd': 45, 'bcd': 42, 'ace': 38, 'bce': 22}
+pm4py:		->( X( 'a', 'b' ), 'c', X( 'd', 'e' ) )
+Our output:	➜(x(a, b), c, x(e, d))
+
+=========== L5 ===========
+Log:		{'abef': 2, 'abecdbf': 3, 'abcedbf': 2, 'abcdebf': 4, 'aebcdbf': 3}
+pm4py:		->( 'a', +( 'e', *( 'b', ->( 'c', 'd' ) ) ), 'f' )
+Our output:	➜(a, ∧(↺(b, ➜(c, d)), e), f)
+
+=========== L6 ===========
+Log:		{'aceg': 2, 'aecg': 3, 'bdfg': 2, 'bfdg': 4}
+pm4py:		->( X( ->( 'a', +( 'c', 'e' ) ), ->( 'b', +( 'd', 'f' ) ) ), 'g' )
+Our output:	➜(x(➜(b, ∧(f, d)), ➜(a, ∧(c, e))), tau, g)
+
+=========== L7 ===========
+Log:		{'ac': 2, 'abc': 3, 'abbc': 2, 'abbbbc': 1}
+pm4py:		->( 'a', X( tau, *( 'b', tau ) ), 'c' )
+Our output:	➜(a, x(tau, ↺(tau, b)), c)
+
+=========== L8 ===========
+Log:		{'abd': 3, 'abcbd': 2, 'abcbcbd': 1}
+pm4py:		->( 'a', *( 'b', 'c' ), 'd' )
+Our output:	➜(a, ↺(b, c), d)
+
+=========== L9 ===========
+Log:		{'acd': 45, 'bce': 42}
+pm4py:		->( X( 'a', 'b' ), 'c', X( 'd', 'e' ) )
+Our output:	➜(x(a, b), c, x(e, d))
+
+=========== L10 ===========
+Log:		{'aa': 55}
+pm4py:		*( 'a', tau )
+Our output:	↺(tau, a)
+
+=========== L11 ===========
+Log:		{'abc': 20, 'ac': 30}
+pm4py:		->( 'a', X( tau, 'b' ), 'c' )
+Our output:	➜(a, x(b, tau), c)
+
+=========== L12 ===========
+Log:		{'acd': 45, 'bce': 42, 'ace': 20}
+pm4py:		->( X( 'a', 'b' ), 'c', X( 'd', 'e' ) )
+Our output:	➜(x(a, b), c, x(e, d))
+
+=========== L13 ===========
+Log:		{'abcde': 10, 'adbe': 10, 'aeb': 1, 'acb': 1, 'abdec': 2}
+pm4py:		->( 'a', +( X( tau, 'c' ), 'b', X( tau, ->( X( tau, 'd' ), 'e' ) ) ) )
+Our output:	➜(a, ∧(↺(tau, d, e, c), b))
+
+=========== L14 ===========
+Log:		{'abcd': 10, 'dab': 10, 'adc': 10, 'bcd': 5}
+pm4py:		+( 'd', ->( X( tau, 'a' ), X( tau, 'b' ), X( tau, 'c' ) ) )
+Our output:	↺(tau, a, b, c, d)
+
+=========== L15 ===========
+Log:		{'ab': 25, 'ac': 25, 'db': 25, 'dc': 25, 'abac': 1}
+pm4py:		->( X( tau, 'd' ), X( tau, +( X( tau, *( 'a', tau ) ), X( tau, 'b' ) ) ), X( tau, 'c' ) )
+Our output:	➜(x(↺(tau, a, b), tau), x(tau, c))
+
+=========== L16 ===========
+Log:		{'abcd': 20, 'ad': 20}
+pm4py:		->( 'a', X( tau, ->( 'b', 'c' ) ), 'd' )
+Our output:	➜(a, x(tau, ➜(b, c)), d)
+
+=========== L17 ===========
+Log:		{'abcde': 10, 'adbe': 10, 'aeb': 10, 'acb': 10, 'abdec': 10, 'cad': 1}
+pm4py:		+( 'a', X( tau, 'c' ), X( tau, 'b' ), X( tau, ->( X( tau, 'd' ), X( tau, 'e' ) ) ) )
+Our output:	↺(tau, a, b, c, d, e)
+
+=========== L18 ===========
+Log:		{'abcgeh': 10, 'abcfgh': 10, 'abdgeh': 10, 'abdeg': 10, 'acbegh': 10, 'acbfgh': 10, 'adbegh': 10, 'adbfgh': 10}
+pm4py:		->( 'a', +( 'b', X( 'c', 'd' ) ), X( tau, 'f' ), +( 'g', X( tau, 'e' ) ), X( tau, 'h' ) )
+Our output:	➜(a, ∧(b, x(c, d)), x(tau, ∧(e, g)), x(tau, h))
+
+=========== L19 ===========
+Log:		{'abcdfe': 1, 'acbdfe': 1, 'acbde': 1, 'abcde': 1}
+pm4py:		->( 'a', +( 'c', 'b' ), 'd', X( tau, 'f' ), 'e' )
+Our output:	➜(a, ∧(b, c), d, x(f, tau), e)

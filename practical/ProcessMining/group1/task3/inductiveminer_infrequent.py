@@ -425,7 +425,11 @@ class InductiveMinerInfrequent(InductiveMiner):
 
             max_costs, best_removal, visited = None, [], set()
 
-            # Iterate over the trace and remove activities until the sequence condition is met
+            # If the sequence condition is already met, continue with the next trace
+            if sequence_condition_met(actual_order(sub_traces), groups):
+                continue
+
+            # Iterate over the trace and find and minimize costs for removals that fulfill the sequence condition
             while not max_costs or (current_max_size < max_costs and current_max_size <= total_max_size):
                 # If the current max size is smaller than the total max size times the threshold, break
                 # Used to throttle due to the powerset calculation in case of large traces

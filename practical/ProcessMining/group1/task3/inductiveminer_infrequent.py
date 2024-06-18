@@ -1,7 +1,7 @@
 import copy
 from collections import defaultdict
 from itertools import combinations, chain
-from typing import Optional, List, Tuple, Dict, Set
+from typing import Optional, List, Tuple, Dict, Set, Union
 
 from practical.ProcessMining.group1.task3.inductiveminer import InductiveMiner, CutType
 from practical.ProcessMining.group1.shared.utils import deduplicate_list
@@ -15,7 +15,7 @@ class InductiveMinerInfrequent(InductiveMiner):
     Attributes (which are not inherited):
         threshold: coefficient used to define infrequency. (1 - threshold) * 100 => outliers
     """
-    def __init__(self, event_log: Optional[List[Tuple[str]]] = None, threshold: float = 0.0):
+    def __init__(self, event_log: Optional[Union[List[Tuple[str]], str]] = None, threshold: float = 0.0):
         super().__init__(event_log=event_log)
         self.threshold = threshold
 

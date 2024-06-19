@@ -1,7 +1,8 @@
 from practical.ProcessMining.group2.conformance_checking import Conformance_checking
 
+
 from sortedcontainers import SortedDict, SortedSet
-import os
+
 
 
 def test_cf():
@@ -20,3 +21,12 @@ def test_cf():
     cf_object.get_footprint_regular_alpha_miner()
     
     assert cf_object.relations == SortedDict({'a': SortedDict({'a': '#', 'b': '->', 'c': '#', 'd': '||'}), 'b': SortedDict({'a': '<-', 'b': '#', 'c': '->', 'd': '#'}), 'c': SortedDict({'a': '#', 'b': '<-', 'c': '#', 'd': '->'}), 'd': SortedDict({'a': '||', 'b': '#', 'c': '<-', 'd': '#'})})
+
+
+
+        
+    
+
+
+    
+    cf_object.visualize_sorted_dict(cf_object.relations)

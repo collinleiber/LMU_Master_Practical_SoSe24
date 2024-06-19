@@ -10,7 +10,7 @@ class Relations(Enum):
     PARALLEL = '||'  
 
 
-print(Relations.BEFORE.value)
+
 class Conformance_checking:
     def __init__(self, traces):
         self.traces = traces  # Traces from an event log
@@ -72,6 +72,10 @@ class Conformance_checking:
                 if all_relations == None:
                     all_relations = Relations.NOT_FOLLOWED.value
                 self.relations[transition_1][transition_2] = all_relations
+
+
+#TODO add different conformance checking variations
+#TODO implement comparison
 
 
 

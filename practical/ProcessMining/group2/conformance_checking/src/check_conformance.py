@@ -1,5 +1,7 @@
 from sortedcontainers import SortedDict, SortedSet
-from practical.ProcessMining.group2.conformance_checking import FootPrintMatrix
+from practical.ProcessMining.group2.conformance_checking.src.generate_footprint import (
+    FootPrintMatrix,
+)
 
 
 class ConformanceChecking:

@@ -1,6 +1,12 @@
-from practical.ProcessMining.group2.conformance_checking import FootPrintMatrix
-from practical.ProcessMining.group2.conformance_checking import ConformanceChecking
-from practical.ProcessMining.group2.conformance_checking import visualize_sorted_dict
+from practical.ProcessMining.group2.conformance_checking.src.generate_footprint import (
+    FootPrintMatrix,
+)
+from practical.ProcessMining.group2.conformance_checking.src.check_conformance import (
+    ConformanceChecking,
+)
+from practical.ProcessMining.group2.conformance_checking.src.visualize_matrix import (
+    visualize_sorted_dict,
+)
 
 
 from sortedcontainers import SortedDict, SortedSet

@@ -1,4 +1,4 @@
-from practical.ProcessMining.group2.inductive_miner.src.graph_utils import *
+from practical.ProcessMining.group2.inductive_miner.src.graph import *
 
 
 def test_initialize_graph():

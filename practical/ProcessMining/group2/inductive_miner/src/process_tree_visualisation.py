@@ -31,22 +31,22 @@ class Visualisation:
           
             match node_label: 
                 case Relations.LOOP.value:
-                    image_path = os.path.join(os.path.dirname(__file__), 'images/loop_arrow.png')
+                    image_path = os.path.join(os.path.dirname(__file__), '../data/images/loop_arrow.png')
                     dot.node(current_id, image=image_path, shape="ellipse", fixedsize="true", label="", width="0.6", height="0.7", penwidth = "2")  
                 case Relations.PARALLEL.value: 
-                    image_path = os.path.join(os.path.dirname(__file__), 'images/and.png')  
+                    image_path = os.path.join(os.path.dirname(__file__), '../data/images/and.png')  
                     dot.node(current_id, image=image_path, shape="ellipse", label="", fixedsize="true", width="0.6", height="0.7", penwidth = "2")
                 case Relations.SEQUENCE.value:
-                    image_path = os.path.join(os.path.dirname(__file__), 'images/seq_arrow.png') 
+                    image_path = os.path.join(os.path.dirname(__file__), '../data/images/seq_arrow.png') 
                     dot.node(current_id, image=image_path, shape="ellipse", label="", fixedsize="true", width="0.6", height="0.7", penwidth = "2")
                 case Relations.CHOICE.value:
-                    image_path = os.path.join(os.path.dirname(__file__), 'images/x.png') 
+                    image_path = os.path.join(os.path.dirname(__file__), '../data/images/x.png') 
                     dot.node(current_id, image=image_path, shape="ellipse", label="", fixedsize="true", width="0.6", height="0.7", penwidth = "2")
                 case Relations.TAU.value:
-                    image_path = os.path.join(os.path.dirname(__file__), 'images/tau.png')
+                    image_path = os.path.join(os.path.dirname(__file__), '../data/images/tau.png')
                     dot.node(current_id, image=image_path, shape="square", label="", fixedsize="true", width="0.6", height="0.7", penwidth = "2",imagescale = "true")
                 case None:
-                    image_path = os.path.join(os.path.dirname(__file__), 'images/bomb.png')
+                    image_path = os.path.join(os.path.dirname(__file__), '../data/images/bomb.png')
                     dot.node(current_id, image=image_path, imagescale = "true", shape="square", label="", fixedsize="true", width="0.6", height="0.7", penwidth = "2",fontname="Arial", fontcolor="black")
                 case _:   
                     dot.node(current_id, node_label,  shape="square", fixedsize="true", width="0.6", height="0.7",  fontsize="30", fontname="Arial", fontcolor="black" ) #shape="circle"

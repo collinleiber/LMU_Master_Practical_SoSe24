@@ -250,7 +250,7 @@ class Graph:
 
     def traverse_path(self, start_node: str) -> List[str]:
         """
-        Traverse the path starting from the given node.
+        Traverse a path-graph starting from the given node.
         :param start_node: Starting node.
         :return: List of nodes in the traversal order.
         """

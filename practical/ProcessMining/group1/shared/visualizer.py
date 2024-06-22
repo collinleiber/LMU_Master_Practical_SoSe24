@@ -5,6 +5,9 @@ from IPython.core.display_functions import display
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from graphviz import Digraph
 import tempfile
+import matplotlib.pyplot as plt
+import matplotlib
+
 
 
 class Visualizer:
@@ -83,7 +86,7 @@ class Visualizer:
 
     @staticmethod
     def _get_place_attributes(place, initial_marking: Marking, final_marking: Marking,
-                              tokens: Optional[Dict[str, Dict]] = None) -> tuple:
+                              tokens: Optional[Dict[str, Dict]] = None, max_tokens: int = 10) -> tuple:
         fillcolor = "transparent"
         label = ""
         penwidth = "1"
@@ -101,23 +104,45 @@ class Visualizer:
 
         if tokens:
             missing_tokens = tokens["missing"]
+            max_missing_tokens = max([v for k, v in missing_tokens.items()])
             remaining_tokens = tokens["remaining"]
+            max_remaining_tokens = max([v for k, v in remaining_tokens.items()])
+
+            def get_color(missing_tokens: int, remaining_tokens: int, max_tokens_miss: int,
+                          max_tokens_remain: int) -> str:
+                res = remaining_tokens - missing_tokens
+                fillcolor = "Thistle"
+                if res > 0:
+                    ratio = res / max_tokens_remain
+                    cmap = plt.cm.get_cmap("Blues")
+                    fillcolor = cmap(ratio * 0.6)
+                    fillcolor = matplotlib.colors.to_hex(fillcolor)
+                elif res < 0:
+                    ratio = res / max_tokens_miss
+                    cmap = plt.cm.get_cmap("Reds")
+                    fillcolor = cmap(abs(ratio) * 0.6)
+                    fillcolor = matplotlib.colors.to_hex(fillcolor)
+                return fillcolor
+
             if place in remaining_tokens and place in missing_tokens:
-                fillcolor = "plum"
+                fillcolor = get_color(missing_tokens[place], remaining_tokens[place],
+                                      max_missing_tokens, max_remaining_tokens)
                 label = f'<<B>+{remaining_tokens[place]}<BR></BR>-{missing_tokens[place]}</B>>'
                 if place in initial_marking:
                     label = f'<<FONT POINT-SIZE="28">&#9679;</FONT><BR></BR><B>+{remaining_tokens[place]} -{missing_tokens[place]}</B>>'
                 penwidth = "2"
                 fontsize = "12"
             elif place in remaining_tokens:
-                fillcolor = "lightskyblue"
+                fillcolor = get_color(0, remaining_tokens[place],
+                                      max_missing_tokens, max_remaining_tokens)
                 label = f'<<B>+{remaining_tokens[place]}</B>>'
                 if place in initial_marking:
                     label = f'<<FONT POINT-SIZE="28">&#9679;</FONT><BR></BR><B>+{remaining_tokens[place]}</B>>'
                 penwidth = "2"
                 fontsize = "12"
             elif place in missing_tokens:
-                fillcolor = "lightcoral"
+                fillcolor = get_color(missing_tokens[place], 0,
+                                      max_missing_tokens, max_remaining_tokens)
                 label = f'<<B>-{missing_tokens[place]}</B>>'
                 if place in initial_marking:
                     label = f'<<FONT POINT-SIZE="28">&#9679;</FONT><BR></BR><B>-{missing_tokens[place]}</B>>'
@@ -125,6 +150,9 @@ class Visualizer:
                 fontsize = "12"
 
         return fillcolor, label, penwidth, fontsize, shape
+
+    @staticmethod
+
 
     @staticmethod
     def display(graph: Digraph) -> None:

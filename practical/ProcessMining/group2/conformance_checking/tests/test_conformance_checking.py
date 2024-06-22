@@ -71,7 +71,41 @@ def test_cf():
     # visualize_sorted_dict(fp_matrix.relations, "")
 
 
-def test_get_conformance():
+def test_get_conformance_matrix():
+    fpm_1 = FootPrintMatrix.from_relations(
+        {
+            'a': SortedDict({'a': '#', 'b': '->', 'c': '#', 'd': '||'}),
+            'b': SortedDict({'a': '<-', 'b': '#', 'c': '->', 'd': '#'}),
+            'c': SortedDict({'a': '#', 'b': '<-', 'c': '#', 'd': '->'}),
+            'd': SortedDict({'a': '||', 'b': '#', 'c': '<-', 'd': '#'}),
+        }
+    )
+
+    fpm_2 = FootPrintMatrix.from_relations(
+        {
+            'a': SortedDict({'a': '->', 'b': '->', 'c': '#', 'd': '||'}),
+            'b': SortedDict({'a': '<-', 'b': '#', 'c': '->', 'd': '#'}),
+            'c': SortedDict({'a': '#', 'b': '<-', 'c': '#', 'd': '->'}),
+            'd': SortedDict({'a': '||', 'b': '->', 'c': '<-', 'd': '||'}),
+        }
+    )
+    target = FootPrintMatrix.from_relations(
+        {
+            'a': SortedDict({'a': '#:->', 'b': '', 'c': '', 'd': ''}),
+            'b': SortedDict({'a': '', 'b': '', 'c': '', 'd': ''}),
+            'c': SortedDict({'a': '', 'b': '', 'c': '', 'd': ''}),
+            'd': SortedDict({'a': '', 'b': '#:->', 'c': '', 'd': '#:||'}),
+        }
+    )
+
+    cc = ConformanceChecking(fpm_1, fpm_2)
+    assert cc.get_conformance_matrix().relations == target.relations
+    visualize_sorted_dict(fpm_1.relations, "dict_1")
+    # visualize_sorted_dict(fpm_2.relations, "dict_2")
+    # visualize_sorted_dict(conformance_matrix.relations, "conf_check_1_2")
+
+
+def test_get_conformance_value():
     fpm_1 = FootPrintMatrix.from_relations(
         {
             'a': SortedDict({'a': '#', 'b': '->', 'c': '#', 'd': '||'}),
@@ -91,8 +125,4 @@ def test_get_conformance():
     )
 
     cc = ConformanceChecking(fpm_1, fpm_2)
-
-    cc.get_conformance()
-    visualize_sorted_dict(fpm_1.relations, "dict_1")
-    visualize_sorted_dict(fpm_2.relations, "dict_2")
-    visualize_sorted_dict(cc.conformance_matrix.relations, "conf_check_1_2")
+    assert cc.get_conformance_value() == 0.8125

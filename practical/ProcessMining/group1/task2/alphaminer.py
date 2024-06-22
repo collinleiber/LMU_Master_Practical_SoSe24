@@ -520,3 +520,9 @@ class AlphaMiner:
         visualizer = Visualizer()
         graph = visualizer.get_petri_net(self.net, self.initial_marking, self.final_marking)
         return graph
+
+    def get_petrinet(self) -> Tuple[PetriNet, Marking, Marking]:
+        """
+        Returns the Petri net and initial/final markings.
+        """
+        return self.net, self. initial_marking, self.final_marking

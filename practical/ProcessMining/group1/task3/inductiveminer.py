@@ -754,7 +754,7 @@ class InductiveMiner:
 
         # Create a new Graphviz graph
         visualizer = Visualizer()
-        graph = visualizer.get_process_tree(tree)
+        graph = visualizer.build_process_tree(tree)
 
         return graph
 
@@ -780,7 +780,7 @@ class InductiveMiner:
 
         # Visualize the Petri net
         visualizer = Visualizer()
-        graph = visualizer.get_petri_net(self.net, self.initial_marking, self.final_marking)
+        graph = visualizer.build_petri_net(self.net, self.initial_marking, self.final_marking)
         return graph
 
     def get_petrinet(self) -> Tuple[nx.DiGraph, Dict[str, int], Dict[str, int]]:

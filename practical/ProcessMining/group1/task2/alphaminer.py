@@ -518,7 +518,7 @@ class AlphaMiner:
 
         # Graphviz visualization
         visualizer = Visualizer()
-        graph = visualizer.get_petri_net(self.net, self.initial_marking, self.final_marking)
+        graph = visualizer.build_petri_net(self.net, self.initial_marking, self.final_marking)
         return graph
 
     def get_petrinet(self) -> Tuple[PetriNet, Marking, Marking]:

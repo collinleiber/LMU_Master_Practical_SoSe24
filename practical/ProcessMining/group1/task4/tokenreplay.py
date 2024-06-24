@@ -1,3 +1,6 @@
+import pm4py
+
+
 class TokenReplay:
     """
     Token Replay algorithm implementation to check conformance of an event log with a Petri net model.
@@ -146,9 +149,14 @@ class TokenReplay:
 
         fitness = 0.5 * (1 - (kpi['m'] / (kpi['c']) + 0.5 * (kpi['r'] / kpi['p'])))
         return fitness
+    def get_fitness_pm4py(self, log, net, init_marking, final_marking):
+        return pm4py.conformance.fitness_token_based_replay(log, net, init_marking, final_marking)
 
     def get_simplicity_pm4py(self, net, init_marking, final_marking):
         return pm4py.analysis.simplicity_petri_net(net, init_marking, final_marking)
 
-    def get_precision_pm4py(self, net, init_marking, final_marking):
-        pm4py.conformance.precision_token_based_replay()
+    def get_precision_pm4py(self, log, net, init_marking, final_marking):
+        return pm4py.conformance.precision_token_based_replay(log, net, init_marking, final_marking)
+
+    def get_generalization_pm4py(self, log, net, initial_marking, final_marking):
+        pm4py.conformance.generalization_tbr(log, net, initial_marking, final_marking)

@@ -3,10 +3,11 @@ from typing import List, Tuple, Set, Optional, Dict
 from practical.ProcessMining.group1.shared.utils import read_txt_test_logs
 from practical.ProcessMining.group1.task3.inductiveminer import CutType
 from practical.ProcessMining.group1.task3.inductiveminer_infrequent import InductiveMinerInfrequent
+from practical.ProcessMining.group1.task3.tests.test_inductiveminer import BASE_PATH
 
 
 def logs_for_testing(key: str):
-    test_logs = read_txt_test_logs("../../shared/example_files/simple_event_logs.txt")
+    test_logs = read_txt_test_logs(BASE_PATH / "simple_event_logs.txt")
     return test_logs[key]
 
 

@@ -1,17 +1,23 @@
 import copy
+import os
+
 import numpy as np
 import pytest
 import pm4py
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, List
-from unittest.mock import patch,MagicMock
+from unittest.mock import patch
 
 from practical.ProcessMining.group1.shared import utils
 from practical.ProcessMining.group1.task2.alphaminer import AlphaMiner
 
-FILE_PATH_CSV = '../../shared/example_files/common-example.csv'  # event log from the paper
-TEST_LOGS = utils.read_txt_test_logs('../../shared/example_files/simple_event_logs.txt')
+dir_path = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = Path(os.path.join(dir_path, '../../shared/example_files'))
+
+FILE_PATH_CSV = str(DATA_DIR / 'common-example.csv')  # event log from the paper
+FILE_PATH_TXT = str(DATA_DIR / 'simple_event_logs.txt')
+TEST_LOGS = utils.read_txt_test_logs(FILE_PATH_TXT)
 
 
 def get_test_case(case: str):
@@ -116,7 +122,7 @@ def test_footprint_matrix(alpha_miner: AlphaMiner) -> None:
     ]
 )
 def test_import_event_log(file: str) -> None:
-    log_path = str(Path("../../shared/example_files") / file)
+    log_path = str(DATA_DIR / file)
     if Path(log_path).exists():
         # Test valid file formats
         if file.endswith(".xes") or file.endswith('.csv'):

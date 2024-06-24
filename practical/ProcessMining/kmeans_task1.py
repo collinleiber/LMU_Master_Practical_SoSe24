@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def scratch_k_means(data, n_clusters=2, max_iterations=100):
+def k_means_scratch(data, n_clusters=2, max_iterations=100):
     # Step 1: Randomly initialize the centroids
     centroids = data[:n_clusters]
     clusters = []
@@ -20,10 +20,14 @@ def scratch_k_means(data, n_clusters=2, max_iterations=100):
         for i, cluster in enumerate(clusters):
             centroids[i] = sum(cluster) / len(cluster)
 
+    # Generate labels for the data points
+    labels = [i for i, cluster in enumerate(clusters) for _ in cluster]
+
+    visualize_clusters(data=data, labels=labels, centroids=centroids)
     return centroids, clusters
 
 
-def calculate_k_means(data: np.ndarray, n_clusters: int, init_centroids: np.ndarray = None) -> KMeans:
+def k_means_lib(data: np.ndarray, n_clusters: int, init_centroids: np.ndarray = None) -> KMeans:
     # When centroids are not provided, the KMeans algorithm will initialize them randomly
     # -> result not deterministic / testable.
     if init_centroids is None:

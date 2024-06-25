@@ -126,6 +126,33 @@ class TokenReplay:
         }
 
     def get_fitness(self) -> float:
+    def get_discovery_type(self):
+        return self.net_type
+
+    def get_fitness(self):
+        return self.fitness
+
+    def get_simplicity(self):
+        return self.simplicity
+
+    def get_precision(self):
+        return self.precision
+
+    def get_generalization(self):
+        return self.generalization
+
+    def get_dimension_value(self, dimension: str):
+        if dimension in ('f', 'fitness'):
+            return self.get_fitness()
+        elif dimension in ('s', 'simplicity'):
+            return self.get_simplicity()
+        elif dimension in ('p', 'precision'):
+            return self.get_precision()
+        elif dimension in ('g', 'generalization'):
+            return self.get_generalization()
+        else:
+            return ValueError
+
         fitness = (0.5 * (1 - (self.missing_tokens / self.consumed_tokens)) +
                    0.5 * (1 - (self.remaining_tokens / self.produced_tokens)))
         return fitness

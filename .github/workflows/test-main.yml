@@ -19,7 +19,7 @@ jobs:
       # You can use PyPy versions in python-version.
       # For example, pypy-2.7 and pypy-3.8
       matrix:
-        python-version: ["3.7", "3.10"]
+        python-version: ["3.10"]
 
     steps:
       - uses: actions/checkout@v3
@@ -37,7 +37,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest-cov
           pip install numpy scikit-learn torch
+          pip install matplotlib
+          pip install graphviz
+          pip install pm4py~=2.7.11.8
           pip install -e .
+
+      - name: Install Graphviz
+        run: sudo apt-get install -y graphviz
 
       - name: Test with pytest
         run: |

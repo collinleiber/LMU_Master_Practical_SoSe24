@@ -38,6 +38,7 @@ jobs:
           pip install pytest pytest-cov
           pip install numpy scikit-learn torch
           pip install matplotlib
+          pip install graphviz
           pip install pm4py~=2.7.11.8
           pip install -e .
 

@@ -47,9 +47,9 @@ class TokenReplay:
         """
         self.marking = self.initial_marking.copy()
         for event in trace:
-            self.process_event(event)
+            self._process_event(event)
 
-    def process_event(self, event):
+    def _process_event(self, event):
         """
         Process a single event by attempting to fire the corresponding transition in the Petri net.
 
@@ -58,12 +58,12 @@ class TokenReplay:
         """
         if event == 'tau':
             return
-        if self.can_fire(event):
-            self.fire(event)
+        if self._can_fire(event):
+            self._fire(event)
         else:
             self.missing_tokens += 1
 
-    def can_fire(self, event):
+    def _can_fire(self, event):
         """
         Check if the transition corresponding to the event can be fired.
 
@@ -78,7 +78,7 @@ class TokenReplay:
                 return False
         return True
 
-    def fire(self, event):
+    def _fire(self, event):
         """
         Fire the transition corresponding to the event, updating the marking.
 
@@ -92,7 +92,7 @@ class TokenReplay:
             self.marking[place] += 1
             self.produced_tokens += 1
 
-    def calculate_remaining_tokens(self):
+    def _calculate_remaining_tokens(self):
         """
         Calculate the total number of remaining tokens in the Petri net after replay.
         """
@@ -110,7 +110,7 @@ class TokenReplay:
         """
         for trace in log:
             self.replay_trace(trace)
-        self.calculate_remaining_tokens()
+        self._calculate_remaining_tokens()
         return {
             'produced_tokens': self.produced_tokens,
             'consumed_tokens': self.consumed_tokens,

@@ -16,16 +16,20 @@ class TokenReplay:
         remaining_tokens: Counter for the total number of remaining tokens after replay.
     """
 
-    def __init__(self, net, initial_marking, final_marking):
+    def __init__(self, log, net, initial_marking, final_marking, net_type):
         """
         Initialize the TokenReplay class with a Petri net, initial marking, and final marking.
 
         Parameters:
+            log: Base event log used for conformance checking with given net as model.
             net: Dictionary representing the Petri net with input and output places for each transition.
             initial_marking: Dictionary representing the initial marking of the Petri net.
             final_marking: Dictionary representing the final marking of the Petri net.
+            net_type: Descriptions which Discovery method has been used.
         """
+        self.log = log
         self.net = net
+        self.net_type = net_type
         self.initial_marking = initial_marking
         self.final_marking = final_marking
         self.marking = initial_marking.copy()

@@ -125,7 +125,6 @@ class TokenReplay:
             'remaining_tokens': self.remaining_tokens
         }
 
-    def get_fitness(self) -> float:
     def get_discovery_type(self):
         return self.net_type
 
@@ -153,11 +152,12 @@ class TokenReplay:
         else:
             return ValueError
 
+    def calculate_fitness(self) -> float:
         fitness = (0.5 * (1 - (self.missing_tokens / self.consumed_tokens)) +
                    0.5 * (1 - (self.remaining_tokens / self.produced_tokens)))
         return fitness
 
-    def get_simplicity(self):
+    def calculate_simplicity(self):
         pass
 
     def _calculate_pm4py_dimensions(self, log, net, im, fm):

@@ -103,7 +103,7 @@ class TokenReplay:
         """
         self.remaining_tokens = sum(self.marking.values())
 
-    def run(self, log):
+    def run(self, log=None):
         """
         Run the Token Replay algorithm on an entire event log.
 
@@ -113,6 +113,8 @@ class TokenReplay:
         Returns:
             dict: A dictionary containing the counts of produced, consumed, missing, and remaining tokens.
         """
+        if not log:
+            log = self.log
         for trace in log:
             self.replay_trace(trace)
         self._calculate_remaining_tokens()

@@ -38,6 +38,11 @@ class TokenReplay:
         self.missing_tokens = 0
         self.remaining_tokens = 0
 
+        self.fitness, self.simplicity, self.precision, self.generalization = self._calculate_pm4py_dimensions(
+            log, net, initial_marking, final_marking)
+        # Override / add dimension values of own implementation
+        # self.fitness = self.calculate_fitness()
+
     def replay_trace(self, trace):
         """
         Replay a single trace (sequence of events) through the Petri net.
@@ -126,14 +131,10 @@ class TokenReplay:
     def get_simplicity(self):
         pass
 
-    def get_fitness_pm4py(self, log, net, init_marking, final_marking):
-        return pm4py.conformance.fitness_token_based_replay(log, net, init_marking, final_marking)
+    def _calculate_pm4py_dimensions(self, log, net, im, fm):
+        fitness = pm4py.conformance.fitness_token_based_replay(log, net, im, fm)
+        simplicity = pm4py.analysis.simplicity_petri_net(net, im, fm)
+        precision = pm4py.conformance.precision_token_based_replay(log, net, im, fm)
+        generalization = pm4py.conformance.generalization_tbr(log, net, im, fm)
 
-    def get_simplicity_pm4py(self, net, init_marking, final_marking):
-        return pm4py.analysis.simplicity_petri_net(net, init_marking, final_marking)
-
-    def get_precision_pm4py(self, log, net, init_marking, final_marking):
-        return pm4py.conformance.precision_token_based_replay(log, net, init_marking, final_marking)
-
-    def get_generalization_pm4py(self, log, net, initial_marking, final_marking):
-        pm4py.conformance.generalization_tbr(log, net, initial_marking, final_marking)
+        return fitness.get("log_fitness"), simplicity, precision, generalization

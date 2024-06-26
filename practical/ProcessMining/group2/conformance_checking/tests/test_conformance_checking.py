@@ -123,6 +123,6 @@ def test_get_conformance_value():
             'd': SortedDict({'a': '||', 'b': '->', 'c': '<-', 'd': '||'}),
         }
     )
-
+    # check / 0
     cc = ConformanceChecking(fpm_1, fpm_2)
     assert cc.get_conformance_value() == 0.8125

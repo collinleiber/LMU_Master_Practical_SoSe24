@@ -8,3 +8,4 @@ pm4py~=2.7.11.8
 graphviz~=0.20.3
 pytest~=8.2.0
 scipy~=1.13.0
+ipython~=8.24.0

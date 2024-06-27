@@ -1,3 +1,4 @@
+from collections import defaultdict
 import pm4py
 
 
@@ -37,7 +38,11 @@ class TokenReplay:
         self.consumed_tokens = 0
         self.missing_tokens = 0
         self.remaining_tokens = 0
+        self.missing_details = defaultdict(int)
+        self.remaining_details = defaultdict(int)
 
+        self.precision_numerator = 0
+        self.precision_denominator = 0
         self.fitness, self.simplicity, self.precision, self.generalization = self._calculate_pm4py_dimensions(
             log, net, initial_marking, final_marking)
         # Override / add dimension values of own implementation
@@ -49,10 +54,31 @@ class TokenReplay:
 
         Parameters:
             trace: List of events representing a trace from the event log.
+
+        Returns:
+            dict: Results of token replay for the trace.
         """
         self.marking = self.initial_marking.copy()
+        self.produced_tokens = 0
+        self.consumed_tokens = 0
+        self.missing_tokens = 0
+        self.remaining_tokens = 0
+        self.missing_details.clear()
+        self.remaining_details.clear()
+
+
         for event in trace:
             self._process_event(event)
+
+        self._calculate_remaining_tokens()
+        return {
+            'produced_tokens': self.produced_tokens,
+            'consumed_tokens': self.consumed_tokens,
+            'missing_tokens': self.missing_tokens,
+            'remaining_tokens': self.remaining_tokens,
+            'missing_details': dict(self.missing_details),
+            'remaining_details': dict(self.remaining_details)
+        }
 
     def _process_event(self, event):
         """
@@ -65,8 +91,15 @@ class TokenReplay:
             return
         if self._can_fire(event):
             self._fire(event)
+            self.precision_numerator += 1  # Count of successfully fired transitions
         else:
             self.missing_tokens += 1
+            transition = next((t for t in self.net.transitions if t.label == event), None)
+            if transition:
+                for arc in transition.in_arcs:
+                    self.missing_details[(frozenset([arc.source.name]), frozenset([arc.target.name]))] += 1
+        self.precision_denominator += 1  # Count of all attempted transitions
+
 
     def _can_fire(self, event):
         """
@@ -78,8 +111,11 @@ class TokenReplay:
         Returns:
             bool: True if the transition can be fired, False otherwise.
         """
-        for place in self.net['input'][event]:
-            if self.marking[place] <= 0:
+        transition = next((t for t in self.net.transitions if t.label == event), None)
+        if transition is None:
+            return False
+        for arc in transition.in_arcs:
+            if self.marking[arc.source] <= 0:
                 return False
         return True
 
@@ -90,18 +126,24 @@ class TokenReplay:
         Parameters:
             event: The event to be fired.
         """
-        for place in self.net['input'][event]:
-            self.marking[place] -= 1
+        transition = next((t for t in self.net.transitions if t.label == event), None)
+        if transition is None:
+            return
+        for arc in transition.in_arcs:
+            self.marking[arc.source] -= 1
             self.consumed_tokens += 1
-        for place in self.net['output'][event]:
-            self.marking[place] += 1
+        for arc in transition.out_arcs:
+            self.marking[arc.target] += 1
             self.produced_tokens += 1
 
     def _calculate_remaining_tokens(self):
         """
         Calculate the total number of remaining tokens in the Petri net after replay.
         """
-        self.remaining_tokens = sum(self.marking.values())
+        for place, tokens in self.marking.items():
+            if tokens > 0:
+                self.remaining_tokens += tokens
+                self.remaining_details[frozenset([place.name])] += tokens
 
     def run(self, log=None):
         """
@@ -111,19 +153,21 @@ class TokenReplay:
             log: List of traces, where each trace is a list of events.
 
         Returns:
-            dict: A dictionary containing the counts of produced, consumed, missing, and remaining tokens.
+            list: A list of results for each trace.
         """
+        self.produced_tokens = 0
+        self.consumed_tokens = 0
+        self.missing_tokens = 0
+        self.remaining_tokens = 0
+        self.precision_numerator = 0
+        self.precision_denominator = 0
+
         if not log:
             log = self.log
+        results = []
         for trace in log:
-            self.replay_trace(trace)
-        self._calculate_remaining_tokens()
-        return {
-            'produced_tokens': self.produced_tokens,
-            'consumed_tokens': self.consumed_tokens,
-            'missing_tokens': self.missing_tokens,
-            'remaining_tokens': self.remaining_tokens
-        }
+            result = self.replay_trace(trace)
+            results.append(result)
 
     def get_discovery_type(self):
         return self.net_type

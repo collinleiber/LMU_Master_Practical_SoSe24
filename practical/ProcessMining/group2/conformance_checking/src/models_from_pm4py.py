@@ -1,10 +1,19 @@
 import csv
 import pm4py
 from pm4py.objects.log.obj import EventLog, Trace, Event
+from enum import Enum
 
 
-def get_petri_net_from_pm4py_alpha_miner(file_path='./../Logs/L2.csv'):
+class AlgoPm4Py(Enum):
+    ALPHA = 1
+    ALPHAPLUS = 2
+    INDUCTIVEMINER = 3
+    HEURISTICMINER = 4
 
+
+def get_model_from_pm4py(
+    file_path="./../Logs/L1.csv", algorithm: AlgoPm4Py = AlgoPm4Py.ALPHAPLUS
+):
     log = EventLog()
 
     with open(file_path, newline='') as file:
@@ -24,5 +33,13 @@ def get_petri_net_from_pm4py_alpha_miner(file_path='./../Logs/L2.csv'):
 
         if trace is not None:
             log.append(trace)
-
-    return pm4py.discover_petri_net_alpha_plus(log)
+    if algorithm == AlgoPm4Py.ALPHA:
+        return pm4py.discover_petri_net_alpha(log)
+    elif algorithm == AlgoPm4Py.ALPHAPLUS:
+        return pm4py.discover_petri_net_alpha_plus(log)
+    elif algorithm == AlgoPm4Py.INDUCTIVEMINER:
+        return pm4py.discover_process_tree_inductive(log)
+    elif algorithm == AlgoPm4Py.HEURISTICMINER:
+        return pm4py.discover_heuristics_net(log)
+    else:
+        raise Exception("Algorithm not in Algorithm enum")

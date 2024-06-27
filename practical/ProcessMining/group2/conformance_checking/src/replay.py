@@ -1,8 +1,6 @@
-from alpha_miner_pm4py import get_petri_net_from_pm4py_alpha_miner
 from pm4py.objects.petri_net.semantics import is_enabled, execute
 from collections import deque
 from pm4py.analysis import get_enabled_transitions
-from pm4py.visualization.petri_net import visualizer as pn_visualizer
 
 
 def get_traces_with_replay(net, start, end, max_depth=100):
@@ -29,10 +27,3 @@ def get_traces_with_replay(net, start, end, max_depth=100):
             queue.append((new_place, current_trace + [transition.name]))
 
     return traces
-
-
-net, start, end = get_petri_net_from_pm4py_alpha_miner('./../Logs/L2.csv')
-# gviz = pn_visualizer.apply(net, start, end)
-# pn_visualizer.view(gviz)
-
-print(get_traces_with_replay(net, start, end, len(net.transitions) * 2))

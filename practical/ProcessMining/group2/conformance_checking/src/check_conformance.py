@@ -50,3 +50,70 @@ class ConformanceChecking:
                     different_cells += 1
 
         return 1 - different_cells / total_cells
+    
+
+    def pipeline(self, log, algorithm): # TODO: type hinting
+        # Pipeline:
+        # 1. Get footprint matrix from log
+        # 2. Run algorithm on log
+        # 3. Replay resulting model from algorithm
+        # 4. Get footprint matrix from replayed log
+        pass
+
+    def log_2_log(self, log, algorithm): # TODO: type hinting
+        """
+        This function takes a log and an algorithm, splits it into multiple sublogs. 
+        Next, after running the algorithm on each sublog, the resulting model is being replayed in order to get a new log.
+        Finally, the resulting logs are being compared to the original log.
+        """
+        # Convert the log to csv for easier splitting
+        # log_csv = pm4py.something(log)
+
+        # Split log into sublogs
+        sublogs = []
+        # Use https://pm4py-source.readthedocs.io/en/stable/pm4py.objects.log.util.html#pm4py.objects.log.util.split_train_test.split
+        # Set k = 4 for now
+        # train, test = pm4py.objects.log.util.split_train_test.split(log_csv, train_percentage=0.5)
+        # train, test = pm4py.objects.log.util.split_train_test.split(train, train_percentage=0.5)
+        # sublogs.append(train)
+        # sublogs.append(test)
+        # train, test = pm4py.objects.log.util.split_train_test.split(test, train_percentage=0.5)
+        # sublogs.append(train)
+        # sublogs.append(test)
+
+
+        replayed_logs = []
+        # Run algorithm on each sublog
+        for sublog in sublogs:
+            # Run pipeline
+            # result = self.pipeline(sublog, algorithm)
+            # results.append(result)
+            pass
+
+        for log in replayed_logs:
+            # Compare with original log
+            pass
+
+    def log_2_model(self, log, algorithm): # TODO: type hinting
+        """
+        This function takes a log and an algorithm.
+        The algorithm is being run on the log in order to get a model, which is then being replayed in order to get a new log.
+        Finally, the resulting log is being compared to the original log.
+        """
+        # Run pipeline
+        # result = self.pipeline(log, algorithm)
+        # Compare with original log
+        pass
+
+    def model_2_model(self, log, algorithms, scenario): # TODO: type hinting
+        """
+        This function takes a log, a list of algorithms and one of two scenarios.
+        The algorithms are being run on the log in order to get multiple models, which are then being replayed in order to get new logs.
+        The resulting logs are compared in dfferent ways, depending on the scenario.
+        Scenario 1: Each log is compared to the original log.
+        Scenario 2: Each log is compared to the other logs.
+        """
+        # Run pipeline for each algorithm
+        # Check for scenario
+        # Compare logs accordingly
+        pass

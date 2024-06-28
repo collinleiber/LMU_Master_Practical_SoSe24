@@ -1,5 +1,11 @@
-from sortedcontainers import SortedDict, SortedSet
-from practical.ProcessMining.group2.conformance_checking.src.generate_footprint import (
+import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+
+from src.generate_footprint import (
     FootPrintMatrix,
 )
 
@@ -13,11 +19,11 @@ class ConformanceChecking:
     # Checks two dictionaries (footprint)
     # TODO only works if keys of dicts are the same
     def get_conformance_matrix(self):
-        dict_out = SortedDict()
+        dict_out = {}
         for (outer_k1, outer_v1), (outer_k2, outer_v2) in zip(
             self.fpm_1.relations.items(), self.fpm_2.relations.items()
         ):
-            inner_dict_out = SortedDict()
+            inner_dict_out = {}
             for (inner_k1, inner_v1), (inner_k2, inner_v2) in zip(
                 outer_v1.items(), outer_v2.items()
             ):
@@ -36,7 +42,7 @@ class ConformanceChecking:
         for (outer_k1, outer_v1), (outer_k2, outer_v2) in zip(
             self.fpm_1.relations.items(), self.fpm_2.relations.items()
         ):
-            inner_dict_out = SortedDict()
+            inner_dict_out = {}
             for (inner_k1, inner_v1), (inner_k2, inner_v2) in zip(
                 outer_v1.items(), outer_v2.items()
             ):

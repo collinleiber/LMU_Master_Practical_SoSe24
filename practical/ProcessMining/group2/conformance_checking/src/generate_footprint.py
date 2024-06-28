@@ -1,4 +1,3 @@
-from sortedcontainers import SortedSet, SortedDict
 from itertools import chain
 import numpy as np
 from enum import Enum
@@ -14,12 +13,12 @@ class Relations(Enum):
 class FootPrintMatrix:
     def __init__(self, traces=None, relations=None):
         self.traces = traces if traces is not None else []  # Traces from an event log
-        self.transitions = SortedSet()
+        self.transitions = set()
 
         if relations is None:
-            self.relations = SortedDict()  # Default to an empty SortedDict
+            self.relations = {}  # Default to an empty dict
         else:
-            self.relations = SortedDict(relations)
+            self.relations = relations
 
         self.places = []
 
@@ -31,9 +30,9 @@ class FootPrintMatrix:
         # Sets all transitions for the current petri net
         self.transitions = set(chain.from_iterable(self.traces.values()))
 
-    def get_footprint_regular_alpha_miner(self) -> np.ndarray:
+    def get_footprint_regular_alpha_miner(self) -> np.ndarray: # TODO: rename
         # Step 1: remove duplicate traces
-        traces_without_duplicates = SortedSet()
+        traces_without_duplicates = set()
 
         for trace in self.traces.values():
             traces_without_duplicates.add("".join(trace))
@@ -42,7 +41,7 @@ class FootPrintMatrix:
         # generate Footprint
 
         for transition_1 in self.transitions:
-            self.relations[transition_1] = SortedDict()
+            self.relations[transition_1] = {}
             for transition_2 in self.transitions:
                 two_element_transitions = transition_1 + transition_2
 

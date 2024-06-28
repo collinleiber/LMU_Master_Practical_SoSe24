@@ -1,8 +1,11 @@
 import csv
+import os
 import pm4py
 from pm4py.objects.log.obj import EventLog, Trace, Event
 from enum import Enum
 
+
+FILE_DIR = os.path.dirname(__file__)
 
 class AlgoPm4Py(Enum):
     ALPHA = 1
@@ -12,7 +15,8 @@ class AlgoPm4Py(Enum):
 
 
 def get_model_from_pm4py(
-    file_path="./../Logs/L1.csv", algorithm: AlgoPm4Py = AlgoPm4Py.ALPHAPLUS
+    file_path = os.path.join(FILE_DIR, "..", "Logs/L1.csv"), 
+    algorithm: AlgoPm4Py = AlgoPm4Py.ALPHAPLUS
 ):
     log = EventLog()
 

@@ -21,7 +21,7 @@ def get_traces_with_replay(net, start, end, max_depth=100):
 
         enabled = get_enabled_transitions(net, current_place)
 
-        # Breitensuche
+        # Breadth-first search
         for transition in enabled:
             new_place = execute(transition, net, current_place)
             queue.append((new_place, current_trace + [transition.name]))

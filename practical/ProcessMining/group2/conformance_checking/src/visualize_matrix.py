@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(SCRIPT_DIR, '..', 'footprintmatrix_plots')
 
+
 def visualize_sorted_dict(sorted_dict, name):
     keys = list(sorted_dict.keys())
     size = len(keys)
 
-    fig, ax = plt.subplots(figsize=(7, 7))
+    fig, ax = plt.subplots(figsize=(len(sorted_dict) * 2, len(sorted_dict) * 2))
 
     ax.matshow([[0] * size] * size, cmap='Greys')  # Create an empty heatmap
 
@@ -38,4 +39,4 @@ def visualize_sorted_dict(sorted_dict, name):
         spine.set_linewidth(5)  # Adjust the linewidth for the outer border
     plt.title('Footprint Matrix {}'.format(name), fontsize=22)
     # plt.show()
-    plt.savefig(OUTPUT_DIR + '/fpm_{}'.format(name))
+    plt.savefig(OUTPUT_DIR + '/fpm_{}.png'.format(name))

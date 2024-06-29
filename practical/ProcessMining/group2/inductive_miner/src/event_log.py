@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from typing import Dict
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -21,11 +22,8 @@ class EventLog:
         :return: EventLog object.
         """
         with open(os.path.join(script_dir, file_path), 'r') as file:
-            traces = {}
+            traces = defaultdict(int)
             for line in file:
                 trace = line.strip()
-                if trace in traces:
-                    traces[trace] += 1
-                else:
-                    traces[trace] = 1
+                traces[trace] += 1
             return EventLog(traces)

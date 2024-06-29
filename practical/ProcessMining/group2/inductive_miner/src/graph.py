@@ -239,10 +239,8 @@ class Graph:
         nodes = self.get_all_nodes()
         non_reachable_pairs = set()
         
-        for i in range(len(nodes)):
-            for j in range(i + 1, len(nodes)):
-                u = nodes[i]
-                v = nodes[j]
+        for i, u in enumerate(nodes):
+            for j, v in enumerate(nodes[i + 1:], start=i + 1):
                 if v not in reach[u] and u not in reach[v]:
                     non_reachable_pairs.add((u, v))
 

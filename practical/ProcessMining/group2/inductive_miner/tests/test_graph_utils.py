@@ -1,4 +1,9 @@
-from practical.ProcessMining.group2.inductive_miner.src.graph import *
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.graph import *
 
 
 def test_initialize_graph():

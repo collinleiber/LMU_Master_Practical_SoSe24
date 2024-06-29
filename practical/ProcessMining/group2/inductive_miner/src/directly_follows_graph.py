@@ -1,7 +1,13 @@
-from collections import defaultdict
+import os
+import sys
 
-from practical.ProcessMining.group2.inductive_miner.src.graph import Graph
-from practical.ProcessMining.group2.inductive_miner.src.event_log import EventLog
+from collections import defaultdict
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from src.graph import Graph
+from src.event_log import EventLog
+
 
 
 class DirectlyFollowsGraph(Graph):

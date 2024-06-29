@@ -1,7 +1,13 @@
-from practical.ProcessMining.group2.inductive_miner.src.graph import *
-from practical.ProcessMining.group2.inductive_miner.src.event_log import *
-from practical.ProcessMining.group2.inductive_miner.src.directly_follows_graph import *
-from practical.ProcessMining.group2.inductive_miner.src.process_tree import *
+import os
+import sys
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from src.graph import *
+from src.event_log import *
+from src.directly_follows_graph import *
+from src.process_tree import *
 
 
 class InductiveMiner():

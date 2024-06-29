@@ -1,7 +1,6 @@
 from itertools import chain
 import numpy as np
 from enum import Enum
-from natsort import natsorted
 
 
 class Relations(Enum):
@@ -28,7 +27,7 @@ class FootPrintMatrix:
 
     def sort_fpm_rec(self, relations):
         sorted_dict = {}
-        for key in natsorted(relations.keys()):
+        for key in sorted(relations.keys()):
             value = relations[key]
             if isinstance(value, dict):
                 sorted_dict[key] = self.sort_fpm_rec(value)

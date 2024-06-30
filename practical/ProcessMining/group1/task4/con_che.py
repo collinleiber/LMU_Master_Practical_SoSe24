@@ -1,40 +1,39 @@
+from practical.ProcessMining.group1.shared.visualizer import Visualizer
+from practical.ProcessMining.group1.shared import utils
+from practical.ProcessMining.group1.task2.alphaminer import AlphaMiner
+from tokenreplay import TokenReplay
+from comparison import ModelComparator
+
+import pandas as pd
 import pm4py
-from pm4py.objects.conversion.log import converter as log_converter
+
 from pm4py.algo.discovery.alpha import algorithm as alpha_miner
 from pm4py.algo.discovery.inductive import algorithm as inductive_miner
 from pm4py.algo.discovery.heuristics import algorithm as heuristics_miner
-from pm4py.objects.conversion.process_tree import converter as pt_converter
-import pandas as pd
-from tokenreplay import TokenReplay
-from comparison import ModelComparator
-from pm4py.objects.process_tree.obj import ProcessTree
-from pm4py.visualization.process_tree import visualizer as pt_visualizer
-from pm4py.objects.conversion.log import converter as log_converter
-from practical.ProcessMining.group1.shared import utils
-from pm4py.visualization.petri_net import visualizer as pn_vis
-from pm4py.algo.discovery.inductive import algorithm as inductive_miner
-from pm4py.visualization.process_tree import visualizer as pt_vis
-from pm4py.objects.conversion.process_tree import converter as pt_to_petri_converter
-from practical.ProcessMining.group1.shared.visualizer import Visualizer
 from pm4py.algo.conformance.tokenreplay import algorithm as token_replay
-from practical.ProcessMining.group1.task2.alphaminer import AlphaMiner
-from graphviz import Digraph
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import os
-from practical.ProcessMining.group1.shared.utils import event_log_to_dataframe, read_txt_test_logs
+
+from pm4py.objects.conversion.log import converter as log_converter
+from pm4py.objects.conversion.process_tree import converter as pt_to_petri_converter
+
+from pm4py.visualization.petri_net import visualizer as pn_vis
+from pm4py.visualization.process_tree import visualizer as pt_vis
 
 
 # ================== logs ================
 
-file_path = '../shared/example_files/DomesticDeclarations_afterDC.csv'
-# file_path = '../shared/example_files/common-example.csv'
-# file_path = '../shared/example_files/limitation-example1.csv'
-# file_path = '../shared/example_files/limitation-example1.csv'
+BASE = utils.SAMPLES_PATH
 
-# Load the CSV file into a pandas DataFrame
-log = pd.read_csv(file_path, sep=';')
-log['timestamp'] = pd.to_datetime(log['timestamp'], utc=True)
+file_path_real = BASE / 'DomesticDeclarations_cleansed.csv'
+file_path_common = BASE / 'common-example.csv'
+file_path_limitation = BASE / 'limitation-example1.csv'
+
+text_logs = BASE / 'simple_event_logs_modified.txt'
+
+def get_log(file_path=file_path_real):
+    return utils.import_csv(file_path)
+
+
+log = get_log()
 event_log = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
 event_log = log_converter.apply(event_log)
 
@@ -99,12 +98,12 @@ vizard.save(graph_fitness,'graph_fitness')
 
 # Inductive Miner
 inductive_tree = inductive_miner.apply(event_log)
-inductive_net, inductive_initial_marking, inductive_final_marking = pt_converter.apply(inductive_tree)
+inductive_net, inductive_initial_marking, inductive_final_marking = pt_to_petri_converter.apply(inductive_tree)
 inductive_token_replay = TokenReplay(event_log, inductive_net, inductive_initial_marking, inductive_final_marking, "Inductive Miner")
 
 # Inductive Miner Infrequent
 inductive_inf_tree = inductive_miner.apply(event_log, variant=inductive_miner.Variants.IMf)
-inductive_inf_net, inductive_inf_initial_marking, inductive_inf_final_marking = pt_converter.apply(inductive_inf_tree)
+inductive_inf_net, inductive_inf_initial_marking, inductive_inf_final_marking = pt_to_petri_converter.apply(inductive_inf_tree)
 inductive_inf_token_replay = TokenReplay(event_log, inductive_inf_net, inductive_inf_initial_marking, inductive_inf_final_marking, "Inductive Miner Infrequent")
 
 
@@ -128,3 +127,4 @@ all_models_values = comparator.get_models_values()
 # Matrix of all models values
 df = pd.DataFrame.from_dict(all_models_values, orient='index')
 print(df)
+

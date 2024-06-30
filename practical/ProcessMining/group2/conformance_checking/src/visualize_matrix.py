@@ -8,9 +8,13 @@ OUTPUT_DIR = os.path.join(SCRIPT_DIR, '..', 'footprintmatrix_plots')
 def visualize_sorted_dict(sorted_dict, name):
     keys = list(sorted_dict.keys())
     size = len(keys)
+    if size == 0:
+        size = 1
+    
+    
 
-    fig, ax = plt.subplots(figsize=(len(sorted_dict) * 2, len(sorted_dict) * 2))
-
+    fig, ax = plt.subplots(figsize=(size * 2, size * 2))
+    
     ax.matshow([[0] * size] * size, cmap='Greys')  # Create an empty heatmap
 
     # Add gridlines

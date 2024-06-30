@@ -17,6 +17,7 @@ from visualize_matrix import visualize_sorted_dict
 from pm4py.visualization.petri_net import visualizer
 from pm4py.objects.log.util import split_train_test
 from itertools import combinations
+from pm4py.algo.simulation.playout.petri_net import variants
 
 
 class Comparison:
@@ -31,8 +32,13 @@ class Comparison:
         fpm_original.generate_footprint()
         # 2. Run algorithm on log
         net, start, end = get_model_from_pm4py(input_log, algorithm)
+        #print("net: ",algorithm,net)
+        gviz = visualizer.apply(net,start,end)
+        gviz.graph_attr['label'] = str(algorithm)
+        gviz.graph_attr['labelloc'] = 't' 
+        visualizer.view(gviz)
         # 3. Replay resulting model from algorithm
-        logs_replayed = get_traces_with_replay(net, start, end, 150)
+        logs_replayed = get_traces_with_replay(net, start, end, variants.extensive)
         # 4. Get footprint matrix from replayed log
         fpm_replayed = FootPrintMatrix(logs_replayed)
         fpm_replayed.generate_footprint()
@@ -124,12 +130,12 @@ class Comparison:
             pipeline_fpm_original, pipeline_fpm_generated = self.pipeline(
                 log_from_file, algorithm
             )
-            # visualize_sorted_dict(pipeline_fpm_generated.relations, "m2m_{}".format(str(algorithm)))
+            visualize_sorted_dict(pipeline_fpm_generated.relations, "m2m_{}".format(str(algorithm)))
 
             generated_fpms[str(algorithm)] = pipeline_fpm_generated
             if fpm_original == None:
                 fpm_original = pipeline_fpm_original
-                # visualize_sorted_dict(pipeline_fpm_original.relations, "m2m_original")
+                visualize_sorted_dict(pipeline_fpm_original.relations, "m2m_original")
 
         comparison_values = {}
         if scenario == 1:
@@ -153,8 +159,8 @@ class Comparison:
         return comparison_values
 
 
-log_path = "InputLogs/L5.csv"
+log_path = "InputLogs/L4.csv"
 
 
 com = Comparison()
-print(com.model_2_model(log_path, [AlgoPm4Py.ALPHA, AlgoPm4Py.ALPHAPLUS], 1))
+print(com.model_2_model(log_path, [AlgoPm4Py.ALPHA, AlgoPm4Py.ALPHAPLUS, AlgoPm4Py.HEURISTICMINER, AlgoPm4Py.INDUCTIVEMINER], 1))

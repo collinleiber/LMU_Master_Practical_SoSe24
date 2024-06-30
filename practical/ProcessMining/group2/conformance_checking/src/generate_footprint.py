@@ -1,6 +1,7 @@
 from itertools import chain
 import numpy as np
 from enum import Enum
+from natsort import natsorted
 
 
 class Relations(Enum):
@@ -27,7 +28,7 @@ class FootPrintMatrix:
 
     def sort_fpm_rec(self, relations):
         sorted_dict = {}
-        for key in sorted(relations.keys()):
+        for key in natsorted(relations.keys()):
             value = relations[key]
             if isinstance(value, dict):
                 sorted_dict[key] = self.sort_fpm_rec(value)
@@ -75,28 +76,28 @@ class FootPrintMatrix:
             self.relations[transition_1] = {}
             for transition_2 in self.transitions:
                 two_element_transitions = transition_1 + transition_2
+                reversed_two_element_transitions = transition_2 + transition_1
+
 
                 all_relations = None
                 for trace in traces_without_duplicates:
-
-                    if trace.find(two_element_transitions) >= 0:
-                        # print(two_element_transitions)
-                        # all_relations = "->"
+                    if two_element_transitions in trace and reversed_two_element_transitions in trace:
+                        all_relations = Relations.PARALLEL.value
+                        break
+                    if two_element_transitions in trace:
                         if all_relations == Relations.BEFORE.value:
-
                             all_relations = Relations.PARALLEL.value
+                            break
                         else:
                             all_relations = Relations.SEQUENCE.value
-
-                    if trace.find(two_element_transitions[::-1]) >= 0:
-
+                    if reversed_two_element_transitions in trace:
                         if all_relations == Relations.SEQUENCE.value:
-
                             all_relations = Relations.PARALLEL.value
+                            break
                         else:
                             all_relations = Relations.BEFORE.value
 
-                if all_relations == None:
+                if all_relations is None:
                     all_relations = Relations.NOT_FOLLOWED.value
                 self.relations[transition_1][transition_2] = all_relations
 

@@ -17,34 +17,44 @@ class ConformanceChecking:
     # TODO only works if keys of dicts are the same
     def get_conformance_matrix(self, fpm_1, fpm_2):
         dict_out = {}
-        for (outer_k1, outer_v1), (outer_k2, outer_v2) in zip(
-            fpm_1.relations.items(), fpm_2.relations.items()
-        ):
-            inner_dict_out = {}
-            for (inner_k1, inner_v1), (inner_k2, inner_v2) in zip(
-                outer_v1.items(), outer_v2.items()
-            ):
-                if inner_v1 == inner_v2:
-                    inner_dict_out[inner_k1] = ''
-                else:
-                    inner_dict_out[inner_k1] = '{}:{}'.format(inner_v1, inner_v2)
+        keys_1 = set(fpm_1.relations.keys())
+        keys_2 = set(fpm_2.relations.keys())
+        all_keys = keys_1.union(keys_2)
 
-            dict_out[outer_k1] = inner_dict_out
+        for key in all_keys:
+            inner_dict_out = {}
+            inner_keys_1 = set(fpm_1.relations.get(key, {}).keys())
+            inner_keys_2 = set(fpm_2.relations.get(key, {}).keys())
+            all_inner_keys = inner_keys_1.union(inner_keys_2)
+
+            for inner_key in all_inner_keys:
+                inner_v1 = fpm_1.relations.get(key, {}).get(inner_key, '')
+                inner_v2 = fpm_2.relations.get(key, {}).get(inner_key, '')
+                if inner_v1 == inner_v2:
+                    inner_dict_out[inner_key] = ''
+                else:
+                    inner_dict_out[inner_key] = '{}:{}'.format(inner_v1, inner_v2)
+
+            dict_out[key] = inner_dict_out
 
         return FootPrintMatrix.from_relations(dict_out)
 
     def get_conformance_value(self, fpm_1, fpm_2):
-        print("Calculating Conformance Value!")
         different_cells = 0
-        total_cells = len(fpm_1.relations) ** 2
-        for (outer_k1, outer_v1), (outer_k2, outer_v2) in zip(
-            fpm_1.relations.items(), fpm_2.relations.items()
-        ):
-            for (inner_k1, inner_v1), (inner_k2, inner_v2) in zip(
-                outer_v1.items(), outer_v2.items()
-            ):
+        keys_1 = set(fpm_1.relations.keys())
+        keys_2 = set(fpm_2.relations.keys())
+        all_keys = keys_1.union(keys_2)
+        total_cells = len(all_keys) ** 2
+
+        for key in all_keys:
+            inner_keys_1 = set(fpm_1.relations.get(key, {}).keys())
+            inner_keys_2 = set(fpm_2.relations.get(key, {}).keys())
+            all_inner_keys = inner_keys_1.union(inner_keys_2)
+
+            for inner_key in all_inner_keys:
+                inner_v1 = fpm_1.relations.get(key, {}).get(inner_key, '')
+                inner_v2 = fpm_2.relations.get(key, {}).get(inner_key, '')
                 if inner_v1 != inner_v2:
-                    # print("diff at: ", outer_k1, inner_k1)
-                    # print(inner_v1, " instead of ", inner_v2)
                     different_cells += 1
+
         return 1 - different_cells / total_cells

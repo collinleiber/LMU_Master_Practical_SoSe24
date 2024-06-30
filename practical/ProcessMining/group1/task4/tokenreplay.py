@@ -2,6 +2,7 @@ from collections import defaultdict
 import pm4py
 from pm4py.algo.conformance.tokenreplay import algorithm as token_replay
 
+
 class TokenReplay:
     """
     Token Replay algorithm implementation to check conformance of an event log with a Petri net model.
@@ -67,7 +68,6 @@ class TokenReplay:
         self.missing_details.clear()
         self.remaining_details.clear()
 
-
         for event in trace:
             self._process_event(event)
 
@@ -100,7 +100,6 @@ class TokenReplay:
                 for arc in transition.in_arcs:
                     self.missing_details[(frozenset([arc.source.name]), frozenset([arc.target.name]))] += 1
         self.precision_denominator += 1  # Count of all attempted transitions
-
 
     def _can_fire(self, event):
         """

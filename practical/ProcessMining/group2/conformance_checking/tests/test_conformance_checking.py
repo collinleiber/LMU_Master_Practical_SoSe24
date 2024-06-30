@@ -1,10 +1,11 @@
-import sys
 import os
+import sys
+
+SCRIPT_DIR = os.path.dirname(__file__)
+sys.path.append(os.path.join(SCRIPT_DIR, ".."))
+
 from pm4py.objects.log.obj import Trace, Event, EventLog
 
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 
 from src.generate_footprint import (
@@ -16,6 +17,7 @@ from src.check_conformance import (
 from src.visualize_matrix import (
     visualize_sorted_dict,
 )
+from src.comparison import Comparison, AlgoPm4Py
 
 
 def test_cf():
@@ -135,3 +137,32 @@ def test_get_conformance_value():
     # check / 0
     cc = ConformanceChecking(fpm_1, fpm_2)
     assert cc.get_conformance_value() == 0.8125
+
+def test_pipeline():
+    # TODO
+    pass
+
+def test_log_2_log():
+    # TODO (replay has infinite loop)
+    # comparison = Comparison()
+    # result = comparison.log_2_log(os.path.join(SCRIPT_DIR, "../InputLogs/pdc2023_000000.xes"), AlgoPm4Py.ALPHA)
+    # assert len(result) == 4
+    # for (sublog, comparison_value) in result:
+    #     assert 0 <= comparison_value <= 1
+    pass
+
+def test_log_2_model():
+    # TODO (replay has infinite loop)
+    # comparison = Comparison()
+    # result = comparison.log_2_log(os.path.join(SCRIPT_DIR, "../InputLogs/pdc2023_000000.xes"), AlgoPm4Py.ALPHA)
+    # assert isinstance(result, float)
+    # assert 0 <= result <= 1
+    pass
+
+def test_model_2_model_scenario_1():
+    # TODO
+    pass
+
+def test_model_2_model_scenario_2():
+    # TODO
+    pass

@@ -15,7 +15,7 @@ class FootPrintMatrix:
         if log is not None:
             self.traces = self.convert_log_for_footprintmatrix(log)
         else:
-            traces = []
+            self.traces = []
         self.transitions = set()
 
         if relations is None:

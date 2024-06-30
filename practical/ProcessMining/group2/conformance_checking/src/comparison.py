@@ -1,3 +1,10 @@
+import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__)))
+
+from typing import Dict, List, Tuple
+
 from models_from_pm4py import (
     get_log_from_file,
     get_model_from_pm4py,
@@ -8,6 +15,7 @@ from generate_footprint import FootPrintMatrix
 from check_conformance import ConformanceChecking
 from visualize_matrix import visualize_sorted_dict
 from pm4py.visualization.petri_net import visualizer
+from pm4py.objects.log.util import split_train_test
 from itertools import combinations
 
 
@@ -30,57 +38,82 @@ class Comparison:
         fpm_replayed.generate_footprint()
         return fpm_original, fpm_replayed
 
-    def log_2_log(self, log, algorithm):  # TODO: type hinting
+    def log_2_log(self, event_log: str, algorithm: 'AlgoPm4Py') -> List[Tuple[str, float]]:
         """
         This function takes a log and an algorithm, splits it into multiple sublogs.
         Next, after running the algorithm on each sublog, the resulting model is being replayed in order to get a new log.
         Finally, the resulting logs are being compared to the original log.
-        """
-        # Convert the log to csv for easier splitting
-        # log_csv = pm4py.something(log)
 
-        # Split log into sublogs
-        sublogs = []
-        # Use https://pm4py-source.readthedocs.io/en/stable/pm4py.objects.log.util.html#pm4py.objects.log.util.split_train_test.split
-        # Set k = 4 for now
-        # train, test = pm4py.objects.log.util.split_train_test.split(log_csv, train_percentage=0.5)
-        # train, test = pm4py.objects.log.util.split_train_test.split(train, train_percentage=0.5)
-        # sublogs.append(train)
-        # sublogs.append(test)
-        # train, test = pm4py.objects.log.util.split_train_test.split(test, train_percentage=0.5)
-        # sublogs.append(train)
-        # sublogs.append(test)
+        :param event_log: Path to the event log.
+        :param algorithm: Algorithm to be used.
+        :return: List of tuples, where each tuple contains the name of the sublog and the conformance value.
+        """
+        def split_log_into_sublogs(log):
+            sublogs = []
+            # Initial split to divide the log into two equal parts
+            split_1, split_2 = split_train_test.split(log, train_percentage=0.5)
+            
+            # Further split each part into two sublogs
+            sublog_1, sublog_2 = split_train_test.split(split_1, train_percentage=0.5)
+            sublog_3, sublog_4 = split_train_test.split(split_2, train_percentage=0.5)
+            
+            sublogs.extend([sublog_1, sublog_2, sublog_3, sublog_4])
+            return sublogs
+
+
+        log = get_log_from_file(event_log)
+
+        # Split log into sublogs. We use 4 sublogs for ease of use.
+        sublogs = split_log_into_sublogs(log)
 
         replayed_logs = []
         # Run algorithm on each sublog
         for sublog in sublogs:
             # Run pipeline
-            # result = self.pipeline(sublog, algorithm)
-            # results.append(result)
-            pass
+            footprint_of_log, footprint_of_replayed_log = self.pipeline(sublog, algorithm)
+            replayed_logs.append(footprint_of_replayed_log)
 
-        for log in replayed_logs:
-            # Compare with original log
-            pass
+        # Compare with original log
+        comparison_values = []
+        for i, footprint_of_replayed_log in enumerate(replayed_logs):
+            conformance_checking = ConformanceChecking()
+            result = conformance_checking.get_conformance_value(footprint_of_log, footprint_of_replayed_log)
+            comparison_values.append((f"sublog_{i}", result))
 
-    def log_2_model(self, log, algorithm):  # TODO: type hinting
+        return comparison_values
+
+    def log_2_model(self, event_log: str, algorithm: 'AlgoPm4Py') -> float:
         """
         This function takes a log and an algorithm.
         The algorithm is being run on the log in order to get a model, which is then being replayed in order to get a new log.
         Finally, the resulting log is being compared to the original log.
-        """
-        # Run pipeline
-        # result = self.pipeline(log, algorithm)
-        # Compare with original log
-        pass
 
-    def model_2_model(self, log, algorithms, scenario):  # TODO: type hinting
+        :param event_log: Path to the event log.
+        :param algorithm: Algorithm to be used.
+        :return: Conformance value.
+        """
+        log = get_log_from_file(event_log)
+
+        # Run pipeline
+        footprint_of_log, footprint_of_replayed_log = self.pipeline(log, algorithm)
+        # Compare with original log
+        conformance_checking = ConformanceChecking()
+        result = conformance_checking.get_conformance_value(footprint_of_log, footprint_of_replayed_log)
+
+        return result
+
+    def model_2_model(self, log: str, algorithms: List['AlgoPm4Py'], scenario: int) -> Dict[str, float]:
         """
         This function takes a log, a list of algorithms and one of two scenarios.
         The algorithms are being run on the log in order to get multiple models, which are then being replayed in order to get new logs.
         The resulting logs are compared in dfferent ways, depending on the scenario.
         Scenario 1: Each log is compared to the original log.
         Scenario 2: Each log is compared to the other logs.
+
+        :param log: Path to the event log.
+        :param algorithms: List of algorithms to be used.
+        :param scenario: Scenario to be used.
+        :return: Dictionary containing the comparison values.
         """
 
         log_from_file = get_log_from_file(log)

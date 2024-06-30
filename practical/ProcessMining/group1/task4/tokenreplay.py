@@ -1,6 +1,6 @@
 from collections import defaultdict
 import pm4py
-
+from pm4py.algo.conformance.tokenreplay import algorithm as token_replay
 
 class TokenReplay:
     """
@@ -47,6 +47,7 @@ class TokenReplay:
             log, net, initial_marking, final_marking)
         # Override / add dimension values of own implementation
         # self.fitness = self.calculate_fitness()
+        self.tokens = self._calculate_missing_remaining_tokens(log, net, initial_marking, final_marking)
 
     def replay_trace(self, trace):
         """
@@ -144,6 +145,39 @@ class TokenReplay:
             if tokens > 0:
                 self.remaining_tokens += tokens
                 self.remaining_details[frozenset([place.name])] += tokens
+
+    # for test
+    def _calculate_missing_remaining_tokens(self, log, net, im, fm):
+        replayed_traces = token_replay.apply(log, net, im, fm)
+        # print('replayed_traces ====', replayed_traces)
+
+        places = net.places
+
+        missing = defaultdict(int)
+        remaining = defaultdict(int)
+
+        for trace in replayed_traces:
+            if isinstance(trace['missing_tokens'], dict):
+                for place, count in trace['missing_tokens'].items():
+                    missing[place] += count
+            elif isinstance(trace['missing_tokens'], int):
+                for place in places:
+                    missing[place] += trace['missing_tokens']
+
+            if isinstance(trace['remaining_tokens'], dict):
+                for place, count in trace['remaining_tokens'].items():
+                    remaining[place] += count
+            elif isinstance(trace['remaining_tokens'], int):
+                for place in places:
+                    remaining[place] += trace['remaining_tokens']
+
+        return {
+            'missing': missing,
+            'remaining': remaining
+        }
+
+    def get_tokens(self):
+        return self.tokens
 
     def run(self, log=None):
         """

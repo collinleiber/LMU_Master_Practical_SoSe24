@@ -57,4 +57,4 @@ class ConformanceChecking:
                 if inner_v1 != inner_v2:
                     different_cells += 1
 
-        return 1 - different_cells / total_cells
+        return 1 - different_cells / total_cells if total_cells > 0 else 0.0

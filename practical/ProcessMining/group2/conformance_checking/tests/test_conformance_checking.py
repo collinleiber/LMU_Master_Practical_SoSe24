@@ -7,7 +7,6 @@ sys.path.append(os.path.join(SCRIPT_DIR, ".."))
 from pm4py.objects.log.obj import Trace, Event, EventLog
 
 
-
 from src.generate_footprint import (
     FootPrintMatrix,
 )
@@ -71,14 +70,12 @@ def test_cf():
     fp_matrix = FootPrintMatrix(traces)
 
     fp_matrix.generate_footprint()
-
     assert fp_matrix.relations == {
         'a': {'a': '#', 'b': '->', 'c': '#', 'd': '||'},
         'b': {'a': '<-', 'b': '#', 'c': '->', 'd': '#'},
-        'c': {'a': '#', 'b': '<-', 'c': '#', 'd': '->'},
-        'd': {'a': '||', 'b': '#', 'c': '<-', 'd': '#'},
+        'c': {'a': '#', 'b': '<-', 'c': '#', 'd': '||'},
+        'd': {'a': '||', 'b': '#', 'c': '||', 'd': '#'},
     }
-
     # visualize_sorted_dict(fp_matrix.relations, "")
 
 
@@ -109,11 +106,9 @@ def test_get_conformance_matrix():
         }
     )
 
-    cc = ConformanceChecking(fpm_1, fpm_2)
-    assert cc.get_conformance_matrix().relations == target.relations
+    cc = ConformanceChecking()
+    assert cc.get_conformance_matrix(fpm_1, fpm_2).relations == target.relations
     visualize_sorted_dict(fpm_1.relations, "dict_1")
-    # visualize_sorted_dict(fpm_2.relations, "dict_2")
-    # visualize_sorted_dict(conformance_matrix.relations, "conf_check_1_2")
 
 
 def test_get_conformance_value():
@@ -135,34 +130,68 @@ def test_get_conformance_value():
         }
     )
     # check / 0
-    cc = ConformanceChecking(fpm_1, fpm_2)
-    assert cc.get_conformance_value() == 0.8125
+    cc = ConformanceChecking()
+    assert cc.get_conformance_value(fpm_1, fpm_2) == 0.8125
+
 
 def test_pipeline():
     # TODO
     pass
 
+
 def test_log_2_log():
-    # TODO (replay has infinite loop)
-    # comparison = Comparison()
-    # result = comparison.log_2_log(os.path.join(SCRIPT_DIR, "../InputLogs/pdc2023_000000.xes"), AlgoPm4Py.ALPHA)
-    # assert len(result) == 4
-    # for (sublog, comparison_value) in result:
-    #     assert 0 <= comparison_value <= 1
-    pass
+    log_path = "InputLogs/L1.csv"
+    comparison = Comparison()
+    result = comparison.log_2_log(log_path, AlgoPm4Py.ALPHA)
+    assert len(result) == 4
+    for sublog, comparison_value in result:
+        assert 0 <= comparison_value <= 1
+
 
 def test_log_2_model():
-    # TODO (replay has infinite loop)
-    # comparison = Comparison()
-    # result = comparison.log_2_log(os.path.join(SCRIPT_DIR, "../InputLogs/pdc2023_000000.xes"), AlgoPm4Py.ALPHA)
-    # assert isinstance(result, float)
-    # assert 0 <= result <= 1
-    pass
+    log_path = "InputLogs/L1.csv"
+    comparison = Comparison()
+    result = comparison.log_2_model(log_path, AlgoPm4Py.ALPHA)
+    assert result == 1.0
+
 
 def test_model_2_model_scenario_1():
-    # TODO
-    pass
+    log_path = "InputLogs/L1.csv"
+    comparison = Comparison()
+    assert comparison.model_2_model(
+        log_path,
+        [
+            AlgoPm4Py.ALPHA,
+            AlgoPm4Py.ALPHAPLUS,
+            AlgoPm4Py.HEURISTICMINER,
+            AlgoPm4Py.INDUCTIVEMINER,
+        ],
+        1,
+    ) == {
+        'InputLog vs. AlgoPm4Py.ALPHA': 1.0,
+        'InputLog vs. AlgoPm4Py.ALPHAPLUS': 1.0,
+        'InputLog vs. AlgoPm4Py.HEURISTICMINER': 1.0,
+        'InputLog vs. AlgoPm4Py.INDUCTIVEMINER': 1.0,
+    }
+
 
 def test_model_2_model_scenario_2():
-    # TODO
-    pass
+    log_path = "InputLogs/L1.csv"
+    comparison = Comparison()
+    assert comparison.model_2_model(
+        log_path,
+        [
+            AlgoPm4Py.ALPHA,
+            AlgoPm4Py.ALPHAPLUS,
+            AlgoPm4Py.HEURISTICMINER,
+            AlgoPm4Py.INDUCTIVEMINER,
+        ],
+        2,
+    ) == {
+        'AlgoPm4Py.ALPHA vs. AlgoPm4Py.ALPHAPLUS': 1.0,
+        'AlgoPm4Py.ALPHA vs. AlgoPm4Py.HEURISTICMINER': 1.0,
+        'AlgoPm4Py.ALPHA vs. AlgoPm4Py.INDUCTIVEMINER': 1.0,
+        'AlgoPm4Py.ALPHAPLUS vs. AlgoPm4Py.HEURISTICMINER': 1.0,
+        'AlgoPm4Py.ALPHAPLUS vs. AlgoPm4Py.INDUCTIVEMINER': 1.0,
+        'AlgoPm4Py.HEURISTICMINER vs. AlgoPm4Py.INDUCTIVEMINER': 1.0,
+    }

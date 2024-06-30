@@ -56,5 +56,3 @@ def get_model_from_pm4py(
         return pm4py.discover_petri_net_inductive(log)
     elif algorithm == AlgoPm4Py.HEURISTICMINER:
         return pm4py.discover_petri_net_heuristics(log)
-    else:
-        raise Exception("Algorithm not in Algorithm enum")

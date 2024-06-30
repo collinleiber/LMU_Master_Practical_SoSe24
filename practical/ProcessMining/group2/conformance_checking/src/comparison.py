@@ -32,11 +32,6 @@ class Comparison:
         fpm_original.generate_footprint()
         # 2. Run algorithm on log
         net, start, end = get_model_from_pm4py(input_log, algorithm)
-        #print("net: ",algorithm,net)
-        gviz = visualizer.apply(net,start,end)
-        gviz.graph_attr['label'] = str(algorithm)
-        gviz.graph_attr['labelloc'] = 't' 
-        visualizer.view(gviz)
         # 3. Replay resulting model from algorithm
         logs_replayed = get_traces_with_replay(net, start, end, variants.extensive)
         # 4. Get footprint matrix from replayed log
@@ -44,7 +39,9 @@ class Comparison:
         fpm_replayed.generate_footprint()
         return fpm_original, fpm_replayed
 
-    def log_2_log(self, event_log: str, algorithm: 'AlgoPm4Py') -> List[Tuple[str, float]]:
+    def log_2_log(
+        self, event_log: str, algorithm: 'AlgoPm4Py'
+    ) -> List[Tuple[str, float]]:
         """
         This function takes a log and an algorithm, splits it into multiple sublogs.
         Next, after running the algorithm on each sublog, the resulting model is being replayed in order to get a new log.
@@ -54,18 +51,18 @@ class Comparison:
         :param algorithm: Algorithm to be used.
         :return: List of tuples, where each tuple contains the name of the sublog and the conformance value.
         """
+
         def split_log_into_sublogs(log):
             sublogs = []
             # Initial split to divide the log into two equal parts
             split_1, split_2 = split_train_test.split(log, train_percentage=0.5)
-            
+
             # Further split each part into two sublogs
             sublog_1, sublog_2 = split_train_test.split(split_1, train_percentage=0.5)
             sublog_3, sublog_4 = split_train_test.split(split_2, train_percentage=0.5)
-            
+
             sublogs.extend([sublog_1, sublog_2, sublog_3, sublog_4])
             return sublogs
-
 
         log = get_log_from_file(event_log)
 
@@ -76,14 +73,18 @@ class Comparison:
         # Run algorithm on each sublog
         for sublog in sublogs:
             # Run pipeline
-            footprint_of_log, footprint_of_replayed_log = self.pipeline(sublog, algorithm)
+            footprint_of_log, footprint_of_replayed_log = self.pipeline(
+                sublog, algorithm
+            )
             replayed_logs.append(footprint_of_replayed_log)
 
         # Compare with original log
         comparison_values = []
         conformance_checking = ConformanceChecking()
         for i, footprint_of_replayed_log in enumerate(replayed_logs):
-            result = conformance_checking.get_conformance_value(footprint_of_log, footprint_of_replayed_log)
+            result = conformance_checking.get_conformance_value(
+                footprint_of_log, footprint_of_replayed_log
+            )
             comparison_values.append((f"sublog_{i}", result))
 
         return comparison_values
@@ -104,11 +105,15 @@ class Comparison:
         footprint_of_log, footprint_of_replayed_log = self.pipeline(log, algorithm)
         # Compare with original log
         conformance_checking = ConformanceChecking()
-        result = conformance_checking.get_conformance_value(footprint_of_log, footprint_of_replayed_log)
+        result = conformance_checking.get_conformance_value(
+            footprint_of_log, footprint_of_replayed_log
+        )
 
         return result
 
-    def model_2_model(self, log: str, algorithms: List['AlgoPm4Py'], scenario: int) -> Dict[str, float]:
+    def model_2_model(
+        self, log: str, algorithms: List['AlgoPm4Py'], scenario: int
+    ) -> Dict[str, float]:
         """
         This function takes a log, a list of algorithms and one of two scenarios.
         The algorithms are being run on the log in order to get multiple models, which are then being replayed in order to get new logs.
@@ -130,7 +135,9 @@ class Comparison:
             pipeline_fpm_original, pipeline_fpm_generated = self.pipeline(
                 log_from_file, algorithm
             )
-            visualize_sorted_dict(pipeline_fpm_generated.relations, "m2m_{}".format(str(algorithm)))
+            visualize_sorted_dict(
+                pipeline_fpm_generated.relations, "m2m_{}".format(str(algorithm))
+            )
 
             generated_fpms[str(algorithm)] = pipeline_fpm_generated
             if fpm_original == None:
@@ -159,8 +166,8 @@ class Comparison:
         return comparison_values
 
 
-log_path = "InputLogs/L4.csv"
+# log_path = "InputLogs/L4.csv"
 
 
-com = Comparison()
-print(com.model_2_model(log_path, [AlgoPm4Py.ALPHA, AlgoPm4Py.ALPHAPLUS, AlgoPm4Py.HEURISTICMINER, AlgoPm4Py.INDUCTIVEMINER], 1))
+# com = Comparison()
+# print(com.model_2_model(log_path, [AlgoPm4Py.ALPHA, AlgoPm4Py.ALPHAPLUS, AlgoPm4Py.HEURISTICMINER, AlgoPm4Py.INDUCTIVEMINER], 1))

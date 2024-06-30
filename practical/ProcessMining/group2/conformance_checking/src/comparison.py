@@ -81,8 +81,8 @@ class Comparison:
 
         # Compare with original log
         comparison_values = []
+        conformance_checking = ConformanceChecking()
         for i, footprint_of_replayed_log in enumerate(replayed_logs):
-            conformance_checking = ConformanceChecking()
             result = conformance_checking.get_conformance_value(footprint_of_log, footprint_of_replayed_log)
             comparison_values.append((f"sublog_{i}", result))
 

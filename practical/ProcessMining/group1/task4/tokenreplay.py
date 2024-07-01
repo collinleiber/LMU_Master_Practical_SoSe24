@@ -58,61 +58,27 @@ class TokenReplay:
         Returns:
             list: A list of results for each trace.
         """
-        if not log:
+        if not log:  # To test with alternative logs
             log = self.log
-        for index, trace in enumerate(log):
-            trace_result = self.replay_trace(trace)
-            self.produced_tokens += trace_result['produced_tokens']
-            self.produced_tokens += trace_result['consumed_tokens']
-            self.missing_tokens |= trace_result['missing_tokens']
-            self.remaining_tokens |= trace_result['remaining_tokens']
 
-    def replay_trace(self, trace):
-        """
-        Replay a single trace (sequence of events) through the Petri net.
+        for trace in log:
+            self.marking = self.initial_marking.copy()
+            self.produced_buffer = 0
+            self.consumed_buffer = 0
 
-        Parameters:
-            trace: List of events representing a trace from the event log.
-
-        Returns:
-            dict: Results of token replay for the trace.
-        """
-        self.marking = self.initial_marking.copy()
-        produced_tokens = 0
-        consumed_tokens = 0
-        missing_tokens = defaultdict(int)
-
-        def handle_unconformity():
-            transition = next((t for t in self.net.transitions if t.label == event), None)
-            if transition:
-                for arc in transition.in_arcs:
-                    missing_tokens[(arc.source, arc.target)] += 1
-
-        def handle_tau():
-            # Check the next event in the trace
-            if i + 1 < len(trace) and self._can_fire(trace[i + 1]['activity']):
-                # Produce and consume a token for the tau event
-                self._fire(event, produced_tokens, consumed_tokens)
-
-        for i, event in enumerate(trace):
-            if 'activity' in event:
-                event = event['activity']
-
+            for i, event in enumerate(trace):
+                if isinstance(event, dict):  # To handle pm4py converted logs
+                    event = event['activity']
                 if event == 'tau':
-                    handle_tau()
+                    self._handle_tau(trace, i, event)
                 elif self._can_fire(event):
-                    self._fire(event, produced_tokens, consumed_tokens)
+                    self._fire(event)
                 else:
-                    handle_unconformity()
-            else:
-                raise KeyError('Event Log structure not a dict with a key "activity"')
+                    self._handle_unconformity(event)
 
-        return {
-            'produced_tokens': produced_tokens,
-            'consumed_tokens': consumed_tokens,
-            'missing_tokens': missing_tokens,
-            'remaining_tokens': self._calculate_remaining_tokens(),
-        }
+            self.produced_tokens += self.produced_buffer
+            self.consumed_tokens += self.consumed_buffer
+            self.remaining_tokens = self._calculate_remaining_tokens()
 
     def _can_fire(self, event):
         """

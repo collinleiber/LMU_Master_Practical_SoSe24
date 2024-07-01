@@ -45,7 +45,7 @@ event_log = log_converter.apply(event_log)
 
 
 # ================== Miners ================
-
+"""
 # # alpha Miner
 alpha_net, alpha_initial_marking, alpha_final_marking = alpha_miner.apply(event_log)
 gviz_alpha = pn_vis.apply(alpha_net, alpha_initial_marking, alpha_final_marking)
@@ -79,7 +79,7 @@ process_tree_IMf = inductive_miner.apply(log, parameters=parameters,variant=indu
 # pt_visualizer.view(gviz_tree_IMf)
 net, initial_marking, final_marking = pt_to_petri_converter.apply(process_tree_IMf)
 gviz_petri_IMf = pn_vis.apply(net, initial_marking, final_marking)
-pn_vis.view(gviz_petri_IMf)
+pn_vis.view(gviz_petri_IMf)"""
 
 # ================== Token Replay ================
 
@@ -125,6 +125,6 @@ pareto_optimal_models = comparator.run()
 all_models_values = comparator.get_models_values()
 
 # Matrix of all models values
-df = pd.DataFrame.from_dict(all_models_values, orient='index')
+df = pd.DataFrame(all_models_values)
 print(df)
 

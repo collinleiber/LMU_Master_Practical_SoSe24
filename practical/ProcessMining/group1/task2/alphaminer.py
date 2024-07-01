@@ -5,10 +5,8 @@ import pandas as pd
 import pm4py
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to
-from pm4py.visualization.petri_net import visualizer as pn_visualizer
 from practical.ProcessMining.group1.shared.visualizer import Visualizer
 from typing import Dict, List, Tuple, Set
-
 
 
 class AlphaMiner:

@@ -27,21 +27,27 @@ file_path_real = BASE / 'DomesticDeclarations_cleansed.csv'
 file_path_common = BASE / 'common-example.csv'
 file_path_limitation = BASE / 'limitation-example1.csv'
 
-text_logs = BASE / 'simple_event_logs_modified.txt'
+text_logs = str(BASE / 'simple_event_logs.txt')
+text_logs2 = str(BASE / 'simple_event_logs_modified.txt')
 
 def get_log(file_path=file_path_real):
     return utils.import_csv(file_path)
 
 
-log = get_log()
-event_log = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
-event_log = log_converter.apply(event_log)
+# log = get_log()
+# event_log_og = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
+# event_log = log_converter.apply(event_log_og)
 
-# logs = read_txt_test_logs("../shared/example_files/simple_event_logs_modified.txt")
-# log = logs['L1']
-# log = event_log_to_dataframe(log)
-# log = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
-# event_log = log_converter.apply(log)
+logs = utils.read_txt_test_logs(text_logs)
+log = logs['L1']
+log = utils.event_log_to_dataframe(log)
+log = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
+event_log = log_converter.apply(log)
+
+logs = utils.read_txt_test_logs(text_logs)
+log = logs['L1']
+log = utils.event_log_to_dataframe(log)
+event_log2 = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
 
 
 # ================== Miners ================
@@ -85,13 +91,13 @@ pn_vis.view(gviz_petri_IMf)"""
 
 # Alpha Miner
 alpha_net, alpha_initial_marking, alpha_final_marking = alpha_miner.apply(event_log)
-alpha_token_replay = TokenReplay(event_log, alpha_net, alpha_initial_marking, alpha_final_marking, "Alpha Miner")
+alpha_token_replay = TokenReplay(event_log2, alpha_net, alpha_initial_marking, alpha_final_marking, "Alpha Miner")
 # print('al_token_replay ======', alpha_token_replay)
 vizard = Visualizer()
-places = alpha_net.places
-print('places:', places)
+
 alpha_token_replay.run()
 tokens = alpha_token_replay.get_unconformity_tokens()
+
 print('tokens ==========', tokens)
 graph_fitness = vizard.build_petri_net(alpha_net, alpha_initial_marking, alpha_final_marking, tokens)
 print('graph_fitness ===', graph_fitness)

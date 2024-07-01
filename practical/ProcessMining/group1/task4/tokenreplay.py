@@ -67,8 +67,8 @@ class TokenReplay:
             self.consumed_buffer = 0
 
             for i, event in enumerate(trace):
-                if isinstance(event, dict):  # To handle pm4py converted logs
-                    event = event['activity']
+                if not isinstance(event, str):  # To handle pm4py converted logs
+                    event = event['concept:name']
                 if event == 'tau':
                     self._handle_tau(trace, i, event)
                 elif self._can_fire(event):

@@ -1,4 +1,5 @@
 from collections import defaultdict
+import random
 import pm4py
 
 
@@ -208,3 +209,18 @@ class TokenReplay:
         generalization = pm4py.conformance.generalization_tbr(log, net, im, fm)
 
         return fitness.get("log_fitness"), simplicity, precision, generalization
+
+    def shuffle_activities(self):
+        """
+        Shuffle the activities in each trace of the event log.
+
+        Returns:
+            list: A new event log with shuffled activities in each trace.
+        """
+        shuffled_log = []
+        for trace in self.log:
+            shuffled_trace = list(trace)  # Create a copy of the trace
+            random.shuffle(shuffled_trace)  # Shuffle the activities in the trace
+            shuffled_log.append(shuffled_trace)
+        return shuffled_log
+

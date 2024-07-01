@@ -37,13 +37,9 @@ class TokenReplay:
         self.marking = initial_marking.copy()
         self.produced_tokens = 0
         self.consumed_tokens = 0
-        self.missing_tokens = 0
-        self.remaining_tokens = 0
-        self.missing_details = defaultdict(int)
-        self.remaining_details = defaultdict(int)
+        self.missing_tokens = defaultdict(int)
+        self.remaining_tokens = defaultdict(int)
 
-        self.precision_numerator = 0
-        self.precision_denominator = 0
         self.fitness, self.simplicity, self.precision, self.generalization = self._calculate_pm4py_dimensions(
             log, net, initial_marking, final_marking)
         # Override / add dimension values of own implementation
@@ -61,24 +57,19 @@ class TokenReplay:
             dict: Results of token replay for the trace.
         """
         self.marking = self.initial_marking.copy()
-        self.produced_tokens = 0
-        self.consumed_tokens = 0
-        self.missing_tokens = 0
-        self.remaining_tokens = 0
-        self.missing_details.clear()
-        self.remaining_details.clear()
+        produced_tokens = 0
+        consumed_tokens = 0
+        missing_tokens = defaultdict(int)
 
         for event in trace:
             self._process_event(event)
 
         self._calculate_remaining_tokens()
         return {
-            'produced_tokens': self.produced_tokens,
-            'consumed_tokens': self.consumed_tokens,
-            'missing_tokens': self.missing_tokens,
-            'remaining_tokens': self.remaining_tokens,
-            'missing_details': dict(self.missing_details),
-            'remaining_details': dict(self.remaining_details)
+            'produced_tokens': produced_tokens,
+            'consumed_tokens': consumed_tokens,
+            'missing_tokens': missing_tokens,
+            'remaining_tokens': self._calculate_remaining_tokens(),
         }
 
     def _process_event(self, event):
@@ -119,7 +110,7 @@ class TokenReplay:
                 return False
         return True
 
-    def _fire(self, event):
+    def _fire(self, event, produced: int, consumed: int):
         """
         Fire the transition corresponding to the event, updating the marking.
 
@@ -131,10 +122,10 @@ class TokenReplay:
             return
         for arc in transition.in_arcs:
             self.marking[arc.source] -= 1
-            self.consumed_tokens += 1
+            consumed += 1
         for arc in transition.out_arcs:
             self.marking[arc.target] += 1
-            self.produced_tokens += 1
+            produced += 1
 
     def _calculate_remaining_tokens(self):
         """

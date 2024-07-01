@@ -199,9 +199,6 @@ class TokenReplay:
                    0.5 * (1 - (total_remaining / self.produced_tokens)))
         return fitness
 
-    def calculate_simplicity(self):
-        pass
-
     def _calculate_pm4py_dimensions(self, log, net, im, fm):
         fitness = pm4py.conformance.fitness_token_based_replay(log, net, im, fm)
         simplicity = pm4py.analysis.simplicity_petri_net(net, im, fm)

@@ -145,7 +145,7 @@ class TokenReplay:
         if transition:
             for arc in transition.in_arcs:
                 if self.marking[arc.source] < 1:
-                    self.missing_tokens[(arc.source, arc.target)] += 1
+                    self.missing_tokens[arc.source] += 1
 
     def _calculate_remaining_tokens(self):
         """

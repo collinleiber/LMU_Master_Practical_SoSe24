@@ -145,6 +145,21 @@ class TokenReplay:
         for arc in transition.out_arcs:
             self.marking[arc.target] += 1
             produced += 1
+    def _handle_tau(self, trace, pointer, event):
+        _next = trace[pointer + 1]
+        if isinstance(_next, dict):
+            _next = _next['activity']
+        # Check the next event in the trace
+        if pointer + 1 < len(trace) and self._can_fire(_next):
+            # Produce and consume a token for the tau event
+            self._fire(event)
+
+    def _handle_unconformity(self, event):
+        transition = next((t for t in self.net.transitions if t.label == event), None)
+        if transition:
+            for arc in transition.in_arcs:
+                if self.marking[arc.source] < 1:
+                    self.missing_tokens[(arc.source, arc.target)] += 1
 
     def _calculate_remaining_tokens(self):
         """

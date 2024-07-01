@@ -70,7 +70,7 @@ class TokenReplay:
                 if not isinstance(event, str):  # To handle pm4py converted logs
                     event = event['concept:name']
                 if event == 'tau':
-                    self._handle_tau(trace, i, event)
+                    self._handle_tau(trace, i)
                 elif self._can_fire(event):
                     self._fire(event)
                 else:
@@ -115,14 +115,29 @@ class TokenReplay:
             self.marking[arc.target] += 1
             self.produced_buffer += 1
 
-    def _handle_tau(self, trace, pointer, event):
-        _next = trace[pointer + 1]
-        if isinstance(_next, dict):
-            _next = _next['activity']
-        # Check the next event in the trace
-        if pointer + 1 < len(trace) and self._can_fire(_next):
-            # Produce and consume a token for the tau event
-            self._fire(event)
+    def _handle_tau(self, trace, pointer):
+        """
+        Handle the tau event by producing and consuming a token and then
+        check if the next event in the trace can be fired.
+
+        Parameters:
+            trace: The trace being replayed.
+            pointer: The current position in the trace.
+        """
+        # Fire the tau event
+        self._fire('tau')
+
+        # Check if there is a next event in the trace
+        if pointer + 1 < len(trace):
+            next_event = trace[pointer + 1]
+            if isinstance(next_event, dict):
+                next_event = next_event['activity']
+
+            # Check if the next event can be fired after handling tau
+            if self._can_fire(next_event):
+                self._fire(next_event)
+            else:
+                self._handle_unconformity(next_event)
 
     def _handle_unconformity(self, event):
         transition = next((t for t in self.net.transitions if t.label == event), None)

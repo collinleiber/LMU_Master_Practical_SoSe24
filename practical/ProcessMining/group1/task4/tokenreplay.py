@@ -44,7 +44,25 @@ class TokenReplay:
             log, net, initial_marking, final_marking)
         # Override / add dimension values of own implementation
         # self.fitness = self.calculate_fitness()
-        self.tokens = self._calculate_missing_remaining_tokens(log, net, initial_marking, final_marking)
+
+    def run(self, log=None):
+        """
+        Run the Token Replay algorithm on an entire event log.
+
+        Parameters:
+            log: List of traces, where each trace is a list of events.
+
+        Returns:
+            list: A list of results for each trace.
+        """
+        if not log:
+            log = self.log
+        for index, trace in enumerate(log):
+            trace_result = self.replay_trace(trace)
+            self.produced_tokens += trace_result['produced_tokens']
+            self.produced_tokens += trace_result['consumed_tokens']
+            self.missing_tokens |= trace_result['missing_tokens']
+            self.remaining_tokens |= trace_result['remaining_tokens']
 
     def replay_trace(self, trace):
         """
@@ -60,6 +78,12 @@ class TokenReplay:
         produced_tokens = 0
         consumed_tokens = 0
         missing_tokens = defaultdict(int)
+
+        def handle_unconformity():
+            transition = next((t for t in self.net.transitions if t.label == event), None)
+            if transition:
+                for arc in transition.in_arcs:
+                    missing_tokens[(arc.source, arc.target)] += 1
 
         for event in trace:
             self._process_event(event)
@@ -169,29 +193,6 @@ class TokenReplay:
     def get_tokens(self):
         return self.tokens
 
-    def run(self, log=None):
-        """
-        Run the Token Replay algorithm on an entire event log.
-
-        Parameters:
-            log: List of traces, where each trace is a list of events.
-
-        Returns:
-            list: A list of results for each trace.
-        """
-        self.produced_tokens = 0
-        self.consumed_tokens = 0
-        self.missing_tokens = 0
-        self.remaining_tokens = 0
-        self.precision_numerator = 0
-        self.precision_denominator = 0
-
-        if not log:
-            log = self.log
-        results = []
-        for trace in log:
-            result = self.replay_trace(trace)
-            results.append(result)
 
     def get_discovery_type(self):
         return self.net_type

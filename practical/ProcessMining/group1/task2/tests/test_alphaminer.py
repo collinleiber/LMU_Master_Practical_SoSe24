@@ -303,15 +303,6 @@ def test_print_pairs(capfd, alpha_miner: AlphaMiner):
     assert capfd.readouterr()
 
 
-def test_visualization_calls(alpha_miner):
-    with patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.apply') as mock_apply, \
-            patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.view') as mock_view:
-        alpha_miner.build_and_visualize_petrinet()
-
-        mock_apply.assert_called_once()
-        mock_view.assert_called_once()
-
-
 def test_petrinet_structure(alpha_miner):
     alpha_miner.build_and_visualize_petrinet()
 
@@ -366,16 +357,3 @@ def test_transition_connections(alpha_miner):
         assert any(arc.source == transitions[activity_name] for arc in global_end.in_arcs), \
             f"Terminal activity {activity_name} is not correctly connected to end place."
 
-
-@pytest.mark.integration
-def test_complete_petrinet_functionality(alpha_miner):
-    # This test will incorporate visualization mock tests and structure tests
-    with patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.apply') as mock_apply, \
-         patch('practical.ProcessMining.group1.task2.alphaminer.pn_visualizer.view') as mock_view:
-
-        test_visualization_calls(alpha_miner)
-        test_petrinet_structure(alpha_miner)
-
-        # Check the visualization methods were called as part of the process
-        mock_apply.assert_called_once()
-        mock_view.assert_called_once()

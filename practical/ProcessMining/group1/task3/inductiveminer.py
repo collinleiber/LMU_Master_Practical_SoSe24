@@ -7,16 +7,13 @@ from typing import List, Tuple, Dict, Set, Optional, Union
 import graphviz
 import networkx as nx
 import pandas as pd
-from IPython.core.display import SVG
 from IPython.display import Image, display
 import pm4py
-from pm4py.visualization.process_tree import visualizer as pt_visualizer
 from pm4py.objects.conversion.log import converter as log_converter
-from practical.ProcessMining.group1.shared import utils
 from pm4py.visualization.petri_net import visualizer as pn_vis
 from pm4py.algo.discovery.inductive import algorithm as inductive_miner
-from pm4py.visualization.process_tree import visualizer as pt_vis
 from pm4py.objects.conversion.process_tree import converter as pt_to_petri_converter
+from practical.ProcessMining.group1.shared.visualizer import Visualizer
 
 logging.basicConfig(level="INFO")  # Change to DEBUG for prints
 
@@ -751,49 +748,15 @@ class InductiveMiner:
 
             return stack[0] if stack else None  # Return the root of the parsed tree
 
-        def create_graph(node, graph):
-            """
-            Recursively creates nodes and edges in the Graphviz graph.
-
-            Parameters:
-                node (tuple): The current node in the parsed tree.
-                graph (graphviz.Digraph): The Graphviz graph being constructed.
-            """
-            if isinstance(node, tuple):
-                operator, children, node_id = node
-                graph.node(node_id, operator, shape='circle')  # Create a circular node for the operator
-                for child in children:
-                    if isinstance(child, tuple):
-                        child_id = child[2]
-                        create_graph(child, graph)  # Recursively add child nodes
-                    else:
-                        # Create a unique ID for each τ
-                        if child == '𝜏':
-                            child_id = f'node{child}_{id(child)}'
-                        else:
-                            child_id = f'node{child}'
-                        graph.node(child_id, child, shape='box')  # Create a rectangular node for the activity
-                    graph.edge(node_id, child_id, arrowhead='none')  # Add an edge from the operator to the child node
-            else:
-                node_id = f'node{node}'
-                graph.node(node_id, node, shape='box')  # Create a rectangular node for the activity
-
-        # Get the process tree string from the Inductive Miner instance
-        tree_str = self.process_tree_str
-
         # Parse the process tree string into a nested structure
-        tree = parse_tree(tree_str)
+        tree = parse_tree(self.process_tree_str)
         # print(f"Parsed tree: {tree}")  # show the parsed tree if needed
 
         # Create a new Graphviz graph
-        graph = graphviz.Digraph(format='png')
+        visualizer = Visualizer()
+        graph = visualizer.build_process_tree(tree)
 
-        # Populate the graph with nodes and edges
-        create_graph(tree, graph)
-
-        # Render the graph to a PNG file in memory and display it
-        graph_bytes = graph.pipe(format='png')
-        return Image(graph_bytes)
+        return graph
 
     def build_and_visualize_petrinet(self):
         """
@@ -816,5 +779,12 @@ class InductiveMiner:
             self.net, self.initial_marking, self.final_marking = pt_to_petri_converter.apply(process_tree)
 
         # Visualize the Petri net
-        gviz = pn_vis.apply(self.net, self.initial_marking, self.final_marking)
-        pn_vis.view(gviz)
+        visualizer = Visualizer()
+        graph = visualizer.build_petri_net(self.net, self.initial_marking, self.final_marking)
+        return graph
+
+    def get_petrinet(self) -> Tuple[nx.DiGraph, Dict[str, int], Dict[str, int]]:
+        """
+        Returns the Petri net and initial/final markings.
+        """
+        return self.net, self.initial_marking, self.final_marking

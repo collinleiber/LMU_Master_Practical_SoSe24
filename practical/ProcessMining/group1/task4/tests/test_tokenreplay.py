@@ -4,6 +4,41 @@ import graphviz
 
 
 class TestTokenReplay:
+    def test_token_replay(self):
+        pass
+
+    def test_can_fire(self):
+        pass
+
+    def test_fire(self):
+        pass
+
+    def test_handle_tau(self):
+        pass
+
+    def test_handle_unconformity(self):
+        pass
+
+    def test_calculate_remaining_tokens(self):
+        pass
+
+    def test_get_unconformity_tokens(self):
+        pass
+
+    def test_token_replay_getters(self):
+        pass
+
+    def test_get_dimension_value(self):
+        pass
+
+    def test_calculate_fitness(self):
+        pass
+
+    def test_calculate_pm4py_dimensions(self):
+        pass
+
+    def test_shuffle_activities(self):
+        pass
 
     def test_visualize_replay_result(self, tmp_path):
         visualizer = Visualizer()

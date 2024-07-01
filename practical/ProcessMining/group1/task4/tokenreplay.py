@@ -217,8 +217,11 @@ class TokenReplay:
             return ValueError
 
     def calculate_fitness(self) -> float:
-        fitness = (0.5 * (1 - (self.missing_tokens / self.consumed_tokens)) +
-                   0.5 * (1 - (self.remaining_tokens / self.produced_tokens)))
+        total_missing = sum(val for val in self.missing_tokens.values())
+        total_remaining = sum(val for val in self.remaining_tokens.values())
+
+        fitness = (0.5 * (1 - (total_missing / self.consumed_tokens)) +
+                   0.5 * (1 - (total_remaining / self.produced_tokens)))
         return fitness
 
     def calculate_simplicity(self):

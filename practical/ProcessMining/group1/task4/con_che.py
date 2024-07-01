@@ -91,16 +91,14 @@ pn_vis.view(gviz_petri_IMf)"""
 
 # Alpha Miner
 alpha_net, alpha_initial_marking, alpha_final_marking = alpha_miner.apply(event_log)
-alpha_token_replay = TokenReplay(event_log2, alpha_net, alpha_initial_marking, alpha_final_marking, "Alpha Miner")
-# print('al_token_replay ======', alpha_token_replay)
-vizard = Visualizer()
 
+alpha_token_replay = TokenReplay(event_log2, alpha_net, alpha_initial_marking, alpha_final_marking, "Alpha Miner")
 alpha_token_replay.run()
 tokens = alpha_token_replay.get_unconformity_tokens()
-
 print('tokens ==========', tokens)
+
+vizard = Visualizer()
 graph_fitness = vizard.build_petri_net(alpha_net, alpha_initial_marking, alpha_final_marking, tokens)
-print('graph_fitness ===', graph_fitness)
 vizard.save(graph_fitness,'graph_fitness')
 
 # Inductive Miner

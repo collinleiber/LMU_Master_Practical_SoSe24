@@ -357,4 +357,5 @@ class Visualizer:
         file_name : str
             The name of the file to save the graph to.
         """
+        graph.graph_attr.update({'bgcolor': 'transparent'})
         graph.render(filename=file_name, format='png', cleanup=True)

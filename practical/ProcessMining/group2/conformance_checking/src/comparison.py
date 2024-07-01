@@ -71,14 +71,19 @@ class Comparison:
 
         replayed_logs = []
         # Run algorithm on each sublog
-        for sublog in sublogs:
+        for i, sublog in enumerate(sublogs):
             # Run pipeline
             footprint_of_log, footprint_of_replayed_log = self.pipeline(
                 sublog, algorithm
             )
+            visualize_sorted_dict(
+                footprint_of_replayed_log.relations, "l2l_{}".format(i)
+            )
             replayed_logs.append(footprint_of_replayed_log)
 
         # Compare with original log
+        footprint_of_log, x = self.pipeline(log, algorithm)
+        visualize_sorted_dict(footprint_of_log.relations, "l2l_original")
         comparison_values = []
         conformance_checking = ConformanceChecking()
         for i, footprint_of_replayed_log in enumerate(replayed_logs):
@@ -103,6 +108,11 @@ class Comparison:
 
         # Run pipeline
         footprint_of_log, footprint_of_replayed_log = self.pipeline(log, algorithm)
+        visualize_sorted_dict(footprint_of_log.relations, "l2m_original")
+        visualize_sorted_dict(
+            footprint_of_replayed_log.relations, "l2m_{}".format(str(algorithm))
+        )
+
         # Compare with original log
         conformance_checking = ConformanceChecking()
         result = conformance_checking.get_conformance_value(
@@ -166,8 +176,14 @@ class Comparison:
         return comparison_values
 
 
-# log_path = "InputLogs/L4.csv"
+log_path = "InputLogs/L8.csv"
 
 
-# com = Comparison()
-# print(com.model_2_model(log_path, [AlgoPm4Py.ALPHA, AlgoPm4Py.ALPHAPLUS, AlgoPm4Py.HEURISTICMINER, AlgoPm4Py.INDUCTIVEMINER], 1))
+com = Comparison()
+print(
+    com.model_2_model(
+        log_path,
+        [AlgoPm4Py.ALPHA, AlgoPm4Py.ALPHAPLUS, AlgoPm4Py.INDUCTIVEMINER],
+        2,
+    )
+)

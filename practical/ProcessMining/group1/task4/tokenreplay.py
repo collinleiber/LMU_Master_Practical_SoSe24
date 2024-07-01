@@ -1,6 +1,5 @@
 from collections import defaultdict
 import pm4py
-from pm4py.algo.conformance.tokenreplay import algorithm as token_replay
 
 
 class TokenReplay:
@@ -35,8 +34,12 @@ class TokenReplay:
         self.initial_marking = initial_marking
         self.final_marking = final_marking
         self.marking = initial_marking.copy()
+
+        self.produced_buffer = 0
         self.produced_tokens = 0
+        self.consumed_buffer = 0
         self.consumed_tokens = 0
+
         self.missing_tokens = defaultdict(int)
         self.remaining_tokens = defaultdict(int)
 
@@ -129,7 +132,7 @@ class TokenReplay:
                 return False
         return True
 
-    def _fire(self, event, produced: int, consumed: int):
+    def _fire(self, event):
         """
         Fire the transition corresponding to the event, updating the marking.
 
@@ -141,10 +144,11 @@ class TokenReplay:
             return
         for arc in transition.in_arcs:
             self.marking[arc.source] -= 1
-            consumed += 1
+            self.consumed_buffer += 1
         for arc in transition.out_arcs:
             self.marking[arc.target] += 1
-            produced += 1
+            self.produced_buffer += 1
+
     def _handle_tau(self, trace, pointer, event):
         _next = trace[pointer + 1]
         if isinstance(_next, dict):

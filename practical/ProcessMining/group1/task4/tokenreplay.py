@@ -167,8 +167,9 @@ class TokenReplay:
         """
         remaining = defaultdict(int)
         for place, tokens in self.marking.items():
-            if tokens > 0:
-                remaining[place] += tokens
+            final_tokens = self.final_marking.get(place, 0)
+            if tokens > final_tokens:
+                remaining[place] += tokens - final_tokens
         return remaining
 
     def get_unconformity_tokens(self):

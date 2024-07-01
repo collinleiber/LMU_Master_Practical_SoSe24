@@ -199,9 +199,9 @@ class Visualizer:
         weight = "1"
         if tokens:
             missing_tokens = tokens["missing"]
-            max_missing_tokens = max([v for k, v in missing_tokens.items()])
+            max_missing_tokens = max([v for k, v in missing_tokens.items()], default=0)
             remaining_tokens = tokens["remaining"]
-            max_remaining_tokens = max([v for k, v in remaining_tokens.items()])
+            max_remaining_tokens = max([v for k, v in remaining_tokens.items()], default=0)
             all_tokens = missing_tokens | remaining_tokens
 
             # If either the source or target node has tokens, adjust the color and weight of the edge
@@ -259,9 +259,9 @@ class Visualizer:
         # If there are tokens, adjust the fill color, label, pen width, and font size based on the tokens
         if tokens:
             missing_tokens = tokens["missing"]
-            max_missing_tokens = max([v for k, v in missing_tokens.items()])
+            max_missing_tokens = max([v for k, v in missing_tokens.items()], default=0)
             remaining_tokens = tokens["remaining"]
-            max_remaining_tokens = max([v for k, v in remaining_tokens.items()])
+            max_remaining_tokens = max([v for k, v in remaining_tokens.items()], default=0)
 
             if place in remaining_tokens and place in missing_tokens:
                 fillcolor = self._get_color(missing_tokens[place], remaining_tokens[place],

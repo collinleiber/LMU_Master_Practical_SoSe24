@@ -88,7 +88,15 @@ class TokenReplay:
         for event in trace:
             self._process_event(event)
 
-        self._calculate_remaining_tokens()
+                if event == 'tau':
+                    handle_tau()
+                elif self._can_fire(event):
+                    self._fire(event, produced_tokens, consumed_tokens)
+                else:
+                    handle_unconformity()
+            else:
+                raise KeyError('Event Log structure not a dict with a key "activity"')
+
         return {
             'produced_tokens': produced_tokens,
             'consumed_tokens': consumed_tokens,

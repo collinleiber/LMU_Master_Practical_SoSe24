@@ -85,8 +85,15 @@ class TokenReplay:
                 for arc in transition.in_arcs:
                     missing_tokens[(arc.source, arc.target)] += 1
 
-        for event in trace:
-            self._process_event(event)
+        def handle_tau():
+            # Check the next event in the trace
+            if i + 1 < len(trace) and self._can_fire(trace[i + 1]['activity']):
+                # Produce and consume a token for the tau event
+                self._fire(event, produced_tokens, consumed_tokens)
+
+        for i, event in enumerate(trace):
+            if 'activity' in event:
+                event = event['activity']
 
                 if event == 'tau':
                     handle_tau()
@@ -103,26 +110,6 @@ class TokenReplay:
             'missing_tokens': missing_tokens,
             'remaining_tokens': self._calculate_remaining_tokens(),
         }
-
-    def _process_event(self, event):
-        """
-        Process a single event by attempting to fire the corresponding transition in the Petri net.
-
-        Parameters:
-            event: The event to be processed.
-        """
-        if event == 'tau':
-            return
-        if self._can_fire(event):
-            self._fire(event)
-            self.precision_numerator += 1  # Count of successfully fired transitions
-        else:
-            self.missing_tokens += 1
-            transition = next((t for t in self.net.transitions if t.label == event), None)
-            if transition:
-                for arc in transition.in_arcs:
-                    self.missing_details[(frozenset([arc.source.name]), frozenset([arc.target.name]))] += 1
-        self.precision_denominator += 1  # Count of all attempted transitions
 
     def _can_fire(self, event):
         """

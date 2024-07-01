@@ -21,6 +21,7 @@ class ModelComparator:
 
             result.append({"type": model.get_discovery_type(), x_dimension: x_val, y_dimension: y_val})
 
+        self.visualize_models(x_dimension, y_dimension)
         return result
 
     def get_models_values(self) -> List:
@@ -63,3 +64,17 @@ class ModelComparator:
                     break
 
         return pareto_efficient_models
+
+    def visualize_models(self, x_dimension: str, y_dimension: str):
+        pareto_efficient_models = self._get_pareto_efficient_models(x_dimension, y_dimension)
+
+        for model in self.model_list:
+            x_val = model.get_dimension_value(x_dimension)
+            y_val = model.get_dimension_value(y_dimension)
+            color = 'red' if model in pareto_efficient_models else 'blue'
+            plt.scatter(x_val, y_val, color=color)
+            plt.text(x_val, y_val, model.get_discovery_type(), fontsize=9)
+
+        plt.xlabel(x_dimension)
+        plt.ylabel(y_dimension)
+        plt.show()

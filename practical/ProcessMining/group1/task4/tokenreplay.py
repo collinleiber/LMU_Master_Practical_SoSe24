@@ -150,11 +150,11 @@ class TokenReplay:
         """
         Calculate the total number of remaining tokens in the Petri net after replay.
         """
+        remaining_details = defaultdict(int)
         for place, tokens in self.marking.items():
             if tokens > 0:
-                self.remaining_tokens += tokens
-                self.remaining_details[frozenset([place.name])] += tokens
-
+                remaining_details[place] += tokens
+            return remaining_details
 
     def get_unconformity_tokens(self):
         return {

@@ -155,39 +155,12 @@ class TokenReplay:
                 self.remaining_tokens += tokens
                 self.remaining_details[frozenset([place.name])] += tokens
 
-    # for test
-    def _calculate_missing_remaining_tokens(self, log, net, im, fm):
-        replayed_traces = token_replay.apply(log, net, im, fm)
-        # print('replayed_traces ====', replayed_traces)
 
-        places = net.places
-
-        missing = defaultdict(int)
-        remaining = defaultdict(int)
-
-        for trace in replayed_traces:
-            if isinstance(trace['missing_tokens'], dict):
-                for place, count in trace['missing_tokens'].items():
-                    missing[place] += count
-            elif isinstance(trace['missing_tokens'], int):
-                for place in places:
-                    missing[place] += trace['missing_tokens']
-
-            if isinstance(trace['remaining_tokens'], dict):
-                for place, count in trace['remaining_tokens'].items():
-                    remaining[place] += count
-            elif isinstance(trace['remaining_tokens'], int):
-                for place in places:
-                    remaining[place] += trace['remaining_tokens']
-
+    def get_unconformity_tokens(self):
         return {
-            'missing': missing,
-            'remaining': remaining
+            "missing": self.missing_tokens,
+            "remaining": self.remaining_tokens
         }
-
-    def get_tokens(self):
-        return self.tokens
-
 
     def get_discovery_type(self):
         return self.net_type

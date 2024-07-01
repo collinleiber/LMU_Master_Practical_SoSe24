@@ -132,14 +132,14 @@ class Comparison:
         generated_fpms = {}
         fpm_original = None
         for algorithm in algorithms:
-            pipeline_fpm_original, pipeline_fpm_generated = self.pipeline(
+            pipeline_fpm_original, pipeline_fpm_replayed = self.pipeline(
                 log_from_file, algorithm
             )
             visualize_sorted_dict(
-                pipeline_fpm_generated.relations, "m2m_{}".format(str(algorithm))
+                pipeline_fpm_replayed.relations, "m2m_{}".format(str(algorithm))
             )
 
-            generated_fpms[str(algorithm)] = pipeline_fpm_generated
+            generated_fpms[str(algorithm)] = pipeline_fpm_replayed
             if fpm_original == None:
                 fpm_original = pipeline_fpm_original
                 visualize_sorted_dict(pipeline_fpm_original.relations, "m2m_original")

@@ -26,6 +26,10 @@ class FootPrintMatrix:
 
         self.places = []
 
+    @classmethod
+    def from_relations(cls, relations):
+        return cls(relations=relations)
+
     def sort_fpm_rec(self, relations):
         sorted_dict = {}
         for key in natsorted(relations.keys()):
@@ -35,10 +39,6 @@ class FootPrintMatrix:
             else:
                 sorted_dict[key] = value
         return sorted_dict
-
-    @classmethod
-    def from_relations(cls, relations):
-        return cls(relations=relations)
 
     def convert_log_for_footprintmatrix(self, log):
         traces = {}
@@ -78,10 +78,12 @@ class FootPrintMatrix:
                 two_element_transitions = transition_1 + transition_2
                 reversed_two_element_transitions = transition_2 + transition_1
 
-
                 all_relations = None
                 for trace in traces_without_duplicates:
-                    if two_element_transitions in trace and reversed_two_element_transitions in trace:
+                    if (
+                        two_element_transitions in trace
+                        and reversed_two_element_transitions in trace
+                    ):
                         all_relations = Relations.PARALLEL.value
                         break
                     if two_element_transitions in trace:

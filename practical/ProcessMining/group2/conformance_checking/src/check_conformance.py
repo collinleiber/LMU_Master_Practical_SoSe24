@@ -11,10 +11,8 @@ from src.generate_footprint import (
 
 
 class ConformanceChecking:
-    # Initialize ConformanceChecking Object
 
     # Checks two dictionaries (footprint)
-    # TODO only works if keys of dicts are the same
     def get_conformance_matrix(self, fpm_1, fpm_2):
         dict_out = {}
         keys_1 = set(fpm_1.relations.keys())

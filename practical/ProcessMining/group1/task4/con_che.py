@@ -90,7 +90,8 @@ alpha_token_replay = TokenReplay(event_log, alpha_net, alpha_initial_marking, al
 vizard = Visualizer()
 places = alpha_net.places
 print('places:', places)
-tokens = alpha_token_replay.get_tokens()
+alpha_token_replay.run()
+tokens = alpha_token_replay.get_unconformity_tokens()
 print('tokens ==========', tokens)
 graph_fitness = vizard.build_petri_net(alpha_net, alpha_initial_marking, alpha_final_marking, tokens)
 print('graph_fitness ===', graph_fitness)

@@ -1,4 +1,5 @@
 from typing import List, Dict
+from matplotlib import pyplot as plt
 
 from practical.ProcessMining.group1.task4.tokenreplay import TokenReplay
 
@@ -10,28 +11,30 @@ class ModelComparator:
     def __init__(self, model_list: List[TokenReplay]):
         self.model_list = model_list
 
-    def run(self, x_dimension: str = "fitness", y_dimension: str = "precision") -> Dict:
+    def run(self, x_dimension: str = "fitness", y_dimension: str = "precision") -> List:
         pareto_optima = self._get_pareto_efficient_models(x_dimension, y_dimension)
-        result = {}
+        result = []
 
-        for index, model in enumerate(pareto_optima):
+        for model in pareto_optima:
             x_val = model.get_dimension_value(x_dimension)
             y_val = model.get_dimension_value(y_dimension)
 
-            result[index] = {"type": model.get_discovery_type(), x_dimension: x_val, y_dimension: y_val}
+            result.append({"type": model.get_discovery_type(), x_dimension: x_val, y_dimension: y_val})
 
         return result
 
-    def get_models_values(self) -> Dict:
+    def get_models_values(self) -> List:
         """ Get all dimensions of all models. """
-        result = {}
+        result = []
 
-        for index, model in enumerate(self.model_list):
-            result[index] = {"type": model.get_discovery_type(),
-                             "f": model.get_fitness(),
-                             "s": model.get_simplicity(),
-                             "p": model.get_precision(),
-                             "g": model.get_generalization()}
+        for model in self.model_list:
+            result.append({
+                "type": model.get_discovery_type(),
+                "f": model.get_fitness(),
+                "s": model.get_simplicity(),
+                "p": model.get_precision(),
+                "g": model.get_generalization()
+            })
 
         return result
 

@@ -40,14 +40,13 @@ def get_log(file_path=file_path_real):
 
 logs = utils.read_txt_test_logs(text_logs)
 log = logs['L1']
-log = utils.event_log_to_dataframe(log)
-log = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
-event_log = log_converter.apply(log)
+log = utils.event_log_to_pm4py_dataframe(log)
+event_log = log_converter.to_event_log.apply(log)
 
 logs = utils.read_txt_test_logs(text_logs)
 log = logs['L1']
-log = utils.event_log_to_dataframe(log)
-event_log2 = pm4py.format_dataframe(log, case_id='case_id', activity_key='activity', timestamp_key='timestamp')
+log = utils.event_log_to_pm4py_dataframe(log)
+modified_log = log_converter.to_event_log.apply(log)
 
 
 # ================== Miners ================
@@ -92,14 +91,14 @@ pn_vis.view(gviz_petri_IMf)"""
 # Alpha Miner
 alpha_net, alpha_initial_marking, alpha_final_marking = alpha_miner.apply(event_log)
 
-alpha_token_replay = TokenReplay(event_log2, alpha_net, alpha_initial_marking, alpha_final_marking, "Alpha Miner")
+alpha_token_replay = TokenReplay(modified_log, alpha_net, alpha_initial_marking, alpha_final_marking, "Alpha Miner")
 alpha_token_replay.run()
 tokens = alpha_token_replay.get_unconformity_tokens()
 print('tokens ==========', tokens)
 
 vizard = Visualizer()
 graph_fitness = vizard.build_petri_net(alpha_net, alpha_initial_marking, alpha_final_marking, tokens)
-vizard.save(graph_fitness,'graph_fitness')
+vizard.save(graph_fitness, 'graph_fitness')
 
 # Inductive Miner
 inductive_tree = inductive_miner.apply(event_log)

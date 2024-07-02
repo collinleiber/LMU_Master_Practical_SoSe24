@@ -184,10 +184,26 @@ class TestTokenReplay:
         assert isinstance(net_type, str)
         assert net_type == "testFixture"
 
+    def test_get_dimension_value(self, token_replay):
+        token_replay.fitness = 0.1
+        token_replay.simplicity = 0.2
+        token_replay.precision = 0.3
+        token_replay.generalization = 0.5
 
+        assert 0.1 == token_replay.get_dimension_value("f")
+        assert 0.1 == token_replay.get_dimension_value("fitness")
 
-    def test_get_dimension_value(self):
-        pass
+        assert 0.2 == token_replay.get_dimension_value("s")
+        assert 0.2 == token_replay.get_dimension_value("simplicity")
+
+        assert 0.3 == token_replay.get_dimension_value("p")
+        assert 0.3 == token_replay.get_dimension_value("precision")
+
+        assert 0.5 == token_replay.get_dimension_value("g")
+        assert 0.5 == token_replay.get_dimension_value("generalization")
+
+        with pytest.raises(ValueError):
+            token_replay.get_dimension_value("nonsense_dimension")
 
     def test_calculate_fitness(self):
         pass

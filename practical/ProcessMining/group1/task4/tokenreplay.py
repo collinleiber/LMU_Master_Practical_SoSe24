@@ -193,7 +193,7 @@ class TokenReplay:
         elif dimension in ('g', 'generalization'):
             return self.get_generalization()
         else:
-            return ValueError
+            raise ValueError
 
     def calculate_fitness(self) -> float:
         total_missing = sum(val for val in self.missing_tokens.values())

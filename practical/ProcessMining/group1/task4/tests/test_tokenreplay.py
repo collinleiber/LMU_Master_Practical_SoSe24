@@ -68,8 +68,21 @@ class TestTokenReplay:
         assert not token_replay._can_fire('t2')
         assert not token_replay._can_fire('unknown')
 
-    def test_fire(self):
-        pass
+    def test_fire(self, token_replay):
+        initial_marking = token_replay.marking.copy()
+        token_replay._fire('t1')
+        # Get the 't1' transition from the net
+        t1 = next((t for t in token_replay.net.transitions if t.label == 't1'), None)
+
+        # Check if the marking of the input place of 't1' has been decremented by 1
+        for arc in t1.in_arcs:
+            assert token_replay.marking[arc.source] == initial_marking[arc.source] - 1
+
+        # Check if the marking of the output place of 't1' has been incremented by 1
+        for arc in t1.out_arcs:
+            assert token_replay.marking[arc.target] == initial_marking[arc.target] + 1
+
+
 
     def test_handle_tau(self):
         pass

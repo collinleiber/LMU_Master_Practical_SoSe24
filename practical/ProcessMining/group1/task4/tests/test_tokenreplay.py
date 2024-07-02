@@ -1,8 +1,11 @@
-import pytest
-from pm4py.objects.petri_net.obj import PetriNet, Marking
-from practical.ProcessMining.group1.shared.visualizer import Visualizer
 import graphviz
+import pm4py
+from pm4py.objects.petri_net.obj import PetriNet, Marking
+from pm4py.objects.conversion.log import converter as log_converter
+import pytest
 
+from practical.ProcessMining.group1.shared import utils
+from practical.ProcessMining.group1.shared.visualizer import Visualizer
 from practical.ProcessMining.group1.task4.tokenreplay import TokenReplay
 
 
@@ -60,8 +63,22 @@ class TestTokenReplay:
 
         return tr
 
-    def test_token_replay(self):
-        pass
+    def test_token_replay(self, token_replay):
+        # Run attempt with initially empty log
+        assert not token_replay.run()
+
+        log = [("p_im", "p1", "p2"), ("p_im", "tau", "p_fm"), ("p2",)]
+        log = utils.event_log_to_pm4py_dataframe(log)
+        event_log = log_converter.to_event_log.apply(log)
+
+        net, initial, final = pm4py.discover_petri_net_alpha(event_log)
+
+        token_replay = TokenReplay(event_log, net, initial, final, "alphaTest")
+
+        token_replay.run(event_log)
+
+        assert sum(x for x in dict(token_replay.missing_tokens).values()) == 4
+        assert sum(y for y in dict(token_replay.remaining_tokens).values()) == 1
 
     def test_can_fire(self, token_replay):
         assert token_replay._can_fire('t1')

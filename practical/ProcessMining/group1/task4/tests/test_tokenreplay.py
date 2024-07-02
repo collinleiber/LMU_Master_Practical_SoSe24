@@ -124,8 +124,14 @@ class TestTokenReplay:
     def test_calculate_remaining_tokens(self):
         pass
 
-    def test_get_unconformity_tokens(self):
-        pass
+    def test_get_unconformity_tokens(self, token_replay):
+        tokens = token_replay.get_unconformity_tokens()
+
+        assert isinstance(tokens, dict)
+        assert "missing" in tokens and "remaining" in tokens
+        assert tokens["missing"] == token_replay.missing_tokens
+        assert tokens["remaining"] == token_replay.remaining_tokens
+
 
     def test_token_replay_getters(self):
         pass

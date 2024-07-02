@@ -147,8 +147,13 @@ class TestTokenReplay:
         else:
             assert token_replay.missing_tokens == initial_missing_tokens
 
-    def test_calculate_remaining_tokens(self):
-        pass
+    def test_calculate_remaining_tokens(self, token_replay):
+        remaining_tokens = token_replay._calculate_remaining_tokens()
+
+        assert isinstance(remaining_tokens, dict)
+
+        total_remaining = sum(val for val in remaining_tokens.values())
+        assert sum(val for val in token_replay.remaining_tokens.values()) - total_remaining == 5
 
     def test_get_unconformity_tokens(self, token_replay):
         tokens = token_replay.get_unconformity_tokens()

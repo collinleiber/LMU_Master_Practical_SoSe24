@@ -99,6 +99,8 @@ class TestTokenReplay:
         for arc in t1.out_arcs:
             assert token_replay.marking[arc.target] == initial_marking[arc.target] + 1
 
+        assert not token_replay._fire('no_transition')
+
     def test_handle_tau(self, token_replay):
         # Create a trace with a tau event followed by a 't1' event
         trace = ['tau', 't1']

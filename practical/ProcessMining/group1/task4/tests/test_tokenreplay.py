@@ -82,10 +82,41 @@ class TestTokenReplay:
         for arc in t1.out_arcs:
             assert token_replay.marking[arc.target] == initial_marking[arc.target] + 1
 
+    def test_handle_tau(self, token_replay):
+        # Create a trace with a tau event followed by a 't1' event
+        trace = ['tau', 't1']
+        pointer = 0
+        initial_produced = token_replay.produced_buffer
+        initial_consumed = token_replay.consumed_buffer
 
+        token_replay._handle_tau(trace, pointer)
 
-    def test_handle_tau(self):
-        pass
+        # Get the 't1' transition from the net
+        t1 = next((t for t in token_replay.net.transitions if t.label == 't1'), None)
+
+        # Check if the marking of the input place of 't1' has been decremented by 1
+        for arc in t1.in_arcs:
+            assert token_replay.marking[arc.source] == 0
+
+        # Check if the marking of the output place of 't1' has been incremented by 1
+        for arc in t1.out_arcs:
+            assert token_replay.marking[arc.target] == 1
+
+        # Check if produced_buffer and consumed_buffer have been incremented by 2, for tau and following
+        assert token_replay.produced_buffer == initial_produced + 2
+        assert token_replay.consumed_buffer == initial_consumed + 2
+
+        current_produced = token_replay.produced_buffer
+        current_consumed = token_replay.consumed_buffer
+
+        # Create a failing trace with a tau event followed by a non-existent event
+        failing_trace = ['tau', 'non_existent_event']
+        pointer = 0
+
+        token_replay._handle_tau(failing_trace, pointer)
+
+        assert token_replay.produced_buffer == current_produced
+        assert token_replay.consumed_buffer == current_consumed
 
     def test_handle_unconformity(self):
         pass

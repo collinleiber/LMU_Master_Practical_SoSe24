@@ -205,8 +205,19 @@ class TestTokenReplay:
         with pytest.raises(ValueError):
             token_replay.get_dimension_value("nonsense_dimension")
 
-    def test_calculate_fitness(self):
-        pass
+    def test_calculate_fitness(self, token_replay):
+        token_replay.consumed_tokens = 80
+        token_replay.produced_tokens = 90
+        token_replay.missing_tokens = {"a": 3, "b": 4}
+        token_replay.remaining_tokens = {"a": 4}
+        expected_fitness = 0.9340277
+
+        fitness = token_replay.calculate_fitness()
+
+        assert isinstance(fitness, float)
+        assert 0 <= fitness <= 1
+
+        assert fitness == pytest.approx(expected_fitness, 0.01)
 
     def test_calculate_pm4py_dimensions(self):
         pass

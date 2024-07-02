@@ -63,8 +63,10 @@ class TestTokenReplay:
     def test_token_replay(self):
         pass
 
-    def test_can_fire(self):
-        pass
+    def test_can_fire(self, token_replay):
+        assert token_replay._can_fire('t1')
+        assert not token_replay._can_fire('t2')
+        assert not token_replay._can_fire('unknown')
 
     def test_fire(self):
         pass

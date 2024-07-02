@@ -75,7 +75,7 @@ class TokenReplay:
                 elif self._can_fire(event):
                     self._fire(event)
                 else:
-                    self._handle_unconformity(event)
+                    self._handle_missing_event(event)
 
             self.produced_tokens += self.produced_buffer
             self.consumed_tokens += self.consumed_buffer
@@ -142,9 +142,9 @@ class TokenReplay:
                 self._fire('tau')
                 self._fire(next_event)
             else:
-                self._handle_unconformity(next_event)
+                self._handle_missing_event(next_event)
 
-    def _handle_unconformity(self, event):
+    def _handle_missing_event(self, event):
         transition = next((t for t in self.net.transitions if t.label == event), None)
         if transition:
             for arc in transition.in_arcs:

@@ -106,6 +106,10 @@ class TokenReplay:
         Parameters:
             event: The event to be fired.
         """
+        if event == "tau":
+            self.consumed_buffer += 1
+            self.produced_buffer += 1
+            return
         transition = next((t for t in self.net.transitions if t.label == event), None)
         if transition is None:
             return
@@ -125,8 +129,6 @@ class TokenReplay:
             trace: The trace being replayed.
             pointer: The current position in the trace.
         """
-        # Fire the tau event
-        self._fire('tau')
 
         # Check if there is a next event in the trace
         if pointer + 1 < len(trace):
@@ -136,6 +138,8 @@ class TokenReplay:
 
             # Check if the next event can be fired after handling tau
             if self._can_fire(next_event):
+                # Increment buffers for tau only, when next event can be fired
+                self._fire('tau')
                 self._fire(next_event)
             else:
                 self._handle_unconformity(next_event)

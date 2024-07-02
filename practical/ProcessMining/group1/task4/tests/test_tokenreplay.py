@@ -163,9 +163,28 @@ class TestTokenReplay:
         assert tokens["missing"] == token_replay.missing_tokens
         assert tokens["remaining"] == token_replay.remaining_tokens
 
+    def test_token_replay_getters(self, token_replay):
+        fitness = token_replay.get_fitness()
+        assert isinstance(fitness, float) or isinstance(fitness, int)
+        assert 1 >= fitness >= 0
 
-    def test_token_replay_getters(self):
-        pass
+        precision = token_replay.get_precision()
+        assert isinstance(precision, float) or isinstance(precision, int)
+        assert 1 >= precision >= 0
+
+        simplicity = token_replay.get_simplicity()
+        assert isinstance(simplicity, float) or isinstance(simplicity, int)
+        assert 1 >= simplicity >= 0
+
+        generalization = token_replay.get_generalization()
+        assert isinstance(generalization, float) or isinstance(generalization, int)
+        assert 1 >= generalization >= 0
+
+        net_type = token_replay.get_discovery_type()
+        assert isinstance(net_type, str)
+        assert net_type == "testFixture"
+
+
 
     def test_get_dimension_value(self):
         pass

@@ -219,11 +219,56 @@ class TestTokenReplay:
 
         assert fitness == pytest.approx(expected_fitness, 0.01)
 
-    def test_calculate_pm4py_dimensions(self):
-        pass
+    def test_calculate_pm4py_dimensions(self, token_replay):
+        # Run the _calculate_pm4py_dimensions method
+        fitness, simplicity, precision, generalization = token_replay._calculate_pm4py_dimensions(
+            token_replay.log, token_replay.net, token_replay.initial_marking, token_replay.final_marking
+        )
 
-    def test_shuffle_activities(self):
-        pass
+        assert isinstance(fitness, float) or isinstance(fitness, int)
+        assert isinstance(simplicity, float) or isinstance(simplicity, int)
+        assert isinstance(precision, float) or isinstance(precision, int)
+        assert isinstance(generalization, float) or isinstance(generalization, int)
+
+        assert 0 <= fitness <= 1
+        assert 0 <= simplicity <= 1
+        assert 0 <= precision <= 1
+        assert 0 <= generalization <= 1
+
+    @pytest.mark.parametrize(
+        "log",
+        [
+            [],
+            [("a",), ("b",)],
+            [("a", "b", "c"), ("c", "d", "e"), ("a", "e")]
+        ]
+    )
+    def test_shuffle_activities(self, token_replay, log):
+        token_replay.log = log
+
+        # Run the shuffle_activities method
+        shuffled_log = token_replay.shuffle_activities()
+
+        # Check if the result is a list
+        assert isinstance(shuffled_log, list)
+
+        if not shuffled_log or not any(len(trace) > 1 for trace in shuffled_log):
+            return
+
+        # Check if the length of the shuffled log is the same as the original log
+        assert len(shuffled_log) == len(token_replay.log)
+
+        # rerun test, if there is any trace, that is different compared to original log
+        if not any(shuffled_log[i] != token_replay.log[i] for i in range(len(shuffled_log))):
+            self.test_shuffle_activities(token_replay, log)
+
+        # Check if each trace in the shuffled log has same length as corresponding trace in original log
+        for i in range(len(shuffled_log)):
+            assert len(shuffled_log[i]) == len(token_replay.log[i])
+
+        # Check if each trace in the shuffled log contains same activities as corresponding trace in original log
+        for i in range(len(shuffled_log)):
+            assert set(shuffled_log[i]) == set(token_replay.log[i])
 
     def test_visualize_replay_result(self, tmp_path, token_replay):
         visualizer = Visualizer()

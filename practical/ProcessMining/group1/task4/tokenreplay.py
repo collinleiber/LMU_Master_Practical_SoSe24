@@ -133,8 +133,8 @@ class TokenReplay:
         # Check if there is a next event in the trace
         if pointer + 1 < len(trace):
             next_event = trace[pointer + 1]
-            if isinstance(next_event, dict):
-                next_event = next_event['activity']
+            if not isinstance(next_event, str):
+                next_event = next_event['concept:name']
 
             # Check if the next event can be fired after handling tau
             if self._can_fire(next_event):

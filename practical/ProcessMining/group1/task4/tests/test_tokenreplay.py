@@ -118,8 +118,34 @@ class TestTokenReplay:
         assert token_replay.produced_buffer == current_produced
         assert token_replay.consumed_buffer == current_consumed
 
-    def test_handle_unconformity(self):
-        pass
+    @pytest.mark.parametrize(
+        "trace",
+        [
+            ['t1', 'p1'],  # existing transition
+            ['non_existent_event', 'p1'],  # not existing
+            ['p_im', 'p_fm']
+        ]
+    )
+    def test_handle_missing_event(self, token_replay, trace):
+        # Create a trace with a non-existent event
+        pointer = 0
+        initial_missing_tokens = token_replay.missing_tokens.copy()
+
+        token_replay._handle_missing_event(trace[pointer])
+
+        # Get the 'non_existent_event' transition from the net
+        transition = next((t for t in token_replay.net.transitions if t.label == trace[pointer]), None)
+
+        # If the transition exists, check if missing_tokens have been incremented for each input place of the transition
+        if transition:
+            for arc in transition.in_arcs:
+                if token_replay.marking[arc.source] < 1:
+                    assert token_replay.missing_tokens[arc.source] == initial_missing_tokens[arc.source] + 1
+                else:
+                    assert token_replay.missing_tokens[arc.source] == initial_missing_tokens[arc.source]
+        # If the transition does not exist, check if missing_tokens have not been changed
+        else:
+            assert token_replay.missing_tokens == initial_missing_tokens
 
     def test_calculate_remaining_tokens(self):
         pass

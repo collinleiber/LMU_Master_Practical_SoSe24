@@ -7,7 +7,6 @@ import uuid
 import re
 from datetime import datetime
 from pathlib import Path
-import xml.etree.ElementTree as ElementTree
 
 TMP_LOGS_PATH = './tmp_logs'
 SAMPLES_PATH = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'example_files'))

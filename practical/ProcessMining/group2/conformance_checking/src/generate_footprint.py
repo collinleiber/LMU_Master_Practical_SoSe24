@@ -12,7 +12,18 @@ class Relations(Enum):
 
 
 class FootPrintMatrix:
+
     def __init__(self, log=None, relations=None):
+        """
+        Initialize a FootPrintMatrix instance.
+
+        Parameters:
+        ----------
+        log : dict, optional
+            The input log to be converted into a list of traces for the footprint matrix.
+        relations : dict, optional
+            A dictionary representing the relations in the footprint matrix.
+        """
         if log is not None:
             self.traces = self.convert_log_for_footprintmatrix(log)
         else:
@@ -28,9 +39,41 @@ class FootPrintMatrix:
 
     @classmethod
     def from_relations(cls, relations):
+        """
+        Create a FootPrintMatrix instance from a given relations dictionary.
+
+        This class method initializes a FootPrintMatrix object using the provided
+        relations dictionary.
+
+        Parameters:
+        ----------
+        relations : dict
+            The relations dictionary to initialize the FootPrintMatrix.
+
+        Returns:
+        -------
+        FootPrintMatrix
+            A new FootPrintMatrix instance with the specified relations.
+        """
         return cls(relations=relations)
 
     def sort_fpm_rec(self, relations):
+        """
+        Recursively sort the FootPrintMatrix relations dictionary.
+
+        This method sorts the keys of the input dictionary and its nested dictionaries
+        in natural order.
+
+        Parameters:
+        ----------
+        relations : dict
+            The relations dictionary to be sorted.
+
+        Returns:
+        -------
+        dict
+            A new dictionary with keys sorted in natural order.
+        """
         sorted_dict = {}
         for key in natsorted(relations.keys()):
             value = relations[key]
@@ -41,6 +84,24 @@ class FootPrintMatrix:
         return sorted_dict
 
     def convert_log_for_footprintmatrix(self, log):
+        """
+        Convert an event log into a format suitable for the FootPrintMatrix.
+
+        This method converts each trace in the log into a list of activities and
+        stores them in a dictionary with trace numbers as keys.
+
+        Parameters:
+        ----------
+        log : list of dict
+            The event log to convert, where each trace is a list of events, and each
+            event is a dictionary with at least the 'concept:name' key.
+
+        Returns:
+        -------
+        dict
+            A dictionary where keys are trace numbers (as strings) and values are lists
+            of activity names.
+        """
         traces = {}
         trace_num = 1
 
@@ -56,10 +117,23 @@ class FootPrintMatrix:
         return traces
 
     def generate_transitions(self):
-        # Sets all transitions for the current petri net
+        """
+        Generate and set all transitions for the current Petri net.
+
+        This method extracts all unique transitions from the traces and stores them
+        in the `transitions` attribute of the FootPrintMatrix.
+        """
         self.transitions = set(chain.from_iterable(self.traces.values()))
 
     def generate_footprint(self) -> np.ndarray:
+        """
+        Generate a FootPrintMatrix by analyzing the transitions and traces.
+
+        This method performs the following steps:
+        1. Generate transitions from the traces.
+        2. Remove duplicate traces.
+        3. Extract relations between each pair of transitions and populate the FootPrintMatrix.
+        """
         print("Generating a Footprint Matrix!")
         # Step 0: generate transitions
         self.generate_transitions()

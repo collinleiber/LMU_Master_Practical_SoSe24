@@ -14,6 +14,21 @@ class ConformanceChecking:
 
     # Checks two dictionaries (footprint)
     def get_conformance_matrix(self, fpm_1, fpm_2):
+        """
+        Create a conformance matrix comparing relations of two FootPrintMatrix objects.
+
+        Parameters:
+        ----------
+        fpm_1 : FootPrintMatrix
+            The first FootPrintMatrix to compare.
+        fpm_2 : FootPrintMatrix
+            The second FootPrintMatrix to compare.
+
+        Returns:
+        -------
+        FootPrintMatrix
+            A FootPrintMatrix representing the conformance matrix.
+        """
         dict_out = {}
         keys_1 = set(fpm_1.relations.keys())
         keys_2 = set(fpm_2.relations.keys())
@@ -38,6 +53,21 @@ class ConformanceChecking:
         return FootPrintMatrix.from_relations(dict_out)
 
     def get_conformance_value(self, fpm_1, fpm_2):
+        """
+        Calculate the conformance value between two FootPrintMatrix objects.
+
+        Parameters:
+        ----------
+        fpm_1 : FootPrintMatrix
+            The first FootPrintMatrix to compare.
+        fpm_2 : FootPrintMatrix
+            The second FootPrintMatrix to compare.
+
+        Returns:
+        -------
+        float
+            The conformance value, ranging from 0.0 (no conformance) to 1.0 (full conformance).
+        """
         different_cells = 0
         keys_1 = set(fpm_1.relations.keys())
         keys_2 = set(fpm_2.relations.keys())

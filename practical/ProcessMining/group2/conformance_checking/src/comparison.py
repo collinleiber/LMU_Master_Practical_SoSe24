@@ -22,9 +22,29 @@ from pm4py.algo.simulation.playout.petri_net import variants
 
 class Comparison:
 
-    def pipeline(self, input_log, algorithm: AlgoPm4Py):
+    def pipeline(self, input_log, algorithm: AlgoPm4Py, variant=variants.extensive):
         """
-        input_log is on form of dictionary like the one FootPrintMatrix uses.
+        Execute a process mining pipeline on an input log using a specified algorithm.
+
+        This method performs the following steps:
+        1. Generate an original FootPrintMatrix from the input log.
+        2. Run the specified algorithm on the input log to obtain a process model.
+        3. Replay the resulting model to obtain replayed logs.
+        4. Generate a FootPrintMatrix from the replayed logs.
+
+        Parameters:
+        ----------
+        input_log : EventLog
+            The input log in EventLog form (pm4py).
+        algorithm : AlgoPm4Py
+            The process mining algorithm to be applied to the input log.
+        variant : variants (optional)
+            The variant of the replay algorithm to be used. Default is variants.extensive.
+
+        Returns:
+        -------
+        tuple
+            A tuple containing the original FootPrintMatrix and the replayed FootPrintMatrix.
         """
         # Pipeline:
         # 1. Get footprint matrix from log
@@ -33,7 +53,7 @@ class Comparison:
         # 2. Run algorithm on log
         net, start, end = get_model_from_pm4py(input_log, algorithm)
         # 3. Replay resulting model from algorithm
-        logs_replayed = get_traces_with_replay(net, start, end, variants.extensive)
+        logs_replayed = get_traces_with_replay(net, start, end, variant)
         # 4. Get footprint matrix from replayed log
         fpm_replayed = FootPrintMatrix(logs_replayed)
         fpm_replayed.generate_footprint()
@@ -47,9 +67,17 @@ class Comparison:
         Next, after running the algorithm on each sublog, the resulting model is being replayed in order to get a new log.
         Finally, the resulting logs are being compared to the original log.
 
-        :param event_log: Path to the event log.
-        :param algorithm: Algorithm to be used.
-        :return: List of tuples, where each tuple contains the name of the sublog and the conformance value.
+
+        Parameters:
+        ----------
+        event_log: str
+            Path to the event log.
+        algorithm: AlgoPm4Py
+            Algorithm to be used.
+
+        Returns:
+        -------
+        List of tuples, where each tuple contains the name of the sublog and the conformance value.
         """
 
         def split_log_into_sublogs(log):
@@ -100,9 +128,17 @@ class Comparison:
         The algorithm is being run on the log in order to get a model, which is then being replayed in order to get a new log.
         Finally, the resulting log is being compared to the original log.
 
-        :param event_log: Path to the event log.
-        :param algorithm: Algorithm to be used.
-        :return: Conformance value.
+        Parameters:
+        ----------
+        event_log: str
+            Path to the event log.
+
+        algorithm: AlgoPm4py
+            Algorithm to be used.
+
+        Returns:
+        -------
+        Conformance value.
         """
         log = get_log_from_file(event_log)
 
@@ -131,10 +167,19 @@ class Comparison:
         Scenario 1: Each log is compared to the original log.
         Scenario 2: Each log is compared to the other logs.
 
-        :param log: Path to the event log.
-        :param algorithms: List of algorithms to be used.
-        :param scenario: Scenario to be used.
-        :return: Dictionary containing the comparison values.
+        Parameters:
+        ----------
+
+        log: str
+            Path to the event log.
+        algorithms: [AlgoPm4Py]
+            List of algorithms to be used.
+        scenario: number
+            Scenario to be used.
+
+        Returns:
+        -------
+        Dictionary containing the comparison values.
         """
 
         log_from_file = get_log_from_file(log)

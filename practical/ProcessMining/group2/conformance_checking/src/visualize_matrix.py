@@ -6,6 +6,19 @@ OUTPUT_DIR = os.path.join(SCRIPT_DIR, '..', 'footprintmatrix_plots')
 
 
 def visualize_sorted_dict(sorted_dict, name):
+    """
+    Visualize a sorted dictionary as a heatmap and save the image.
+
+    This function visualizes the given sorted dictionary as a heatmap, with keys as labels
+    on the x and y axes. The resulting heatmap is saved as a PNG image.
+
+    Parameters:
+    ----------
+    sorted_dict : dict
+        The sorted dictionary to visualize.
+    name : str
+        The name to use in the title and filename of the saved image.
+    """
     keys = list(sorted_dict.keys())
     size = len(keys) if len(keys) > 0 else 1
 

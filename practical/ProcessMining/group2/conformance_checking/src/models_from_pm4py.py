@@ -16,6 +16,23 @@ class AlgoPm4Py(Enum):
 
 
 def get_log_from_file(file_path="InputLogs/L1.csv"):
+    """
+    Load an event log from a file.
+
+    This function loads an event log from a specified file path. It supports both
+    .csv and .xes file formats. If the file is a .xes file, it uses the `importer`
+    to load the log. Otherwise, it reads a .csv file and constructs the event log manually.
+
+    Parameters:
+    ----------
+    file_path : str, optional
+        The path to the log file. Default is "InputLogs/L1.csv".
+
+    Returns:
+    -------
+    EventLog
+        The loaded event log.
+    """
 
     file_path = os.path.join(FILE_DIR, "..", file_path)
 
@@ -48,6 +65,24 @@ def get_model_from_pm4py(
     log,
     algorithm: AlgoPm4Py = AlgoPm4Py.ALPHAPLUS,
 ):
+    """
+    Discover a Petri net model from an event log using the specified algorithm.
+
+    This function uses the PM4Py library to discover a Petri net model from the provided
+    event log based on the selected process mining algorithm.
+
+    Parameters:
+    ----------
+    log : EventLog
+        The event log from which to discover the Petri net model.
+    algorithm : AlgoPm4Py, optional
+        The process mining algorithm to use for discovery. Default is AlgoPm4Py.ALPHAPLUS.
+
+    Returns:
+    -------
+    tuple
+        A tuple containing the discovered Petri net, initial marking, and final marking.
+    """
     if algorithm == AlgoPm4Py.ALPHA:
         return pm4py.discover_petri_net_alpha(log)
     elif algorithm == AlgoPm4Py.ALPHAPLUS:

@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Union
 from matplotlib import pyplot as plt
 
 from practical.ProcessMining.group1.task4.tokenreplay import TokenReplay
@@ -7,11 +7,24 @@ from practical.ProcessMining.group1.task4.tokenreplay import TokenReplay
 class ModelComparator:
     """
     Compares multiple TokenReplay instances to find pareto optimal models.
+
+    Attributes:
+        model_list: List containing TokenReplay instances, which are based on petri nets
     """
     def __init__(self, model_list: List[TokenReplay]):
         self.model_list = model_list
 
-    def run(self, x_dimension: str = "fitness", y_dimension: str = "precision") -> List:
+    def run(self, x_dimension: str = "fitness", y_dimension: str = "precision") -> List[Dict[str, Union[str, float]]]:
+        """
+        Executes the comparison for given models, calculates pareto efficient models and plots the result
+
+        Parameters:
+            x_dimension: name or shortcut of the x-axis dimension
+            y_dimension: name or shortcut of the y-axis dimension
+
+        Returns:
+            List of all models, that are pareto efficient with chosen dimension's scores
+        """
         pareto_optima = self._get_pareto_efficient_models(x_dimension, y_dimension)
         result = []
 
@@ -24,8 +37,13 @@ class ModelComparator:
         self.visualize_models(x_dimension, y_dimension)
         return result
 
-    def get_models_values(self) -> List:
-        """ Get all dimensions of all models. """
+    def get_models_values(self) -> List[Dict[str, Union[str, float]]]:
+        """
+        Get values for all dimensions of all models.
+
+        Returns:
+            List of all models, with all dimension scores
+        """
         result = []
 
         for model in self.model_list:
@@ -48,7 +66,7 @@ class ModelComparator:
             y_dimension: name or shortcut of the y-axis dimension
 
         Returns:
-            List of all models, that are pareto
+            List of all models, that are pareto efficient
         """
         pareto_efficient_models = self.model_list.copy()
 
@@ -66,6 +84,13 @@ class ModelComparator:
         return pareto_efficient_models
 
     def visualize_models(self, x_dimension: str, y_dimension: str):
+        """
+        plots model comparison and highlights from all models the pareto efficient one's in red
+
+        Parameters:
+            x_dimension: name or shortcut of the x-axis dimension
+            y_dimension: name or shortcut of the y-axis dimension
+        """
         pareto_efficient_models = self._get_pareto_efficient_models(x_dimension, y_dimension)
 
         for model in self.model_list:

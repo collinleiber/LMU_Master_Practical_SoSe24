@@ -1,6 +1,7 @@
 from collections import defaultdict
-import random
 import pm4py
+import random
+from typing import List, Dict
 
 
 class TokenReplay:
@@ -49,7 +50,7 @@ class TokenReplay:
         # Override / add dimension values of own implementation
         # self.fitness = self.calculate_fitness()
 
-    def run(self, log=None):
+    def run(self, log=None) -> None:
         """
         Run the Token Replay algorithm on an entire event log.
 
@@ -59,16 +60,19 @@ class TokenReplay:
         Returns:
             list: A list of results for each trace.
         """
-        if not log:  # To test with alternative logs
+        # To test with alternative logs
+        if not log:
             log = self.log
 
+        # Iterate over all log traces
         for trace in log:
             self.marking = self.initial_marking.copy()
             self.produced_buffer = 0
             self.consumed_buffer = 0
 
+            # handle event in current trace
             for i, event in enumerate(trace):
-                if not isinstance(event, str):  # To handle pm4py converted logs
+                if not isinstance(event, str):  # Used by pm4py converted logs
                     event = event['concept:name']
                 if event == 'tau':
                     self._handle_tau(trace, i)
@@ -81,7 +85,7 @@ class TokenReplay:
             self.consumed_tokens += self.consumed_buffer
             self.remaining_tokens = self._calculate_remaining_tokens()
 
-    def _can_fire(self, event):
+    def _can_fire(self, event) -> bool:
         """
         Check if the transition corresponding to the event can be fired.
 
@@ -99,7 +103,7 @@ class TokenReplay:
                 return False
         return True
 
-    def _fire(self, event):
+    def _fire(self, event) -> None:
         """
         Fire the transition corresponding to the event, updating the marking.
 
@@ -120,7 +124,7 @@ class TokenReplay:
             self.marking[arc.target] += 1
             self.produced_buffer += 1
 
-    def _handle_tau(self, trace, pointer):
+    def _handle_tau(self, trace, pointer) -> None:
         """
         Handle the tau event by producing and consuming a token and then
         check if the next event in the trace can be fired.
@@ -138,23 +142,27 @@ class TokenReplay:
 
             # Check if the next event can be fired after handling tau
             if self._can_fire(next_event):
-                # Increment buffers for tau only, when next event can be fired
+                # Fire tau only, when next event can be fired
                 self._fire('tau')
                 self._fire(next_event)
             else:
                 self._handle_missing_event(next_event)
 
-    def _handle_missing_event(self, event):
+    def _handle_missing_event(self, event) -> None:
+        """
+        Increases the missing tokens counter for the given event, when needed conditions met.
+
+        Parameters:
+            event: The trace event, that is missing in the model.
+        """
         transition = next((t for t in self.net.transitions if t.label == event), None)
         if transition:
             for arc in transition.in_arcs:
                 if self.marking[arc.source] < 1:
                     self.missing_tokens[arc.source] += 1
 
-    def _calculate_remaining_tokens(self):
-        """
-        Calculate the total number of remaining tokens in the Petri net after replay.
-        """
+    def _calculate_remaining_tokens(self) -> Dict[any, int]:
+        """ Calculate the total number of remaining tokens in the Petri net after replay. """
         remaining = defaultdict(int)
         for place, tokens in self.marking.items():
             final_tokens = self.final_marking.get(place, 0)
@@ -162,28 +170,30 @@ class TokenReplay:
                 remaining[place] += tokens - final_tokens
         return remaining
 
-    def get_unconformity_tokens(self):
+    def get_unconformity_tokens(self) -> Dict[str, Dict[any, int]]:
+        """ Returns the missing and remaining tokens in the Petri net after replay. """
         return {
             "missing": self.missing_tokens,
             "remaining": self.remaining_tokens
         }
 
-    def get_discovery_type(self):
+    def get_discovery_type(self) -> str:
         return self.net_type
 
-    def get_fitness(self):
+    def get_fitness(self) -> float:
         return self.fitness
 
-    def get_simplicity(self):
+    def get_simplicity(self) -> float:
         return self.simplicity
 
-    def get_precision(self):
+    def get_precision(self) -> float:
         return self.precision
 
-    def get_generalization(self):
+    def get_generalization(self) -> float:
         return self.generalization
 
-    def get_dimension_value(self, dimension: str):
+    def get_dimension_value(self, dimension: str) -> float:
+        """ Get the value of a specific dimension. """
         if dimension in ('f', 'fitness'):
             return self.get_fitness()
         elif dimension in ('s', 'simplicity'):
@@ -196,6 +206,7 @@ class TokenReplay:
             raise ValueError
 
     def calculate_fitness(self) -> float:
+        """ Calculate the fitness of the token replay algorithm for the entire log. """
         total_missing = sum(val for val in self.missing_tokens.values())
         total_remaining = sum(val for val in self.remaining_tokens.values())
 
@@ -203,7 +214,17 @@ class TokenReplay:
                    0.5 * (1 - (total_remaining / self.produced_tokens)))
         return fitness
 
-    def _calculate_pm4py_dimensions(self, log, net, im, fm):
+    @staticmethod
+    def _calculate_pm4py_dimensions(log, net, im, fm) -> (float, float, float, float):
+        """
+        Calculate the fitness, simplicity, precision, and generalization scores by pm4py.
+
+        Parameters:
+            log: Base event log used for conformance checking with given net as model.
+            net: Dictionary representing the Petri net with input and output places for each transition.
+            im: Dictionary representing the initial marking of the Petri net.
+            fm: Dictionary representing the final marking of the Petri net.
+        """
         fitness = pm4py.conformance.fitness_token_based_replay(log, net, im, fm)
         simplicity = pm4py.analysis.simplicity_petri_net(net, im, fm)
         precision = pm4py.conformance.precision_token_based_replay(log, net, im, fm)
@@ -211,7 +232,7 @@ class TokenReplay:
 
         return fitness.get("log_fitness"), simplicity, precision, generalization
 
-    def shuffle_activities(self):
+    def shuffle_activities(self) -> List:
         """
         Shuffle the activities in each trace of the event log.
 

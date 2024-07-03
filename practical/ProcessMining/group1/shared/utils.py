@@ -7,7 +7,6 @@ import uuid
 import re
 from datetime import datetime
 from pathlib import Path
-import xml.etree.ElementTree as ElementTree
 
 TMP_LOGS_PATH = './tmp_logs'
 SAMPLES_PATH = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'example_files'))
@@ -94,31 +93,3 @@ def check_lists_of_sets_equal(list1, list2):
     sorted_list2 = sorted([tuple(sorted(s)) for s in list2])
 
     return sorted_list1 == sorted_list2
-
-
-def cleanse_real_eventlog(input_file_path=None, output_file_path=None):
-    if not input_file_path:
-        input_file_path = SAMPLES_PATH / 'DomesticDeclarations.xes'
-        output_file_path = SAMPLES_PATH / 'DomesticDeclarations_cleansed.csv'
-
-    tree = ElementTree.parse(input_file_path)
-    root = tree.getroot()
-
-    with open(output_file_path, mode='w', newline='') as file:
-        writer = csv.writer(file, delimiter=';')
-        # Write the CSV file header
-        writer.writerow(['case_id', 'timestamp', 'activity'])
-
-        # Iterate over each trace
-        for trace in root.findall('trace'):
-            case_id = trace.find('string[@key="id"]').get('value')
-
-            # Iterate over each event
-            for event in trace.findall('event'):
-                timestamp = event.find('date[@key="time:timestamp"]').get('value')
-                activity = event.find('string[@key="concept:name"]').get('value')
-
-                # Write to CSV file
-                writer.writerow([case_id, timestamp, activity])
-
-    print("Done")

@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Union
 from matplotlib import pyplot as plt
 
 from practical.ProcessMining.group1.task4.tokenreplay import TokenReplay
@@ -14,7 +14,7 @@ class ModelComparator:
     def __init__(self, model_list: List[TokenReplay]):
         self.model_list = model_list
 
-    def run(self, x_dimension: str = "fitness", y_dimension: str = "precision") -> List[Dict[str: str | float]]:
+    def run(self, x_dimension: str = "fitness", y_dimension: str = "precision") -> List[Dict[str, Union[str, float]]]:
         """
         Executes the comparison for given models, calculates pareto efficient models and plots the result
 
@@ -37,7 +37,7 @@ class ModelComparator:
         self.visualize_models(x_dimension, y_dimension)
         return result
 
-    def get_models_values(self) -> List[Dict[str: str | float]]:
+    def get_models_values(self) -> List[Dict[str, Union[str, float]]]:
         """
         Get values for all dimensions of all models.
 

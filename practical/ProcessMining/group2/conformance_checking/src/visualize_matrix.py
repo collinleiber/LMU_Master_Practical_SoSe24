@@ -24,9 +24,8 @@ def visualize_sorted_dict(sorted_dict, name):
 
     fig, ax = plt.subplots(figsize=(size * 2, size * 2))
 
-    ax.matshow([[0] * size] * size, cmap='Greys')  # Create an empty heatmap
+    ax.matshow([[0] * size] * size, cmap='Greys')
 
-    # Add gridlines
     ax.set_xticks([x - 0.5 for x in range(1, size)], minor=True)
     ax.set_yticks([y - 0.5 for y in range(1, size)], minor=True)
     ax.grid(which='minor', color='black', linestyle='-', linewidth=5)
@@ -49,7 +48,7 @@ def visualize_sorted_dict(sorted_dict, name):
     ax.tick_params(axis='both', which='major', labelsize=28)
     for spine in ax.spines.values():
         spine.set_edgecolor('black')
-        spine.set_linewidth(5)  # Adjust the linewidth for the outer border
+        spine.set_linewidth(5)
     plt.title('Footprint Matrix {}'.format(name), fontsize=22)
     # plt.show()
     plt.savefig(OUTPUT_DIR + '/fpm_{}.png'.format(name))

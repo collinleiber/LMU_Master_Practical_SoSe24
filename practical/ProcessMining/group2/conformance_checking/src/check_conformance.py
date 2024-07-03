@@ -12,7 +12,6 @@ from src.generate_footprint import (
 
 class ConformanceChecking:
 
-    # Checks two dictionaries (footprint)
     def get_conformance_matrix(self, fpm_1, fpm_2):
         """
         Create a conformance matrix comparing relations of two FootPrintMatrix objects.

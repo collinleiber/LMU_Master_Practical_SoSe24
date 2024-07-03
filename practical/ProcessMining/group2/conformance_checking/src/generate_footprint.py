@@ -31,7 +31,7 @@ class FootPrintMatrix:
         self.transitions = set()
 
         if relations is None:
-            self.relations = {}  # Default to an empty dict
+            self.relations = {}
         else:
             self.relations = relations
 
@@ -135,16 +135,13 @@ class FootPrintMatrix:
         3. Extract relations between each pair of transitions and populate the FootPrintMatrix.
         """
         print("Generating a Footprint Matrix!")
-        # Step 0: generate transitions
+
         self.generate_transitions()
-        # Step 1: remove duplicate traces
+
         traces_without_duplicates = set()
 
         for trace in self.traces.values():
             traces_without_duplicates.add("".join(trace))
-
-        # Extract relations between each transitions
-        # generate Footprint
 
         for transition_1 in self.transitions:
             self.relations[transition_1] = {}

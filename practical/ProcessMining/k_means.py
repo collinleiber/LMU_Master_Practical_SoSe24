@@ -50,8 +50,8 @@ def kMeans (data,k):
             count_points = len(cluster)
             sum_x = sum([tupel[0] for tupel in cluster])
             sum_y = sum([tupel[1] for tupel in cluster])
-            avg_x= sum_x/count_points
-            avg_y= sum_y/count_points
+            avg_x= sum_x/count_points if count_points != 0 else 0
+            avg_y= sum_y/count_points if count_points != 0 else 0
             centroids [index] = (avg_x,avg_y)
         
         print ("Clusters {}".format(clusters))

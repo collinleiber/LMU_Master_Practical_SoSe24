@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 TMP_LOGS_PATH = './tmp_logs'
+SAMPLES_PATH = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'example_files'))
 
 
 def import_csv(file_path):

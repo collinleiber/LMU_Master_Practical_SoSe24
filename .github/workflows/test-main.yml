@@ -37,7 +37,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest-cov
           pip install numpy scikit-learn torch
-          pip install matplotlib
+          pip install matplotlib==3.7.3
           pip install graphviz IPython
           pip install pm4py~=2.7.11.8
           pip install -e .

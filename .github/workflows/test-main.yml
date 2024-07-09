@@ -40,6 +40,7 @@ jobs:
           pip install matplotlib==3.7.3
           pip install graphviz IPython
           pip install pm4py~=2.7.11.8
+          pip install natsort
           pip install -e .
 
       - name: Install Graphviz

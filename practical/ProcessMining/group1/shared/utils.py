@@ -7,8 +7,10 @@ import pm4py
 import shutil
 import uuid
 import re
+from IPython.utils import io
 from datetime import datetime
 from pathlib import Path
+from sklearn.metrics import silhouette_score
 
 TMP_LOGS_PATH = './tmp_logs'
 SAMPLES_PATH = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'example_files'))
@@ -95,6 +97,23 @@ def check_lists_of_sets_equal(list1, list2):
     sorted_list2 = sorted([tuple(sorted(s)) for s in list2])
 
     return sorted_list1 == sorted_list2
+
+
+def custom_metric(log, features, cluster_labels, net, im, fm, weights=None):
+    if weights is None:
+        weights = {"ss": 0.4, "f": 0.25, "p": 0.35}
+
+    ss = silhouette_score(features, cluster_labels)
+    # Calculate and apply penalty for small clusters
+    # cluster_sizes = pd.Series(cluster_labels).value_counts(normalize=True)
+    # penalty_factor = (cluster_sizes ** 2).sum()
+    # ss_adjusted = ss * penalty_factor
+
+    with io.capture_output() as captured:
+        fitness = pm4py.conformance.fitness_alignments(log, net, im, fm)["averageFitness"]
+        precision = pm4py.conformance.precision_alignments(log, net, im, fm)
+
+    return weights["ss"] * ss + weights["f"] * fitness + weights["p"] * precision
 
 
 def filter_rare_traces(log, threshold: int = 2, case_column='case:concept:name'):

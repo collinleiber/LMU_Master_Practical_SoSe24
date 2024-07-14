@@ -1,4 +1,9 @@
-from practical.ProcessMining.group2.inductive_miner.src.algo import *
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.inductive_miner import *
 
 
 def test_file_loading():

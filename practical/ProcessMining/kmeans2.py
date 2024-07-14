@@ -23,7 +23,7 @@ class Kmeans:
 
     def plot_clusters(self, data):
         # Color the data points according to their cluster
-        cmap = plt.cm.get_cmap(lut=self.k)
+        cmap = plt.get_cmap(lut=self.k)
         for i in range(self.k):
             plt.scatter(data[self.cluster_indices == i][:, 0], 
                         data[self.cluster_indices == i][:, 1], 

@@ -7,7 +7,6 @@ __pycache__/
 *.so
 *.dll
 
-
 # Distribution / packaging
 .Python
 build/
@@ -135,3 +134,5 @@ dmypy.json
 
 # Shell scripts
 *.sh
+
+/practical/ProcessMining/group1/task2/full_alpha_miner_graph*

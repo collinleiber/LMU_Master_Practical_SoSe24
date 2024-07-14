@@ -5,9 +5,8 @@ import pandas as pd
 import pm4py
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to
-from pm4py.visualization.petri_net import visualizer as pn_visualizer
+from practical.ProcessMining.group1.shared.visualizer import Visualizer
 from typing import Dict, List, Tuple, Set
-
 
 
 class AlphaMiner:
@@ -515,7 +514,13 @@ class AlphaMiner:
             add_arc_from_to(transitions[activity_name], global_end, self.net)
             self.final_marking[global_end] = 1
 
-        # Visualization settings
-        parameters = {'format': 'png'}  # can change later to other format
-        gviz = pn_visualizer.apply(self.net, self.initial_marking, self.final_marking, parameters=parameters)
-        pn_visualizer.view(gviz)
+        # Graphviz visualization
+        visualizer = Visualizer()
+        graph = visualizer.build_petri_net(self.net, self.initial_marking, self.final_marking)
+        return graph
+
+    def get_petrinet(self) -> Tuple[PetriNet, Marking, Marking]:
+        """
+        Returns the Petri net and initial/final markings.
+        """
+        return self.net, self. initial_marking, self.final_marking

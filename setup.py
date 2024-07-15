@@ -25,5 +25,6 @@ setup(
                       'matplotlib',
                       'pandas',
                       'sortedcontainers',
-                      'graphviz']
+                      'graphviz',
+                      'natsort']
 )

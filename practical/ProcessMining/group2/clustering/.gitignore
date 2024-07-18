@@ -1,0 +1,4 @@
+data/*.csv
+data/*.xes
+output
+src/business_process_encoding

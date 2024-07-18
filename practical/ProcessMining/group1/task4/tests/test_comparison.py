@@ -1,6 +1,6 @@
 import unittest
-from practical.ProcessMining.group1.task4.comparison import ModelComparator
-
+from practical.ProcessMining.group1.task4.comparison import ModelComparator,ModelComparator4D
+import matplotlib.pyplot as plt
 
 class TestModelComparator(unittest.TestCase):
 
@@ -50,3 +50,40 @@ class TestModelComparator(unittest.TestCase):
 
     def test_visualize_models(self):
         self.comparator.visualize_models("fitness", "precision")
+
+
+class TestModelComparator4D(unittest.TestCase):
+
+    def setUp(self):
+        self.model1 = self.create_mock_model("Model 1", 0.9, 0.7, 0.8, 0.6)
+        self.model2 = self.create_mock_model("Model 2", 0.85, 0.75, 0.88, 0.65)
+        self.model3 = self.create_mock_model("Model 3", 0.7, 0.85, 0.6, 0.7)
+
+        self.model_list = [self.model1, self.model2, self.model3]
+        self.comparator = ModelComparator4D(self.model_list)
+
+    def create_mock_model(self, discovery_type, fitness, simplicity, precision, generalization):
+        model = type('MockTokenReplay', (), {})()
+        model.get_discovery_type = lambda: discovery_type
+        model.get_fitness = lambda: fitness
+        model.get_simplicity = lambda: simplicity
+        model.get_precision = lambda: precision
+        model.get_generalization = lambda: generalization
+        model.get_dimension_value = lambda dimension: {
+            "fitness": fitness,
+            "simplicity": simplicity,
+            "precision": precision,
+            "generalization": generalization
+        }[dimension]
+        return model
+
+    def test_get_pareto_efficient_models_4d(self):
+        pareto_models = self.comparator._get_pareto_efficient_models_4d()
+        self.assertEqual(len(pareto_models), 3)
+        self.assertIn(self.model1, pareto_models)
+        self.assertIn(self.model2, pareto_models)
+        self.assertIn(self.model3, pareto_models)
+
+    def test_visualize_models_4d(self):
+        plt.switch_backend('Agg')
+        self.comparator.visualize_models_4d(pareto_efficient_only=True)

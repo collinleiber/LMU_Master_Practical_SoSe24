@@ -2,7 +2,9 @@ import os
 
 from pm4py.objects.log.obj import EventLog, Trace, Event
 from pm4py.algo.discovery.inductive import algorithm as inductive_miner
-import practical.ProcessMining.group2.inductive_miner.src.algo as algo
+
+from practical.ProcessMining.group2.inductive_miner.src.event_log import EventLog as OwnEventLog
+import practical.ProcessMining.group2.inductive_miner.src.inductive_miner as algo
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -24,7 +26,7 @@ def get_process_tree_with_pm4py(log):
     return tree
 
 def get_process_tree_with_algo(log):
-    event_log = algo.EventLog(log)
+    event_log = OwnEventLog(log)
     miner = algo.InductiveMiner()
     process_tree = miner.mine_process_model(event_log)
     return process_tree
@@ -63,6 +65,6 @@ for title, event_log in logs:
     output += "pm4py:\t\t{}\n".format(str(get_process_tree_with_pm4py(event_log)))
     output += "Our output:\t{}\n\n".format(str(get_process_tree_with_algo(event_log)))
 
-file_path = './output/pm4py_process_trees.txt'
+file_path = '../output/pm4py_process_trees.txt'
 with open(os.path.join(script_dir, file_path), 'w') as file:
     file.write(output)

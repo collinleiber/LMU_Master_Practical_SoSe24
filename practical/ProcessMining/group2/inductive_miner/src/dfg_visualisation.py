@@ -1,6 +1,6 @@
 
 from pm4py.visualization.dfg import visualizer as dfg_visualizer
-from practical.ProcessMining.group2.inductive_miner.src.algo import DirectlyFollowsGraph, EventLog
+from practical.ProcessMining.group2.inductive_miner.src.inductive_miner import *
 
 
 
